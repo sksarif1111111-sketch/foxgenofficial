@@ -386,7 +386,7 @@ const Experience = () => {
           <EnergyRing />
           <Environment preset="night" />
           
-          <EffectComposer disableNormalPass>
+          <EffectComposer>
             <Bloom 
               luminanceThreshold={0.8} 
               mipmapBlur 
