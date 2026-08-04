@@ -386,7 +386,7 @@ export function Index() {
       <style>{`
         body { margin: 0; overflow: hidden; background: #000; }
         * { cursor: inherit; }
-      `}`}</style>
+      `}</style>
     </div>
   );
 }
