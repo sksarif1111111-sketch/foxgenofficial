@@ -14,7 +14,7 @@ export function makeLicenseKey() {
 }
 
 export function makeReferralCode() {
-  return `FX${block(6)}`;
+  return `FOXGEN-${block(5)}`;
 }
 
 export async function getSettings(): Promise<Record<string, string>> {
@@ -209,9 +209,41 @@ export async function refreshVerification(profile: Profile) {
       body: "All tasks completed. You can now earn credits and redeem licenses.",
       kind: "account",
     });
-    await db.rpc("award_referral", { _referred_user_id: profile.id });
+    const { data: awarded } = await db.rpc("award_referral", { _referred_user_id: profile.id });
+    if (awarded) await notifyReferralReward(profile.id);
   }
   return { allDone, missing, telegram, doneIds: [...doneIds] };
+}
+
+export async function notifyReferralReward(referredUserId: string) {
+  const { data: referral } = await db
+    .from("referrals")
+    .select("referrer_id")
+    .eq("referred_user_id", referredUserId)
+    .eq("status", "verified")
+    .maybeSingle();
+  if (!referral) return;
+
+  const [{ data: referrer }, { count }] = await Promise.all([
+    db.from("profiles").select("telegram_user_id, credits_available").eq("id", referral.referrer_id).maybeSingle(),
+    db
+      .from("referrals")
+      .select("id", { count: "exact", head: true })
+      .eq("referrer_id", referral.referrer_id)
+      .eq("status", "verified"),
+  ]);
+  if (!referrer) return;
+
+  await tg("sendMessage", {
+    chat_id: referrer.telegram_user_id,
+    parse_mode: "HTML",
+    text:
+      `🎉 <b>New Referral Verified!</b>\n\n` +
+      `You earned:\n💰 <b>+1 Credit</b>\n\n━━━━━━━━━━\n\n` +
+      `👥 Valid Referrals: <b>${count ?? 0}</b>\n` +
+      `💰 Available Credits: <b>${referrer.credits_available}</b>\n\n` +
+      `Keep inviting friends to unlock free Lovable Unlimited licenses!`,
+  });
 }
 
 

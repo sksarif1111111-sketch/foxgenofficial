@@ -17,6 +17,8 @@ export type HubState = {
   referralLink: string;
   verifiedReferrals: number;
   pendingReferrals: number;
+  bonusCredits: number;
+  nextReward: { name: string; credit_cost: number; progress: number } | null;
   tasks: Array<{
     id: string;
     name: string;
@@ -29,7 +31,7 @@ export type HubState = {
   }>;
   rewards: Array<{ id: string; name: string; duration_days: number; credit_cost: number }>;
   licenses: Array<{ license_key: string; duration_days: number; reward_name: string; redeemed_at: string }>;
-  transactions: Array<{ amount: number; transaction_type: string; description: string | null; created_at: string }>;
+  transactions: Array<{ id: string; amount: number; transaction_type: string; description: string | null; created_at: string }>;
   leaderboard: Array<{ name: string; referrals: number; credits: number }>;
   announcements: Array<{ title: string; message: string; button_text: string | null; button_url: string | null }>;
   links: Record<string, string>;
@@ -57,7 +59,7 @@ export const getHubState = createServerFn({ method: "POST" })
         .order("redeemed_at", { ascending: false }),
       db
         .from("credit_transactions")
-        .select("amount, transaction_type, description, created_at")
+        .select("id, amount, transaction_type, description, created_at")
         .eq("user_id", profile.id)
         .order("created_at", { ascending: false })
         .limit(50),
@@ -70,6 +72,9 @@ export const getHubState = createServerFn({ method: "POST" })
     ]);
 
     const botUser = settings["bot_username"] || "";
+    const transactions = txs.data ?? [];
+    const nextReward = (rewards.data ?? []).find((reward) => reward.credit_cost > profile.credits_available) ??
+      (rewards.data ?? [])[0] ?? null;
     return {
       profile: {
         id: profile.id,
@@ -86,6 +91,12 @@ export const getHubState = createServerFn({ method: "POST" })
         : `Referral code: ${profile.referral_code}`,
       verifiedReferrals: (refs.data ?? []).filter((r) => r.status === "verified").length,
       pendingReferrals: (refs.data ?? []).filter((r) => r.status === "pending").length,
+      bonusCredits: transactions
+        .filter((t) => t.amount > 0 && t.transaction_type !== "referral_reward")
+        .reduce((sum, t) => sum + t.amount, 0),
+      nextReward: nextReward
+        ? { name: nextReward.name, credit_cost: nextReward.credit_cost, progress: Math.min(profile.credits_available, nextReward.credit_cost) }
+        : null,
       tasks: tasks.map((t) => ({
         id: t.id,
         name: t.name,
@@ -98,7 +109,7 @@ export const getHubState = createServerFn({ method: "POST" })
       })),
       rewards: rewards.data ?? [],
       licenses: redemptions.data ?? [],
-      transactions: txs.data ?? [],
+      transactions,
       leaderboard: (board.data ?? []).map((b) => ({
         name: b.telegram_username ? `@${b.telegram_username}` : (b.first_name ?? "Member"),
         referrals: b.credits_earned,

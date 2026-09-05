@@ -291,12 +291,51 @@ export const adminBroadcast = createServerFn({ method: "POST" })
     return { sent, total: (rows ?? []).length };
   });
 
-export const adminReferrals = createServerFn({ method: "POST" }).handler(async () => {
+export const adminReferrals = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({ search: z.string().max(100).optional(), status: z.enum(["all", "pending", "verified", "rejected", "suspicious"]).optional() }).parse(input),
+  )
+  .handler(async ({ data }) => {
   const { db } = await import("@/lib/hub.server");
-  const { data } = await db
+  let query = db
     .from("referrals")
-    .select("id, status, credit_awarded, created_at, verified_at")
+    .select("id, status, credit_awarded, created_at, verified_at, referrer_id, referred_user_id, referrer:profiles!referrals_referrer_id_fkey(telegram_username,first_name,referral_code), referred:profiles!referrals_referred_user_id_fkey(telegram_username,first_name,telegram_user_id,status)")
     .order("created_at", { ascending: false })
     .limit(200);
-  return data ?? [];
+  if (data.status && data.status !== "all" && data.status !== "suspicious") query = query.eq("status", data.status);
+  const { data: rows } = await query;
+  const search = (data.search ?? "").trim().toLowerCase();
+  const filtered = (rows ?? []).filter((row) => {
+    const haystack = JSON.stringify(row).toLowerCase();
+    return !search || haystack.includes(search);
+  });
+  if (data.status !== "suspicious") return filtered;
+  const userIds = filtered.map((row) => row.referred_user_id);
+  if (!userIds.length) return [];
+  const { data: flags } = await db.from("fraud_flags").select("user_id").in("user_id", userIds).eq("status", "open");
+  const flagged = new Set((flags ?? []).map((flag) => flag.user_id));
+  return filtered.filter((row) => flagged.has(row.referred_user_id));
 });
+
+export const adminApproveReferral = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db, notifyReferralReward } = await import("@/lib/hub.server");
+    const { data: referral } = await db.from("referrals").select("referred_user_id").eq("id", data.id).maybeSingle();
+    if (!referral) throw new Error("Referral not found.");
+    const { data: awarded, error } = await db.rpc("award_referral", { _referred_user_id: referral.referred_user_id });
+    if (error) throw new Error("Could not approve this referral.");
+    if (!awarded) throw new Error("Only a pending referral with an active referred account can be approved.");
+    await notifyReferralReward(referral.referred_user_id);
+    return { ok: true };
+  });
+
+export const adminRejectReferral = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    const { data: rejected, error } = await db.rpc("reject_referral", { _referral_id: data.id });
+    if (error) throw new Error("Could not reject this referral.");
+    if (!rejected) throw new Error("Only an uncredited pending referral can be rejected.");
+    return { ok: true };
+  });
