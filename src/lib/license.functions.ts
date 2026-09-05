@@ -52,6 +52,6 @@ export const checkLicense = createServerFn({ method: "POST" })
       valid,
       status,
       message: messages[status] ?? (valid ? "License activated." : "This license key is not valid."),
-      ...(valid ? { downloadUrl: "/downloads/foxgen-extension.zip" } : {}),
+            ...(valid ? {} : {}),
     };
   });
