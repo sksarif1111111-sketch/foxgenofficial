@@ -493,10 +493,13 @@ function toTaskInput(t: TaskRow) {
   return {
     id: t.id,
     name: t.name,
+    description: t.description ?? "",
     url: t.url ?? "",
     telegram_chat_id: t.telegram_chat_id ?? "",
     verification_type: t.verification_type as "manual_confirmation" | "telegram_auto_verification",
+    display_order: t.display_order,
     required: t.required,
     enabled: t.enabled,
   };
 }
+
