@@ -220,7 +220,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             let body = `❌ <b>Verification Incomplete</b>\n\n`;
             if (joined.length) body += `You have joined:\n${joined.map((c) => `✅ ${esc(c.name)}`).join("\n")}\n\n`;
             body += `You still need to join:\n${pending.map((c) => `❌ ${esc(c.name)}`).join("\n")}`;
-            const rows = pending.filter((c) => c.url).map((c) => [{ text: c.name, url: c.url as string }]);
+            const rows: Array<Array<{ text: string; url?: string; callback_data?: string }>> = pending
+              .filter((c) => c.url)
+              .map((c) => [{ text: c.name, url: c.url as string }]);
+
             rows.push([{ text: "🔍 Verify Telegram Membership", callback_data: "verify" }]);
             rows.push([{ text: "📋 My tasks", callback_data: "tasks" }]);
             await send(body, rows);
