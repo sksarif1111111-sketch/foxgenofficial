@@ -50,7 +50,7 @@ export default function DownloadPage() {
             FoxGEN Pro
           </span>
           <h1 className="bg-gradient-to-r from-primary via-foreground to-accent bg-clip-text text-4xl font-black tracking-tight text-transparent sm:text-6xl">
-            FoxGEN Old Vibe Extension
+            FoxGEN Pro Extension
           </h1>
           <p className="max-w-xl text-muted-foreground">
             Free to download. The extension stays locked until you activate it with a valid
