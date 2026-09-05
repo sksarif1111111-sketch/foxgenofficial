@@ -127,8 +127,16 @@ function HubPage() {
   return (
     <main className="mx-auto max-w-5xl px-5 py-10">
       <header className="mb-6">
-        <h1 className="text-3xl font-black">🦊 {links["brand_name"] || "FoxGEN PRO Rewards Hub"}</h1>
-        <p className="text-sm text-muted-foreground">{links["brand_description"] || "Earn. Refer. Unlock."}</p>
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-lg font-black text-primary">
+            {state.profile.initials}
+          </div>
+          <div>
+            <h1 className="text-3xl font-black">🦊 {links["brand_name"] || "FoxGEN PRO Rewards Hub"}</h1>
+            <p className="text-sm font-semibold">{state.profile.name}{state.profile.username ? ` · @${state.profile.username}` : ""}</p>
+            <p className="text-sm text-muted-foreground">{links["brand_description"] || "Earn. Refer. Unlock."}</p>
+          </div>
+        </div>
       </header>
 
       <nav className="mb-6 flex flex-wrap gap-2">
@@ -342,7 +350,8 @@ function HubPage() {
           <div className="mt-5 flex flex-wrap justify-center gap-3 text-xs text-muted-foreground"><span>Version {links["extension_version"] || "—"}</span>{links["extension_release_date"] && <span>Released {links["extension_release_date"]}</span>}</div>
           {links["extension_description"] && <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground">{links["extension_description"]}</p>}
           <a
-            href={links["extension_download_url"] || "/foxgen-extension.zip"}
+            href={`/foxgen-extension.zip?v=${encodeURIComponent(links["extension_version"] || "latest")}`}
+            download={`FoxGEN-Pro-Extension-${links["extension_version"] || "latest"}.zip`}
             className="mt-6 inline-block rounded-xl bg-primary px-6 py-3 text-xs font-black uppercase text-primary-foreground"
           >
             📥 Download Extension

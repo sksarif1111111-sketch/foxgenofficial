@@ -8,6 +8,7 @@ export type HubState = {
     id: string;
     name: string;
     username: string | null;
+    initials: string;
     status: string;
     referral_code: string;
     credits_available: number;
@@ -80,6 +81,10 @@ export const getHubState = createServerFn({ method: "POST" })
         id: profile.id,
         name: [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Member",
         username: profile.telegram_username,
+        initials: [profile.first_name, profile.last_name]
+          .filter(Boolean)
+          .map((part) => part?.charAt(0).toUpperCase())
+          .join("") || "FG",
         status: profile.status,
         referral_code: profile.referral_code,
         credits_available: profile.credits_available,
