@@ -1,0 +1,154 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+const tokenSchema = z.object({ token: z.string().min(10).max(200) });
+
+export type HubState = {
+  profile: {
+    id: string;
+    name: string;
+    username: string | null;
+    status: string;
+    referral_code: string;
+    credits_available: number;
+    credits_earned: number;
+    credits_spent: number;
+  };
+  referralLink: string;
+  verifiedReferrals: number;
+  pendingReferrals: number;
+  tasks: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    platform: string;
+    url: string | null;
+    verification_type: string;
+    required: boolean;
+    completed: boolean;
+  }>;
+  rewards: Array<{ id: string; name: string; duration_days: number; credit_cost: number }>;
+  licenses: Array<{ license_key: string; duration_days: number; reward_name: string; redeemed_at: string }>;
+  transactions: Array<{ amount: number; transaction_type: string; description: string | null; created_at: string }>;
+  leaderboard: Array<{ name: string; referrals: number; credits: number }>;
+  announcements: Array<{ title: string; message: string; button_text: string | null; button_url: string | null }>;
+  links: Record<string, string>;
+};
+
+export const getHubState = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => tokenSchema.parse(input))
+  .handler(async ({ data }): Promise<HubState> => {
+    const { db, getSettings, profileByToken, activeTasks, completionsFor } = await import("@/lib/hub.server");
+    const profile = await profileByToken(data.token);
+    if (!profile) throw new Error("Invalid access link. Open the bot and press “My account”.");
+
+    const settings = await getSettings();
+    const tasks = await activeTasks();
+    const completions = await completionsFor(profile.id);
+    const doneIds = new Set(completions.filter((c) => c.completed).map((c) => c.task_id));
+
+    const [refs, rewards, redemptions, txs, board, ann] = await Promise.all([
+      db.from("referrals").select("status").eq("referrer_id", profile.id),
+      db.from("rewards").select("id, name, duration_days, credit_cost").eq("enabled", true).order("display_order"),
+      db
+        .from("license_redemptions")
+        .select("license_key, duration_days, reward_name, redeemed_at")
+        .eq("user_id", profile.id)
+        .order("redeemed_at", { ascending: false }),
+      db
+        .from("credit_transactions")
+        .select("amount, transaction_type, description, created_at")
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      db
+        .from("profiles")
+        .select("first_name, telegram_username, credits_earned")
+        .order("credits_earned", { ascending: false })
+        .limit(20),
+      db.from("announcements").select("title, message, button_text, button_url").eq("status", "published").order("publish_date", { ascending: false }).limit(5),
+    ]);
+
+    const botUser = settings["bot_username"] || "";
+    return {
+      profile: {
+        id: profile.id,
+        name: [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Member",
+        username: profile.telegram_username,
+        status: profile.status,
+        referral_code: profile.referral_code,
+        credits_available: profile.credits_available,
+        credits_earned: profile.credits_earned,
+        credits_spent: profile.credits_spent,
+      },
+      referralLink: botUser
+        ? `https://t.me/${botUser}?start=${profile.referral_code}`
+        : `Referral code: ${profile.referral_code}`,
+      verifiedReferrals: (refs.data ?? []).filter((r) => r.status === "verified").length,
+      pendingReferrals: (refs.data ?? []).filter((r) => r.status === "pending").length,
+      tasks: tasks.map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        platform: t.platform,
+        url: t.url,
+        verification_type: t.verification_type,
+        required: t.required,
+        completed: doneIds.has(t.id),
+      })),
+      rewards: rewards.data ?? [],
+      licenses: redemptions.data ?? [],
+      transactions: txs.data ?? [],
+      leaderboard: (board.data ?? []).map((b) => ({
+        name: b.telegram_username ? `@${b.telegram_username}` : (b.first_name ?? "Member"),
+        referrals: b.credits_earned,
+        credits: b.credits_earned,
+      })),
+      announcements: ann.data ?? [],
+      links: settings,
+    };
+  });
+
+export const completeTask = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => tokenSchema.extend({ taskId: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db, profileByToken, refreshVerification } = await import("@/lib/hub.server");
+    const profile = await profileByToken(data.token);
+    if (!profile) throw new Error("Invalid access link.");
+    await db.from("task_completions").upsert(
+      {
+        user_id: profile.id,
+        task_id: data.taskId,
+        completed: true,
+        verification_status: "confirmed",
+        completed_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,task_id" },
+    );
+    return await refreshVerification(profile);
+  });
+
+export const verifyMembership = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => tokenSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { profileByToken, refreshVerification } = await import("@/lib/hub.server");
+    const profile = await profileByToken(data.token);
+    if (!profile) throw new Error("Invalid access link.");
+    return await refreshVerification(profile);
+  });
+
+export const redeemReward = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => tokenSchema.extend({ rewardId: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { profileByToken, redeem } = await import("@/lib/hub.server");
+    const profile = await profileByToken(data.token);
+    if (!profile) throw new Error("Invalid access link.");
+    try {
+      return await redeem(profile.id, data.rewardId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("insufficient_credits")) throw new Error("Not enough credits yet.");
+      if (msg.includes("account_not_active")) throw new Error("Complete every required task first.");
+      throw new Error("This reward is unavailable right now.");
+    }
+  });
