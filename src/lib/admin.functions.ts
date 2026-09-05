@@ -4,7 +4,8 @@ import { z } from "zod";
 export type LicenseRow = {
   id: string;
   license_key: string;
-  plan_days: number;
+  plan_days: number | null;
+  duration_seconds: number | null;
   status: string;
   note: string | null;
   device_id: string | null;
@@ -15,7 +16,7 @@ export type LicenseRow = {
 };
 
 const SELECT =
-  "id, license_key, plan_days, status, note, device_id, activated_at, expires_at, last_seen_at, created_at";
+  "id, license_key, plan_days, duration_seconds, status, note, device_id, activated_at, expires_at, last_seen_at, created_at";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789";
 
@@ -43,19 +44,21 @@ export const generateLicense = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        planDays: z.union([z.literal(15), z.literal(30), z.literal(60)]),
+        durationSeconds: z.number().int().min(1).max(60 * 60 * 24 * 3650),
         note: z.string().trim().max(120).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data }): Promise<LicenseRow> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const planDays = Math.max(1, Math.round(data.durationSeconds / 86400));
     for (let i = 0; i < 6; i++) {
       const { data: row, error } = await supabaseAdmin
         .from("licenses")
         .insert({
           license_key: makeKey(),
-          plan_days: data.planDays,
+          plan_days: planDays,
+          duration_seconds: data.durationSeconds,
           note: data.note ?? null,
         })
         .select(SELECT)
