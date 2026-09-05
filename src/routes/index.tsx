@@ -21,7 +21,7 @@ export const Route = createFileRoute("/")({
   component: DownloadPage,
 });
 
-const BUILD_TAG = "2026-09-05b";
+const BUILD_TAG = "2026-09-05c";
 
 const steps = [
   "Download the ZIP file and unzip it on your computer.",

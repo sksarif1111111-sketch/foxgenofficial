@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
+import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -28,34 +29,52 @@ const ApiPublicLicenseVerifyRoute = ApiPublicLicenseVerifyRouteImport.update({
   path: '/api/public/license/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicExtCoreRoute = ApiPublicExtCoreRouteImport.update({
+  id: '/api/public/ext/core',
+  path: '/api/public/ext/core',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/api/public/license/verify'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/api/public/ext/core'
+    | '/api/public/license/verify'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/api/public/license/verify'
-  id: '__root__' | '/' | '/admin' | '/api/public/license/verify'
+  to: '/' | '/admin' | '/api/public/ext/core' | '/api/public/license/verify'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/api/public/ext/core'
+    | '/api/public/license/verify'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  ApiPublicExtCoreRoute: typeof ApiPublicExtCoreRoute
   ApiPublicLicenseVerifyRoute: typeof ApiPublicLicenseVerifyRoute
 }
 
@@ -82,12 +101,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLicenseVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ext/core': {
+      id: '/api/public/ext/core'
+      path: '/api/public/ext/core'
+      fullPath: '/api/public/ext/core'
+      preLoaderRoute: typeof ApiPublicExtCoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  ApiPublicExtCoreRoute: ApiPublicExtCoreRoute,
   ApiPublicLicenseVerifyRoute: ApiPublicLicenseVerifyRoute,
 }
 export const routeTree = rootRouteImport
