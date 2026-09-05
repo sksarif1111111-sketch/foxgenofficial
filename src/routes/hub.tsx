@@ -1,0 +1,310 @@
+import { useCallback, useEffect, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { completeTask, getHubState, redeemReward, verifyMembership, type HubState } from "@/lib/hub.functions";
+
+export const Route = createFileRoute("/hub")({
+  head: () => ({
+    meta: [
+      { title: "FoxGEN PRO Rewards Hub — Earn. Refer. Unlock." },
+      {
+        name: "description",
+        content:
+          "Invite friends, collect credits and unlock free FoxGEN Pro extension licenses from your rewards dashboard.",
+      },
+      { property: "og:title", content: "FoxGEN PRO Rewards Hub" },
+      { property: "og:description", content: "Earn credits with referrals and unlock free extension licenses." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: HubPage,
+});
+
+const TABS = [
+  "Dashboard",
+  "Invite",
+  "Tasks",
+  "Store",
+  "My Licenses",
+  "Credits",
+  "Leaderboard",
+  "Download",
+] as const;
+type Tab = (typeof TABS)[number];
+
+function Card({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card/60 p-5">
+      <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="mt-1 text-3xl font-black">{value}</p>
+    </div>
+  );
+}
+
+function HubPage() {
+  const load = useServerFn(getHubState);
+  const done = useServerFn(completeTask);
+  const verify = useServerFn(verifyMembership);
+  const redeem = useServerFn(redeemReward);
+
+  const [token, setToken] = useState("");
+  const [state, setState] = useState<HubState | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("Dashboard");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const fromUrl = url.searchParams.get("t");
+    const stored = localStorage.getItem("foxgen_hub_token");
+    const t = fromUrl || stored || "";
+    if (fromUrl) localStorage.setItem("foxgen_hub_token", fromUrl);
+    setToken(t);
+  }, []);
+
+  const refresh = useCallback(
+    async (t: string) => {
+      if (!t) return;
+      try {
+        setState(await load({ data: { token: t } }));
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not load your account.");
+      }
+    },
+    [load],
+  );
+
+  useEffect(() => {
+    void refresh(token);
+  }, [token, refresh]);
+
+  if (!token || error) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-6">
+        <h1 className="text-2xl font-black">FoxGEN PRO Rewards Hub</h1>
+        <p className="text-sm text-muted-foreground">
+          {error ?? "Open the Telegram bot, tap “My account” and use the web dashboard link to sign in."}
+        </p>
+        <input
+          placeholder="Paste your access token"
+          className="rounded-xl border border-border bg-background px-4 py-3 text-sm"
+          onChange={(e) => {
+            const t = e.target.value.trim();
+            if (t.length > 20) {
+              localStorage.setItem("foxgen_hub_token", t);
+              setError(null);
+              setToken(t);
+            }
+          }}
+        />
+      </main>
+    );
+  }
+
+  if (!state) return <main className="p-10 text-sm text-muted-foreground">Loading…</main>;
+
+  const links = state.links;
+
+  async function run(fn: () => Promise<string | void>) {
+    setBusy(true);
+    try {
+      const msg = await fn();
+      if (msg) setFlash(msg);
+      await refresh(token);
+    } catch (err) {
+      setFlash(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="mx-auto max-w-5xl px-5 py-10">
+      <header className="mb-6">
+        <h1 className="text-3xl font-black">🦊 {links["brand_name"] || "FoxGEN PRO Rewards Hub"}</h1>
+        <p className="text-sm text-muted-foreground">{links["brand_description"] || "Earn. Refer. Unlock."}</p>
+      </header>
+
+      <nav className="mb-6 flex flex-wrap gap-2">
+        {TABS.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`rounded-full border px-4 py-2 text-xs font-bold ${
+              tab === t ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </nav>
+
+      {flash && <p className="mb-4 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm">{flash}</p>}
+
+      {tab === "Dashboard" && (
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card label="Credits" value={state.profile.credits_available} />
+          <Card label="Verified referrals" value={state.verifiedReferrals} />
+          <Card label="Pending referrals" value={state.pendingReferrals} />
+          <Card label="Status" value={state.profile.status} />
+          {state.announcements.map((a) => (
+            <div key={a.title} className="rounded-2xl border border-border bg-card/60 p-5 sm:col-span-2 lg:col-span-4">
+              <p className="font-bold">{a.title}</p>
+              <p className="text-sm text-muted-foreground">{a.message}</p>
+              {a.button_url && (
+                <a className="mt-2 inline-block text-sm font-semibold text-primary" href={a.button_url}>
+                  {a.button_text || "Open"}
+                </a>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {tab === "Invite" && (
+        <section className="rounded-2xl border border-border bg-card/60 p-6">
+          <p className="text-sm text-muted-foreground">Share this link. 1 valid referral = 1 credit.</p>
+          <p className="mt-3 break-all rounded-xl bg-muted/40 px-4 py-3 font-mono text-sm">{state.referralLink}</p>
+          <button
+            onClick={() => navigator.clipboard.writeText(state.referralLink).then(() => setFlash("Link copied"))}
+            className="mt-4 rounded-xl bg-primary px-5 py-2 text-xs font-black uppercase text-primary-foreground"
+          >
+            Copy link
+          </button>
+        </section>
+      )}
+
+      {tab === "Tasks" && (
+        <section className="space-y-3">
+          {state.tasks.map((t) => (
+            <div key={t.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card/60 p-4">
+              <div className="flex-1">
+                <p className="font-bold">
+                  {t.completed ? "✅ " : "⬜ "}
+                  {t.name}
+                </p>
+                <p className="text-xs text-muted-foreground">{t.description}</p>
+              </div>
+              {t.url && (
+                <a
+                  href={t.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-lg border border-border px-3 py-2 text-xs font-semibold"
+                >
+                  Open
+                </a>
+              )}
+              {t.verification_type === "manual_confirmation" && !t.completed && (
+                <button
+                  disabled={busy}
+                  onClick={() => run(async () => void (await done({ data: { token, taskId: t.id } })))}
+                  className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground"
+                >
+                  I completed this
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            disabled={busy}
+            onClick={() =>
+              run(async () => {
+                const res = await verify({ data: { token } });
+                return res.allDone ? "Verified — account active!" : `Still missing: ${res.missing.join(", ")}`;
+              })
+            }
+            className="rounded-xl bg-accent px-5 py-3 text-xs font-black uppercase text-primary-foreground"
+          >
+            Verify membership
+          </button>
+        </section>
+      )}
+
+      {tab === "Store" && (
+        <section className="grid gap-4 sm:grid-cols-3">
+          {state.rewards.map((r) => (
+            <div key={r.id} className="rounded-2xl border border-border bg-card/60 p-6">
+              <p className="text-2xl font-black">{r.duration_days} days</p>
+              <p className="text-sm text-muted-foreground">{r.credit_cost} credits</p>
+              <button
+                disabled={busy}
+                onClick={() =>
+                  run(async () => {
+                    const row = await redeem({ data: { token, rewardId: r.id } });
+                    return `Your license key: ${row.license_key}`;
+                  })
+                }
+                className="mt-4 w-full rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase text-primary-foreground"
+              >
+                Redeem
+              </button>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {tab === "My Licenses" && (
+        <section className="space-y-2">
+          {state.licenses.length === 0 && <p className="text-sm text-muted-foreground">No licenses yet.</p>}
+          {state.licenses.map((l) => (
+            <div key={l.license_key} className="rounded-xl border border-border bg-card/60 p-4">
+              <p className="font-mono text-sm text-primary">{l.license_key}</p>
+              <p className="text-xs text-muted-foreground">
+                {l.duration_days} days · {new Date(l.redeemed_at).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {tab === "Credits" && (
+        <section className="space-y-2">
+          {state.transactions.map((t, i) => (
+            <div key={i} className="flex justify-between rounded-xl border border-border bg-card/60 p-3 text-sm">
+              <span>{t.description || t.transaction_type}</span>
+              <span className={t.amount > 0 ? "font-bold text-primary" : "font-bold text-destructive"}>
+                {t.amount > 0 ? `+${t.amount}` : t.amount}
+              </span>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {tab === "Leaderboard" && (
+        <section className="space-y-2">
+          {state.leaderboard.map((row, i) => (
+            <div key={i} className="flex justify-between rounded-xl border border-border bg-card/60 p-3 text-sm">
+              <span>
+                #{i + 1} {row.name}
+              </span>
+              <span className="font-bold">{row.credits} credits</span>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {tab === "Download" && (
+        <section className="rounded-2xl border border-border bg-card/60 p-6">
+          <p className="font-bold">{links["extension_name"] || "FoxGEN Pro Extension"}</p>
+          <p className="text-sm text-muted-foreground">Version {links["extension_version"] || "—"}</p>
+          <a
+            href={links["extension_download_url"] || "/foxgen-extension.zip"}
+            className="mt-4 inline-block rounded-xl bg-primary px-5 py-3 text-xs font-black uppercase text-primary-foreground"
+          >
+            Download extension
+          </a>
+          <div className="mt-4 flex flex-wrap gap-4 text-sm text-primary">
+            {links["installation_guide_url"] && <a href={links["installation_guide_url"]}>Installation guide</a>}
+            {links["tutorial_url"] && <a href={links["tutorial_url"]}>Video tutorial</a>}
+            {links["youtube_url"] && <a href={links["youtube_url"]}>YouTube</a>}
+            {links["telegram_channel_1"] && <a href={links["telegram_channel_1"]}>Telegram</a>}
+          </div>
+        </section>
+      )}
+    </main>
+  );
+}
