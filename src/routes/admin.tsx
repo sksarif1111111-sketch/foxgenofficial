@@ -262,9 +262,18 @@ function AdminPage() {
           </table>
         </section>
 
-        <a className="text-sm font-semibold text-primary hover:underline" href="/">
-          Back to download page
-        </a>
+        <div className="flex flex-wrap gap-5 text-sm font-semibold text-primary">
+          <a className="hover:underline" href="/">
+            Back to download page
+          </a>
+          <a className="hover:underline" href="/hub-admin">
+            Rewards Hub admin
+          </a>
+          <a className="hover:underline" href="/hub">
+            Rewards Hub (member view)
+          </a>
+        </div>
+
       </div>
     </main>
   );
