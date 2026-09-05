@@ -107,6 +107,8 @@ function HubPage() {
   if (!state) return <main className="p-10 text-sm text-muted-foreground">Loading…</main>;
 
   const links = state.links;
+  const shareMessage = `🦊 Join FoxGEN PRO Rewards Hub!\n\n🎁 Earn FREE Lovable Unlimited Extension licenses.\n\nComplete tasks, invite friends and earn credits.\n\nJoin using my referral link:\n${state.referralLink}`;
+  const encodedMessage = encodeURIComponent(shareMessage);
 
   async function run(fn: () => Promise<string | void>) {
     setBusy(true);
@@ -146,8 +148,11 @@ function HubPage() {
 
       {tab === "Dashboard" && (
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card label="Credits" value={state.profile.credits_available} />
-          <Card label="Verified referrals" value={state.verifiedReferrals} />
+          <Card label="Available credits" value={state.profile.credits_available} />
+          <Card label="Total earned" value={state.profile.credits_earned} />
+          <Card label="Total spent" value={state.profile.credits_spent} />
+          <Card label="Valid referrals" value={state.verifiedReferrals} />
+          <Card label="Bonus credits" value={state.bonusCredits} />
           <Card label="Pending referrals" value={state.pendingReferrals} />
           <Card label="Status" value={state.profile.status} />
           {state.announcements.map((a) => (
@@ -166,14 +171,32 @@ function HubPage() {
 
       {tab === "Invite" && (
         <section className="rounded-2xl border border-border bg-card/60 p-6">
-          <p className="text-sm text-muted-foreground">Share this link. 1 valid referral = 1 credit.</p>
-          <p className="mt-3 break-all rounded-xl bg-muted/40 px-4 py-3 font-mono text-sm">{state.referralLink}</p>
-          <button
-            onClick={() => navigator.clipboard.writeText(state.referralLink).then(() => setFlash("Link copied"))}
-            className="mt-4 rounded-xl bg-primary px-5 py-2 text-xs font-black uppercase text-primary-foreground"
-          >
-            Copy link
-          </button>
+          <h2 className="text-xl font-black">👥 Invite & Earn</h2>
+          <p className="mt-1 text-sm text-muted-foreground">1 verified referral = 1 credit.</p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <Card label="Valid referrals" value={state.verifiedReferrals} />
+            <Card label="Available credits" value={state.profile.credits_available} />
+            <Card label="Referral code" value={state.profile.referral_code} />
+          </div>
+          <p className="mt-5 text-xs font-bold uppercase text-muted-foreground">Your referral link</p>
+          <p className="mt-2 break-all rounded-xl bg-muted/40 px-4 py-3 font-mono text-sm">{state.referralLink}</p>
+          {state.nextReward && (
+            <div className="mt-5">
+              <div className="flex justify-between text-sm">
+                <span>Next reward: <b>{state.nextReward.name}</b></span>
+                <span>{state.nextReward.progress} / {state.nextReward.credit_cost} credits</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                <div className="h-full bg-primary" style={{ width: `${Math.min(100, (state.nextReward.progress / state.nextReward.credit_cost) * 100)}%` }} />
+              </div>
+            </div>
+          )}
+          <div className="mt-5 flex flex-wrap gap-2">
+            <a href={`https://t.me/share/url?url=${encodeURIComponent(state.referralLink)}&text=${encodeURIComponent(shareMessage.replace(state.referralLink, ""))}`} target="_blank" rel="noreferrer" className="rounded-xl border border-border px-4 py-2 text-xs font-bold">Telegram Share</a>
+            <a href={`https://wa.me/?text=${encodedMessage}`} target="_blank" rel="noreferrer" className="rounded-xl border border-border px-4 py-2 text-xs font-bold">WhatsApp Share</a>
+            <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(state.referralLink)}`} target="_blank" rel="noreferrer" className="rounded-xl border border-border px-4 py-2 text-xs font-bold">Facebook Share</a>
+            <button onClick={() => navigator.clipboard.writeText(state.referralLink).then(() => setFlash("Referral link copied"))} className="rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground">Copy Referral Link</button>
+          </div>
         </section>
       )}
 
@@ -262,15 +285,21 @@ function HubPage() {
       )}
 
       {tab === "Credits" && (
-        <section className="space-y-2">
-          {state.transactions.map((t, i) => (
-            <div key={i} className="flex justify-between rounded-xl border border-border bg-card/60 p-3 text-sm">
-              <span>{t.description || t.transaction_type}</span>
-              <span className={t.amount > 0 ? "font-bold text-primary" : "font-bold text-destructive"}>
-                {t.amount > 0 ? `+${t.amount}` : t.amount}
-              </span>
+        <section className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-4">
+            <Card label="Available" value={state.profile.credits_available} />
+            <Card label="Total earned" value={state.profile.credits_earned} />
+            <Card label="Total spent" value={state.profile.credits_spent} />
+            <Card label="Bonus credits" value={state.bonusCredits} />
+          </div>
+          <div className="space-y-2">
+          {state.transactions.map((t) => (
+            <div key={t.id} className="grid grid-cols-[1fr_auto] gap-2 rounded-xl border border-border bg-card/60 p-3 text-sm">
+              <div><p>{t.description || t.transaction_type}</p><p className="text-xs text-muted-foreground">{t.transaction_type.replace(/_/g, " ")} · {new Date(t.created_at).toLocaleString()}</p></div>
+              <span className={t.amount > 0 ? "font-bold text-primary" : "font-bold text-destructive"}>{t.amount > 0 ? `+${t.amount}` : t.amount}</span>
             </div>
           ))}
+          </div>
         </section>
       )}
 

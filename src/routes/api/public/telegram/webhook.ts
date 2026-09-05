@@ -62,6 +62,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           [{ text: "💬 Support", url: supportUrl }],
           [
             { text: "👤 My account", callback_data: "me" },
+            { text: "👥 Invite friends", callback_data: "invite" },
             { text: "🎁 Rewards", callback_data: "rewards" },
           ],
           [{ text: "✅ Verify tasks", callback_data: "verify" }],
@@ -253,6 +254,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             `👤 <b>Account</b>\nStatus: <b>${esc(fresh?.status ?? profile.status)}</b>\nCredits: <b>${fresh?.credits_available ?? 0}</b>\nEarned: ${fresh?.credits_earned ?? 0} · Spent: ${fresh?.credits_spent ?? 0}\nVerified referrals: <b>${count ?? 0}</b>\n\nInvite link:\n<code>${esc(link)}</code>` +
               (site ? `\n\nWeb dashboard:\n${site}/hub?t=${profile.web_token}` : ""),
             mainMenu,
+          );
+          return Response.json({ ok: true });
+        }
+
+        if (action === "invite") {
+          const fresh = await profileByTelegramId(from.id);
+          const { count } = await db.from("referrals").select("id", { count: "exact", head: true }).eq("referrer_id", profile.id).eq("status", "verified");
+          const botUser = settings["bot_username"] || "";
+          const link = botUser ? `https://t.me/${botUser}?start=${profile.referral_code}` : profile.referral_code;
+          const message = `🦊 Join FoxGEN PRO Rewards Hub!\n\n🎁 Earn FREE Lovable Unlimited Extension licenses.\n\nComplete tasks, invite friends and earn credits.\n\nJoin using my referral link:\n${link}`;
+          await send(
+            `👥 <b>INVITE & EARN</b>\n\nYour Referral Code:\n<code>${esc(profile.referral_code)}</code>\n\nYour Referral Link:\n<code>${esc(link)}</code>\n\nValid Referrals: <b>${count ?? 0}</b>\nCredits: <b>${fresh?.credits_available ?? 0}</b>`,
+            [
+              [{ text: "✈️ Share on Telegram", url: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message.replace(link, ""))}` }],
+              [{ text: "💬 Share on WhatsApp", url: `https://wa.me/?text=${encodeURIComponent(message)}` }],
+              [{ text: "⬅️ Back", callback_data: "menu" }],
+            ],
           );
           return Response.json({ ok: true });
         }

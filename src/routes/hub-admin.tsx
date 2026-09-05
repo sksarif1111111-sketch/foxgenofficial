@@ -3,12 +3,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   adminAdjustCredits,
+  adminApproveReferral,
   adminBotStatus,
   adminBroadcast,
   adminImportLicenses,
   adminInventory,
   adminOverview,
   adminReferrals,
+  adminRejectReferral,
   adminRewards,
   adminSaveReward,
   adminSaveSettings,
@@ -98,6 +100,8 @@ function HubAdmin() {
   const fWebhook = useServerFn(adminSetWebhook);
   const fBroadcast = useServerFn(adminBroadcast);
   const fReferrals = useServerFn(adminReferrals);
+  const fApproveReferral = useServerFn(adminApproveReferral);
+  const fRejectReferral = useServerFn(adminRejectReferral);
 
   const [section, setSection] = useState<Section>("Overview");
   const [flash, setFlash] = useState<string | null>(null);
@@ -108,6 +112,8 @@ function HubAdmin() {
   const [tasks, setTasks] = useState<TaskRow[]>([]);
   const [inventory, setInventory] = useState<InvRow[]>([]);
   const [referrals, setReferrals] = useState<RefRow[]>([]);
+  const [referralSearch, setReferralSearch] = useState("");
+  const [referralStatus, setReferralStatus] = useState<"all" | "pending" | "verified" | "rejected" | "suspicious">("all");
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [bot, setBot] = useState<BotInfo | null>(null);
   const [keys, setKeys] = useState("");
@@ -119,7 +125,7 @@ function HubAdmin() {
       try {
         if (s === "Overview") setOverview(await fOverview({ data: undefined }));
         if (s === "Users") setUsers(await fUsers({ data: { search } }));
-        if (s === "Referrals") setReferrals(await fReferrals({ data: undefined }));
+        if (s === "Referrals") setReferrals(await fReferrals({ data: { search: referralSearch, status: referralStatus } }));
         if (s === "Licenses") setInventory(await fInventory({ data: undefined }));
         if (s === "Rewards") setRewards(await fRewards({ data: undefined }));
         if (s === "Tasks") setTasks(await fTasks({ data: undefined }));
@@ -132,7 +138,7 @@ function HubAdmin() {
         setFlash(err instanceof Error ? err.message : "Could not load data.");
       }
     },
-    [fOverview, fUsers, fReferrals, fInventory, fRewards, fTasks, fSettings, fBot, search],
+    [fOverview, fUsers, fReferrals, fInventory, fRewards, fTasks, fSettings, fBot, search, referralSearch, referralStatus],
   );
 
   useEffect(() => {
@@ -254,12 +260,28 @@ function HubAdmin() {
 
       {section === "Referrals" && (
         <section className="space-y-2 text-sm">
+          <div className="flex flex-wrap gap-2">
+            <input value={referralSearch} onChange={(e) => setReferralSearch(e.target.value)} placeholder="Search referral code or member" className="min-w-64 flex-1 rounded-xl border border-border bg-background px-4 py-2 text-sm" />
+            <select value={referralStatus} onChange={(e) => setReferralStatus(e.target.value as typeof referralStatus)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+              {(["all", "pending", "verified", "rejected", "suspicious"] as const).map((status) => <option key={status} value={status}>{status}</option>)}
+            </select>
+            <button onClick={() => void loadSection("Referrals")} className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Search</button>
+          </div>
           {referrals.map((r) => (
-            <div key={r.id} className="flex justify-between rounded-xl border border-border bg-card/60 p-3">
-              <span>{new Date(r.created_at).toLocaleString()}</span>
-              <span className="font-bold">
-                {r.status} {r.credit_awarded ? "· credited" : ""}
-              </span>
+            <div key={r.id} className="rounded-xl border border-border bg-card/60 p-4">
+              <div className="flex flex-wrap justify-between gap-3">
+                <div>
+                  <p className="font-bold">{profileLabel(r.referrer)} <span className="text-muted-foreground">→</span> {profileLabel(r.referred)}</p>
+                  <p className="text-xs text-muted-foreground">Code: {profileCode(r.referrer)} · {new Date(r.created_at).toLocaleString()}</p>
+                </div>
+                <span className="font-bold">{r.status} {r.credit_awarded ? "· credited" : "· not credited"}</span>
+              </div>
+              {r.status === "pending" && !r.credit_awarded && (
+                <div className="mt-3 flex gap-2">
+                  <button onClick={async () => { try { await fApproveReferral({ data: { id: r.id } }); setFlash("Referral approved and one credit awarded"); } catch (err) { setFlash(err instanceof Error ? err.message : "Approval failed"); } void loadSection("Referrals"); }} className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">Approve</button>
+                  <button onClick={async () => { try { await fRejectReferral({ data: { id: r.id } }); setFlash("Referral rejected"); } catch (err) { setFlash(err instanceof Error ? err.message : "Rejection failed"); } void loadSection("Referrals"); }} className="rounded-lg border border-destructive px-3 py-1 text-xs font-bold text-destructive">Reject</button>
+                </div>
+              )}
             </div>
           ))}
         </section>
@@ -513,5 +535,20 @@ function toTaskInput(t: TaskRow) {
     required: t.required,
     enabled: t.enabled,
   };
+}
+
+function relatedProfile(value: unknown) {
+  const profile = Array.isArray(value) ? value[0] : value;
+  return profile && typeof profile === "object" ? profile as Record<string, unknown> : null;
+}
+
+function profileLabel(value: unknown) {
+  const profile = relatedProfile(value);
+  if (!profile) return "Unknown member";
+  return profile.telegram_username ? `@${String(profile.telegram_username)}` : String(profile.first_name ?? "Member");
+}
+
+function profileCode(value: unknown) {
+  return String(relatedProfile(value)?.referral_code ?? "—");
 }
 
