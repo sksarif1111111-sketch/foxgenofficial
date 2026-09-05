@@ -54,6 +54,7 @@ function HubPage() {
   const [flash, setFlash] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Dashboard");
   const [busy, setBusy] = useState(false);
+  const [unlocked, setUnlocked] = useState<{ license_key: string; duration_days: number; credits_used: number } | null>(null);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -248,25 +249,44 @@ function HubPage() {
       )}
 
       {tab === "Store" && (
-        <section className="grid gap-4 sm:grid-cols-3">
+        <section className="space-y-5">
+          {unlocked && (
+            <div className="border border-primary bg-primary/10 p-6">
+              <h2 className="text-2xl font-black">🎉 Congratulations!</h2>
+              <p className="mt-1 text-sm">You successfully unlocked a FREE FoxGEN PRO reward!</p>
+              <p className="mt-5 text-xs font-bold uppercase text-muted-foreground">Your Lovable Unlimited License</p>
+              <p className="mt-2 break-all font-mono text-xl font-black text-primary">{unlocked.license_key}</p>
+              <p className="mt-3 text-sm">📅 {unlocked.duration_days} Days · 💰 {unlocked.credits_used} Credits Used</p>
+              <p className="mt-1 text-xs text-muted-foreground">Keep your license key safe.</p>
+              <div className="mt-4 flex gap-2">
+                <button onClick={() => navigator.clipboard.writeText(unlocked.license_key).then(() => setFlash("License copied"))} className="rounded-lg bg-primary px-4 py-2 text-xs font-black text-primary-foreground">📋 Copy License</button>
+                <button onClick={() => setTab("My Licenses")} className="rounded-lg border border-border px-4 py-2 text-xs font-black">🔑 My Licenses</button>
+              </div>
+            </div>
+          )}
+          <div className="grid gap-4 sm:grid-cols-3">
           {state.rewards.map((r) => (
-            <div key={r.id} className="rounded-2xl border border-border bg-card/60 p-6">
-              <p className="text-2xl font-black">{r.duration_days} days</p>
-              <p className="text-sm text-muted-foreground">{r.credit_cost} credits</p>
+            <div key={r.id} className="rounded-lg border border-border bg-card/60 p-6">
+              <p className="text-xs font-black uppercase text-primary">{r.duration_days === 15 ? "🟢" : r.duration_days === 30 ? "🔵" : "🟣"} {r.duration_days} Days License</p>
+              <p className="mt-3 text-sm text-muted-foreground">Lovable Unlimited Extension License</p>
+              <p className="mt-5 text-3xl font-black">💰 {r.credit_cost}</p>
+              <p className="text-xs text-muted-foreground">Credits</p>
               <button
-                disabled={busy}
+                disabled={busy || state.profile.credits_available < r.credit_cost}
                 onClick={() =>
                   run(async () => {
                     const row = await redeem({ data: { token, rewardId: r.id } });
-                    return `Your license key: ${row.license_key}`;
+                    setUnlocked(row);
+                    return "License unlocked successfully.";
                   })
                 }
                 className="mt-4 w-full rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase text-primary-foreground"
               >
-                Redeem
+                🎁 Redeem Now
               </button>
             </div>
           ))}
+          </div>
         </section>
       )}
 
@@ -274,11 +294,9 @@ function HubPage() {
         <section className="space-y-2">
           {state.licenses.length === 0 && <p className="text-sm text-muted-foreground">No licenses yet.</p>}
           {state.licenses.map((l) => (
-            <div key={l.license_key} className="rounded-xl border border-border bg-card/60 p-4">
-              <p className="font-mono text-sm text-primary">{l.license_key}</p>
-              <p className="text-xs text-muted-foreground">
-                {l.duration_days} days · {new Date(l.redeemed_at).toLocaleString()}
-              </p>
+            <div key={l.license_key} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/60 p-4">
+              <div><p className="font-mono text-sm text-primary">{l.license_key}</p><p className="text-xs text-muted-foreground">{l.duration_days} days · {l.status} · {new Date(l.redeemed_at).toLocaleString()}</p></div>
+              <button onClick={() => navigator.clipboard.writeText(l.license_key).then(() => setFlash("License copied"))} className="rounded-lg border border-border px-3 py-2 text-xs font-bold">📋 Copy</button>
             </div>
           ))}
         </section>
@@ -317,20 +335,23 @@ function HubPage() {
       )}
 
       {tab === "Download" && (
-        <section className="rounded-2xl border border-border bg-card/60 p-6">
-          <p className="font-bold">{links["extension_name"] || "FoxGEN Pro Extension"}</p>
-          <p className="text-sm text-muted-foreground">Version {links["extension_version"] || "—"}</p>
+        <section className="border border-border bg-card/60 p-7 text-center">
+          <h2 className="text-3xl font-black">🦊 {links["extension_name"] || "FoxGEN PRO Extension"}</h2>
+          <p className="mt-2 text-sm">Lovable Unlimited Extension Experience</p>
+          <p className="mt-1 text-xs font-bold uppercase text-primary">Premium Access • Unlimited Possibilities</p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3 text-xs text-muted-foreground"><span>Version {links["extension_version"] || "—"}</span>{links["extension_release_date"] && <span>Released {links["extension_release_date"]}</span>}</div>
+          {links["extension_description"] && <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground">{links["extension_description"]}</p>}
           <a
             href={links["extension_download_url"] || "/foxgen-extension.zip"}
-            className="mt-4 inline-block rounded-xl bg-primary px-5 py-3 text-xs font-black uppercase text-primary-foreground"
+            className="mt-6 inline-block rounded-xl bg-primary px-6 py-3 text-xs font-black uppercase text-primary-foreground"
           >
-            Download extension
+            📥 Download Extension
           </a>
-          <div className="mt-4 flex flex-wrap gap-4 text-sm text-primary">
-            {links["installation_guide_url"] && <a href={links["installation_guide_url"]}>Installation guide</a>}
-            {links["tutorial_url"] && <a href={links["tutorial_url"]}>Video tutorial</a>}
-            {links["youtube_url"] && <a href={links["youtube_url"]}>YouTube</a>}
-            {links["telegram_channel_1"] && <a href={links["telegram_channel_1"]}>Telegram</a>}
+          <p className="mt-7 text-xs font-bold uppercase text-muted-foreground">Need help?</p>
+          <div className="mt-3 flex flex-wrap justify-center gap-3 text-sm text-primary">
+            {links["installation_guide_url"] && <a className="rounded-lg border border-border px-4 py-2" href={links["installation_guide_url"]}>📖 Installation Guide</a>}
+            {links["tutorial_url"] && <a className="rounded-lg border border-border px-4 py-2" href={links["tutorial_url"]}>▶️ Video Tutorial</a>}
+            {links["support_url"] && <a className="rounded-lg border border-border px-4 py-2" href={links["support_url"]}>💬 Contact Support</a>}
           </div>
         </section>
       )}

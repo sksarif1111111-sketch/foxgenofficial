@@ -30,7 +30,7 @@ export type HubState = {
     completed: boolean;
   }>;
   rewards: Array<{ id: string; name: string; duration_days: number; credit_cost: number }>;
-  licenses: Array<{ license_key: string; duration_days: number; reward_name: string; redeemed_at: string }>;
+  licenses: Array<{ license_key: string; duration_days: number; reward_name: string; redeemed_at: string; status: string }>;
   transactions: Array<{ id: string; amount: number; transaction_type: string; description: string | null; created_at: string }>;
   leaderboard: Array<{ name: string; referrals: number; credits: number }>;
   announcements: Array<{ title: string; message: string; button_text: string | null; button_url: string | null }>;
@@ -108,7 +108,7 @@ export const getHubState = createServerFn({ method: "POST" })
         completed: doneIds.has(t.id),
       })),
       rewards: rewards.data ?? [],
-      licenses: redemptions.data ?? [],
+      licenses: (redemptions.data ?? []).map((license) => ({ ...license, status: "redeemed" })),
       transactions,
       leaderboard: (board.data ?? []).map((b) => ({
         name: b.telegram_username ? `@${b.telegram_username}` : (b.first_name ?? "Member"),
@@ -160,6 +160,7 @@ export const redeemReward = createServerFn({ method: "POST" })
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("insufficient_credits")) throw new Error("Not enough credits yet.");
       if (msg.includes("account_not_active")) throw new Error("Complete every required task first.");
+      if (msg.includes("inventory_empty")) throw new Error("This license duration is temporarily out of stock.");
       throw new Error("This reward is unavailable right now.");
     }
   });

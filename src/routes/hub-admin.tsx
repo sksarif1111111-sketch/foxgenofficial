@@ -8,6 +8,9 @@ import {
   adminBroadcast,
   adminImportLicenses,
   adminInventory,
+  adminDeleteInventoryLicense,
+  adminRedemptions,
+  adminSetInventoryStatus,
   adminOverview,
   adminReferrals,
   adminRejectReferral,
@@ -50,6 +53,8 @@ const LINK_FIELDS = [
   "site_url",
   "extension_name",
   "extension_version",
+  "extension_release_date",
+  "extension_description",
   "extension_download_url",
   "installation_guide_url",
   "tutorial_url",
@@ -70,6 +75,7 @@ type UserRow = Awaited<ReturnType<typeof adminUsers>>[number];
 type RewardRow = Awaited<ReturnType<typeof adminRewards>>[number];
 type TaskRow = Awaited<ReturnType<typeof adminTasks>>[number];
 type InvRow = Awaited<ReturnType<typeof adminInventory>>[number];
+type RedemptionRow = Awaited<ReturnType<typeof adminRedemptions>>[number];
 type RefRow = Awaited<ReturnType<typeof adminReferrals>>[number];
 type BotInfo = Awaited<ReturnType<typeof adminBotStatus>>;
 
@@ -94,6 +100,9 @@ function HubAdmin() {
   const fResetTasks = useServerFn(adminResetUserTasks);
   const fImport = useServerFn(adminImportLicenses);
   const fInventory = useServerFn(adminInventory);
+  const fDeleteInventory = useServerFn(adminDeleteInventoryLicense);
+  const fSetInventoryStatus = useServerFn(adminSetInventoryStatus);
+  const fRedemptions = useServerFn(adminRedemptions);
   const fSettings = useServerFn(adminSettings);
   const fSaveSettings = useServerFn(adminSaveSettings);
   const fBot = useServerFn(adminBotStatus);
@@ -111,6 +120,10 @@ function HubAdmin() {
   const [rewards, setRewards] = useState<RewardRow[]>([]);
   const [tasks, setTasks] = useState<TaskRow[]>([]);
   const [inventory, setInventory] = useState<InvRow[]>([]);
+  const [redemptions, setRedemptions] = useState<RedemptionRow[]>([]);
+  const [inventorySearch, setInventorySearch] = useState("");
+  const [inventoryStatus, setInventoryStatus] = useState<"all" | "available" | "redeemed" | "disabled" | "reserved">("all");
+  const [inventoryDays, setInventoryDays] = useState<0 | 15 | 30 | 60>(0);
   const [referrals, setReferrals] = useState<RefRow[]>([]);
   const [referralSearch, setReferralSearch] = useState("");
   const [referralStatus, setReferralStatus] = useState<"all" | "pending" | "verified" | "rejected" | "suspicious">("all");
@@ -126,7 +139,14 @@ function HubAdmin() {
         if (s === "Overview") setOverview(await fOverview({ data: undefined }));
         if (s === "Users") setUsers(await fUsers({ data: { search } }));
         if (s === "Referrals") setReferrals(await fReferrals({ data: { search: referralSearch, status: referralStatus } }));
-        if (s === "Licenses") setInventory(await fInventory({ data: undefined }));
+        if (s === "Licenses") {
+          const [stock, history] = await Promise.all([
+            fInventory({ data: { search: inventorySearch, status: inventoryStatus, durationDays: inventoryDays } }),
+            fRedemptions({ data: undefined }),
+          ]);
+          setInventory(stock);
+          setRedemptions(history);
+        }
         if (s === "Rewards") setRewards(await fRewards({ data: undefined }));
         if (s === "Tasks") setTasks(await fTasks({ data: undefined }));
         if (s === "Links") setSettings(await fSettings({ data: undefined }));
@@ -138,7 +158,7 @@ function HubAdmin() {
         setFlash(err instanceof Error ? err.message : "Could not load data.");
       }
     },
-    [fOverview, fUsers, fReferrals, fInventory, fRewards, fTasks, fSettings, fBot, search, referralSearch, referralStatus],
+    [fOverview, fUsers, fReferrals, fInventory, fRedemptions, fRewards, fTasks, fSettings, fBot, search, referralSearch, referralStatus, inventorySearch, inventoryStatus, inventoryDays],
   );
 
   useEffect(() => {
@@ -313,7 +333,7 @@ function HubAdmin() {
               <button
                 onClick={async () => {
                   const res = await fImport({ data: { keys, durationDays: days } });
-                  setFlash(`Imported ${res.imported}, duplicates skipped ${res.duplicates}`);
+                  setFlash(`Successfully imported ${res.imported} · Duplicates skipped ${res.duplicates} · Invalid entries ${res.invalid}`);
                   setKeys("");
                   void loadSection("Licenses");
                 }}
@@ -322,20 +342,24 @@ function HubAdmin() {
                 Import
               </button>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Inventory is optional — if a category is empty, a fresh key is generated automatically on redemption.
-            </p>
+            <p className="mt-2 text-xs text-muted-foreground">One key per line. Only valid, unique keys are added as available inventory.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <input value={inventorySearch} onChange={(e) => setInventorySearch(e.target.value)} placeholder="Search license key" className="min-w-56 flex-1 rounded-xl border border-border bg-background px-4 py-2 text-sm" />
+            <select value={inventoryDays} onChange={(e) => setInventoryDays(Number(e.target.value) as typeof inventoryDays)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm"><option value={0}>All durations</option>{[15,30,60].map((d) => <option key={d} value={d}>{d} days</option>)}</select>
+            <select value={inventoryStatus} onChange={(e) => setInventoryStatus(e.target.value as typeof inventoryStatus)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">{["all","available","redeemed","disabled","reserved"].map((status) => <option key={status} value={status}>{status}</option>)}</select>
+            <button onClick={() => void loadSection("Licenses")} className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Search</button>
+            <button onClick={() => exportInventory(inventory)} className="rounded-xl border border-border px-4 py-2 text-xs font-bold">Export CSV</button>
           </div>
           <div className="space-y-1 text-sm">
             {inventory.map((l) => (
-              <div key={l.id} className="flex justify-between rounded-xl border border-border bg-card/60 p-3">
-                <span className="font-mono text-xs">{l.license_key}</span>
-                <span>
-                  {l.duration_days}d · {l.status}
-                </span>
+              <div key={l.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/60 p-3">
+                <div><span className="font-mono text-xs">{l.license_key}</span><p className="text-xs text-muted-foreground">{l.duration_days}d · {l.status} · added {new Date(l.added_at).toLocaleDateString()}</p></div>
+                {l.status !== "redeemed" && <div className="flex gap-2"><select value={l.status} onChange={async (e) => { try { await fSetInventoryStatus({ data: { id: l.id, status: e.target.value as "available" | "disabled" | "reserved" } }); setFlash("License status updated"); } catch (err) { setFlash(err instanceof Error ? err.message : "Update failed"); } void loadSection("Licenses"); }} className="rounded-lg border border-border bg-background px-2 py-1 text-xs"><option value="available">Available</option><option value="reserved">Reserved</option><option value="disabled">Disabled</option></select><button onClick={async () => { try { await fDeleteInventory({ data: { id: l.id } }); setFlash("Unused license deleted"); } catch (err) { setFlash(err instanceof Error ? err.message : "Delete failed"); } void loadSection("Licenses"); }} className="rounded-lg border border-destructive px-3 py-1 text-xs font-bold text-destructive">Delete</button></div>}
               </div>
             ))}
           </div>
+          <div className="pt-4"><h2 className="mb-2 text-lg font-black">Redemption history</h2><div className="space-y-1">{redemptions.map((r) => <div key={r.id} className="grid gap-1 rounded-xl border border-border bg-card/60 p-3 text-xs sm:grid-cols-[1fr_auto]"><div><p className="font-mono text-primary">{r.license_key}</p><p className="text-muted-foreground">{profileLabel(r.user)} · {r.reward_name}</p></div><p>{r.duration_days}d · {r.credits_used} credits · {new Date(r.redeemed_at).toLocaleString()}</p></div>)}</div></div>
         </section>
       )}
 
@@ -550,5 +574,16 @@ function profileLabel(value: unknown) {
 
 function profileCode(value: unknown) {
   return String(relatedProfile(value)?.referral_code ?? "—");
+}
+
+function exportInventory(rows: InvRow[]) {
+  const escape = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const csv = ["License Key,Duration Days,Status,Added At,Redeemed At", ...rows.map((row) => [row.license_key, row.duration_days, row.status, row.added_at, row.redeemed_at ?? ""].map(escape).join(","))].join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `foxgen-license-inventory-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
