@@ -22,6 +22,8 @@ export const Route = createFileRoute("/")({
   component: DownloadPage,
 });
 
+const BUILD_TAG = "2026-09-05";
+
 const steps = [
   "Download the ZIP file and unzip it on your computer.",
   "Open your browser and go to the Extensions page, then turn on Developer mode.",
@@ -51,19 +53,20 @@ function DownloadPage() {
             <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
               Latest build
             </p>
-            <p className="text-2xl font-bold">Version 16.73</p>
+            <p className="text-2xl font-bold">Version 16.73 · build {BUILD_TAG}</p>
             <p className="text-sm text-muted-foreground">
-              ZIP archive · license protected
+              ZIP archive · license gate on lovable.dev
             </p>
           </div>
           <a
             className="mt-6 inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
-            href="/foxgen-extension.zip"
-            download="FoxGEN-Old-Vibe-Extension.zip"
+            href={`/foxgen-extension.zip?v=${BUILD_TAG}`}
+            download={`FoxGEN-Old-Vibe-Extension-${BUILD_TAG}.zip`}
           >
-            Download extension
+            Download latest extension
           </a>
         </section>
+
 
         <section className="flex flex-col gap-4">
           <h2 className="text-xl font-bold">How to install</h2>
