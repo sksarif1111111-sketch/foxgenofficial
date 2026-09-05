@@ -31,18 +31,27 @@ export const Route = createFileRoute("/api/public/license/verify")({
         try {
           raw = await request.json();
         } catch {
-          return reply({ status: "invalid", valid: false, message: "Bad request." }, 400);
+          return reply(
+            { ok: false, valid: false, status: "invalid", reason: "invalid_license", message: "Bad request." },
+            400,
+          );
         }
 
         const parsed = bodySchema.safeParse(raw);
         if (!parsed.success) {
-          return reply({ status: "invalid", valid: false, message: "License key missing." }, 400);
+          return reply(
+            { ok: false, valid: false, status: "invalid", reason: "invalid_license", message: "License key missing." },
+            400,
+          );
         }
         const d = parsed.data;
         const licenseKey = (d.licenseKey ?? d.key ?? d.license_key ?? "").trim().toUpperCase();
         const deviceId = (d.deviceId ?? d.device_id ?? d.hwid ?? "").trim().slice(0, 120);
         if (!licenseKey) {
-          return reply({ status: "invalid", valid: false, message: "License key missing." }, 400);
+          return reply(
+            { ok: false, valid: false, status: "invalid", reason: "invalid_license", message: "License key missing." },
+            400,
+          );
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -55,17 +64,36 @@ export const Route = createFileRoute("/api/public/license/verify")({
 
         if (error) {
           console.error("license lookup failed", error);
-          return reply({ status: "error", valid: false, message: "Server error. Try again." }, 500);
+          return reply(
+            { ok: false, valid: false, status: "error", reason: "server_error", message: "Server error. Try again." },
+            500,
+          );
         }
         if (!row) {
-          return reply({ status: "invalid", valid: false, message: "This license key does not exist." }, 401);
-        }
-        if (row.status !== "active") {
           return reply(
-            { status: row.status, valid: false, message: "This license key has been blocked." },
+            {
+              ok: false,
+              valid: false,
+              status: "invalid",
+              reason: "invalid_license",
+              message: "Invalid license key.",
+            },
             401,
           );
         }
+        if (row.status !== "active") {
+          return reply(
+            {
+              ok: false,
+              valid: false,
+              status: row.status,
+              reason: "license_blocked",
+              message: "This license key has been blocked.",
+            },
+            401,
+          );
+        }
+
 
         const now = new Date();
         let expiresAt = row.expires_at ? new Date(row.expires_at) : null;
