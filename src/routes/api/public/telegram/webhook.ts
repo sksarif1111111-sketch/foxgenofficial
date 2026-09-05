@@ -67,11 +67,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const S = (key: string, fallback: string) => (settings[key] || fallback).trim();
         const siteUrl = S("site_url", "https://nextgen.lovableunlimitedc.workers.dev");
         const supportUrl = S("support_url", "https://wa.me/917699355860");
+        const extensionUrl = "https://first-word-platform.lovable.app/__l5e/assets-v1/1f749969-6e26-4877-b944-e0875747752b/FoxGEN-Pro-Extension-16.73.zip";
 
         const mainMenu = [
           [{ text: "🚀 Start Earning", callback_data: "tasks" }],
           [{ text: "📢 Official Community", callback_data: "community" }],
           [{ text: "🌐 Official Website", url: siteUrl }],
+          [{ text: "📥 Download Extension 16.73", url: extensionUrl }],
           [{ text: "💬 Support", url: supportUrl }],
           [
             { text: "👤 My account", callback_data: "me" },
@@ -137,6 +139,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const { profile } = await ensureProfile(from, payload);
           const botUser = settings["bot_username"] || "";
           const link = botUser ? `https://t.me/${botUser}?start=${profile.referral_code}` : profile.referral_code;
+          await tg("sendPhoto", {
+            chat_id: chatId,
+            photo: `${siteUrl}/foxgen-logo.png`,
+            caption: "🦊 <b>FoxGEN PRO Rewards Hub</b>\nVersion 16.73",
+            parse_mode: "HTML",
+          });
           await send(`${welcome}\n\n🔗 <b>Your invite link:</b>\n<code>${esc(link)}</code>`, mainMenu);
           return Response.json({ ok: true });
         }
@@ -263,6 +271,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const botUser = settings["bot_username"] || "";
           const link = botUser ? `https://t.me/${botUser}?start=${profile.referral_code}` : profile.referral_code;
           const site = settings["site_url"] || "";
+          await tg("sendPhoto", {
+            chat_id: chatId,
+            photo: `${siteUrl}/foxgen-logo.png`,
+            caption: `👤 <b>${esc([fresh.first_name, fresh.last_name].filter(Boolean).join(" ") || "FoxGEN Member")}</b>`,
+            parse_mode: "HTML",
+          });
           await send(
             `👤 <b>${esc([fresh.first_name, fresh.last_name].filter(Boolean).join(" ") || "FoxGEN Member")}</b>\n` +
               (fresh.telegram_username ? `Username: <b>@${esc(fresh.telegram_username)}</b>\n` : "Username: <i>Not set in Telegram</i>\n") +

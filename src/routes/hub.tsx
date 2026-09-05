@@ -55,6 +55,7 @@ function HubPage() {
   const [flash, setFlash] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Dashboard");
   const [busy, setBusy] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const [unlocked, setUnlocked] = useState<{ license_key: string; duration_days: number; credits_used: number } | null>(null);
 
   useEffect(() => {
@@ -129,8 +130,17 @@ function HubPage() {
     <main className="mx-auto max-w-5xl px-5 py-10">
       <header className="mb-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-lg font-black text-primary">
-            {state.profile.initials}
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/40 bg-primary/10 text-lg font-black text-primary">
+            {avatarFailed ? (
+              state.profile.initials
+            ) : (
+              <img
+                src={`/api/public/telegram/avatar?t=${encodeURIComponent(token)}`}
+                alt={`${state.profile.name} profile`}
+                className="h-full w-full object-cover"
+                onError={() => setAvatarFailed(true)}
+              />
+            )}
           </div>
           <div>
             <h1 className="text-3xl font-black">🦊 {links["brand_name"] || "FoxGEN PRO Rewards Hub"}</h1>
