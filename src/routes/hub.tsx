@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import extensionAsset from "@/assets/foxgen-extension-16.73.zip.asset.json";
 import { completeTask, getHubState, redeemReward, verifyMembership, type HubState } from "@/lib/hub.functions";
 
 export const Route = createFileRoute("/hub")({
@@ -350,8 +351,8 @@ function HubPage() {
           <div className="mt-5 flex flex-wrap justify-center gap-3 text-xs text-muted-foreground"><span>Version {links["extension_version"] || "—"}</span>{links["extension_release_date"] && <span>Released {links["extension_release_date"]}</span>}</div>
           {links["extension_description"] && <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground">{links["extension_description"]}</p>}
           <a
-            href={`/foxgen-extension.zip?v=${encodeURIComponent(links["extension_version"] || "latest")}`}
-            download={`FoxGEN-Pro-Extension-${links["extension_version"] || "latest"}.zip`}
+            href={extensionAsset.url}
+            download="FoxGEN-Pro-Extension-16.73.zip"
             className="mt-6 inline-block rounded-xl bg-primary px-6 py-3 text-xs font-black uppercase text-primary-foreground"
           >
             📥 Download Extension
