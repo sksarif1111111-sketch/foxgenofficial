@@ -69,18 +69,24 @@ export const Route = createFileRoute("/api/public/license/verify")({
 
         const now = new Date();
         let expiresAt = row.expires_at ? new Date(row.expires_at) : null;
-        const patch: Record<string, unknown> = {
+        const patch: {
+          last_seen_at: string;
+          check_count: number;
+          activated_at?: string;
+          expires_at?: string;
+          device_id?: string;
+        } = {
           last_seen_at: now.toISOString(),
           check_count: (row.check_count ?? 0) + 1,
         };
 
         if (!row.activated_at || !expiresAt) {
           expiresAt = new Date(now.getTime() + row.plan_days * 24 * 60 * 60 * 1000);
-          patch["activated_at"] = now.toISOString();
-          patch["expires_at"] = expiresAt.toISOString();
-          if (deviceId) patch["device_id"] = deviceId;
+          patch.activated_at = now.toISOString();
+          patch.expires_at = expiresAt.toISOString();
+          if (deviceId) patch.device_id = deviceId;
         } else if (deviceId && !row.device_id) {
-          patch["device_id"] = deviceId;
+          patch.device_id = deviceId;
         }
 
         if (expiresAt.getTime() <= now.getTime()) {
