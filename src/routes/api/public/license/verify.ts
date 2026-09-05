@@ -58,7 +58,9 @@ export const Route = createFileRoute("/api/public/license/verify")({
 
         const { data: row, error } = await supabaseAdmin
           .from("licenses")
-          .select("id, license_key, plan_days, status, device_id, activated_at, expires_at, check_count")
+          .select(
+            "id, license_key, plan_days, duration_seconds, status, device_id, activated_at, expires_at, check_count",
+          )
           .eq("license_key", licenseKey)
           .maybeSingle();
 
@@ -108,8 +110,13 @@ export const Route = createFileRoute("/api/public/license/verify")({
           check_count: (row.check_count ?? 0) + 1,
         };
 
+        const durationSeconds =
+          row.duration_seconds && row.duration_seconds > 0
+            ? Number(row.duration_seconds)
+            : (row.plan_days ?? 1) * 24 * 60 * 60;
+
         if (!row.activated_at || !expiresAt) {
-          expiresAt = new Date(now.getTime() + row.plan_days * 24 * 60 * 60 * 1000);
+          expiresAt = new Date(now.getTime() + durationSeconds * 1000);
           patch.activated_at = now.toISOString();
           patch.expires_at = expiresAt.toISOString();
           if (deviceId) patch.device_id = deviceId;
@@ -143,12 +150,13 @@ export const Route = createFileRoute("/api/public/license/verify")({
           user_name: "FoxGEN User",
           activated_at: (patch.activated_at ?? row.activated_at),
           online_count: 1,
-          ttl: 900,
+          ttl: Math.max(5, Math.min(900, Math.floor((expiresAt.getTime() - now.getTime()) / 1000))),
           plan_days: row.plan_days,
+          duration_seconds: durationSeconds,
           expires_at: expiresAt.toISOString(),
           message: "License active.",
           license: {
-            plan: `${row.plan_days}-day`,
+            plan: durationSeconds >= 86400 ? `${Math.round(durationSeconds / 86400)}-day` : `${durationSeconds}s`,
             expires_at: expiresAt.toISOString(),
             max_devices: 1,
             is_trial: false,

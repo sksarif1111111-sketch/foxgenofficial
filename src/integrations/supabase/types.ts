@@ -39,12 +39,13 @@ export type Database = {
           created_at: string
           created_by: string | null
           device_id: string | null
+          duration_seconds: number | null
           expires_at: string | null
           id: string
           last_seen_at: string | null
           license_key: string
           note: string | null
-          plan_days: number
+          plan_days: number | null
           status: string
         }
         Insert: {
@@ -53,12 +54,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           device_id?: string | null
+          duration_seconds?: number | null
           expires_at?: string | null
           id?: string
           last_seen_at?: string | null
           license_key: string
           note?: string | null
-          plan_days: number
+          plan_days?: number | null
           status?: string
         }
         Update: {
@@ -67,12 +69,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           device_id?: string | null
+          duration_seconds?: number | null
           expires_at?: string | null
           id?: string
           last_seen_at?: string | null
           license_key?: string
           note?: string | null
-          plan_days?: number
+          plan_days?: number | null
           status?: string
         }
         Relationships: []
