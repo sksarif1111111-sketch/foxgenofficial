@@ -83,7 +83,24 @@ export async function ensureProfile(
   startPayload?: string,
 ): Promise<{ profile: Profile; created: boolean }> {
   const existing = await profileByTelegramId(tgUser.id);
-  if (existing) return { profile: existing, created: false };
+  if (existing) {
+    const attemptedCode = startPayload?.trim().toUpperCase();
+    if (attemptedCode && attemptedCode !== existing.referral_code) {
+      const { data: attemptedReferrer } = await db
+        .from("profiles")
+        .select("id")
+        .eq("referral_code", attemptedCode)
+        .maybeSingle();
+      if (attemptedReferrer) {
+        await db.from("fraud_flags").insert({
+          user_id: existing.id,
+          reason: attemptedReferrer.id === existing.id ? "self_referral_attempt" : "existing_user_referral_attempt",
+          details: "An existing Telegram account attempted to enter through a referral link. The original referrer was not changed.",
+        });
+      }
+    }
+    return { profile: existing, created: false };
+  }
 
   let referrer: Profile | null = null;
   if (startPayload) {
