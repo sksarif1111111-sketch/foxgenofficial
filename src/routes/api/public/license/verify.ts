@@ -120,7 +120,13 @@ export const Route = createFileRoute("/api/public/license/verify")({
         if (expiresAt.getTime() <= now.getTime()) {
           await supabaseAdmin.from("licenses").update(patch).eq("id", row.id);
           return reply(
-            { status: "expired", valid: false, message: "This license key has expired." },
+            {
+              ok: false,
+              valid: false,
+              status: "expired",
+              reason: "license_expired",
+              message: "This license key has expired.",
+            },
             401,
           );
         }
@@ -132,6 +138,8 @@ export const Route = createFileRoute("/api/public/license/verify")({
           valid: true,
           ok: true,
           success: true,
+          token: row.id,
+          ttl: 900,
           plan_days: row.plan_days,
           expires_at: expiresAt.toISOString(),
           message: "License active.",
@@ -142,6 +150,7 @@ export const Route = createFileRoute("/api/public/license/verify")({
             is_trial: false,
           },
         });
+
       },
     },
   },
