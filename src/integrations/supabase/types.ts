@@ -32,6 +32,248 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          button_text: string | null
+          button_url: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          message: string
+          publish_date: string
+          status: string
+          title: string
+        }
+        Insert: {
+          button_text?: string | null
+          button_url?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          message: string
+          publish_date?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          button_text?: string | null
+          button_url?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          message?: string
+          publish_date?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
+      campaigns: {
+        Row: {
+          bonus_credits: number
+          conditions: string | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          status: string
+        }
+        Insert: {
+          bonus_credits?: number
+          conditions?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: string
+        }
+        Update: {
+          bonus_credits?: number
+          conditions?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          reference_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fraud_flags: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_flags_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_inventory: {
+        Row: {
+          added_at: string
+          created_at: string
+          duration_days: number
+          id: string
+          license_key: string
+          redeemed_at: string | null
+          redeemed_by: string | null
+          status: string
+        }
+        Insert: {
+          added_at?: string
+          created_at?: string
+          duration_days: number
+          id?: string
+          license_key: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          status?: string
+        }
+        Update: {
+          added_at?: string
+          created_at?: string
+          duration_days?: number
+          id?: string
+          license_key?: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_inventory_redeemed_by_fkey"
+            columns: ["redeemed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_redemptions: {
+        Row: {
+          credits_used: number
+          duration_days: number
+          id: string
+          license_key: string
+          redeemed_at: string
+          reward_name: string
+          user_id: string
+        }
+        Insert: {
+          credits_used: number
+          duration_days: number
+          id?: string
+          license_key: string
+          redeemed_at?: string
+          reward_name: string
+          user_id: string
+        }
+        Update: {
+          credits_used?: number
+          duration_days?: number
+          id?: string
+          license_key?: string
+          redeemed_at?: string
+          reward_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       licenses: {
         Row: {
           activated_at: string | null
@@ -80,12 +322,280 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          credits_available: number
+          credits_earned: number
+          credits_spent: number
+          first_name: string | null
+          id: string
+          last_name: string | null
+          referral_code: string
+          referred_by: string | null
+          status: string
+          telegram_user_id: number
+          telegram_username: string | null
+          updated_at: string
+          web_token: string
+        }
+        Insert: {
+          created_at?: string
+          credits_available?: number
+          credits_earned?: number
+          credits_spent?: number
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          referral_code: string
+          referred_by?: string | null
+          status?: string
+          telegram_user_id: number
+          telegram_username?: string | null
+          updated_at?: string
+          web_token?: string
+        }
+        Update: {
+          created_at?: string
+          credits_available?: number
+          credits_earned?: number
+          credits_spent?: number
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          referral_code?: string
+          referred_by?: string | null
+          status?: string
+          telegram_user_id?: number
+          telegram_username?: string | null
+          updated_at?: string
+          web_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          credit_awarded: boolean
+          id: string
+          referred_user_id: string
+          referrer_id: string
+          status: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          credit_awarded?: boolean
+          id?: string
+          referred_user_id: string
+          referrer_id: string
+          status?: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          credit_awarded?: boolean
+          id?: string
+          referred_user_id?: string
+          referrer_id?: string
+          status?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referred_user_id_fkey"
+            columns: ["referred_user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rewards: {
+        Row: {
+          created_at: string
+          credit_cost: number
+          description: string | null
+          display_order: number
+          duration_days: number
+          enabled: boolean
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          credit_cost: number
+          description?: string | null
+          display_order?: number
+          duration_days: number
+          enabled?: boolean
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          credit_cost?: number
+          description?: string | null
+          display_order?: number
+          duration_days?: number
+          enabled?: boolean
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      social_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          enabled: boolean
+          id: string
+          name: string
+          platform: string
+          required: boolean
+          telegram_chat_id: string | null
+          url: string | null
+          verification_type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          enabled?: boolean
+          id?: string
+          name: string
+          platform: string
+          required?: boolean
+          telegram_chat_id?: string | null
+          url?: string | null
+          verification_type?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          enabled?: boolean
+          id?: string
+          name?: string
+          platform?: string
+          required?: boolean
+          telegram_chat_id?: string | null
+          url?: string | null
+          verification_type?: string
+        }
+        Relationships: []
+      }
+      task_completions: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          id: string
+          task_id: string
+          user_id: string
+          verification_status: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          task_id: string
+          user_id: string
+          verification_status?: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          task_id?: string
+          user_id?: string
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_completions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "social_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_completions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      award_referral: { Args: { _referred_user_id: string }; Returns: boolean }
+      redeem_reward: {
+        Args: { _generated_key: string; _reward_id: string; _user_id: string }
+        Returns: {
+          credits_used: number
+          duration_days: number
+          license_key: string
+          reward_name: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
