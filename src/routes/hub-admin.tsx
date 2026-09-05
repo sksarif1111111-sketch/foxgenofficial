@@ -343,13 +343,34 @@ function HubAdmin() {
             <div key={t.id} className="space-y-2 rounded-2xl border border-border bg-card/60 p-4">
               <input
                 defaultValue={t.name}
+                placeholder="▶️ Task name (icon + text)"
                 onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), name: e.target.value } })}
                 className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-bold"
+              />
+              <textarea
+                defaultValue={t.description ?? ""}
+                rows={2}
+                placeholder="Description shown to members"
+                onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), description: e.target.value } })}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
               />
               <input
                 defaultValue={t.url ?? ""}
                 placeholder="https://…"
                 onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), url: e.target.value } })}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                defaultValue={t.display_order}
+                placeholder="Display order"
+                onBlur={async () => {
+                  void 0;
+                }}
+                onChange={(e) => {
+                  const order = Number(e.target.value);
+                  if (Number.isFinite(order)) void fSaveTask({ data: { ...toTaskInput(t), display_order: order } });
+                }}
                 className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
               />
               {t.verification_type === "telegram_auto_verification" && (
@@ -360,6 +381,7 @@ function HubAdmin() {
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
                 />
               )}
+
               <div className="flex flex-wrap gap-2 text-xs">
                 <button
                   onClick={async () => {
