@@ -14,6 +14,7 @@ import { Route as HubRouteImport } from './routes/hub'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
+import { Route as ApiPublicTelegramAvatarRouteImport } from './routes/api/public/telegram/avatar'
 import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 
@@ -43,6 +44,11 @@ const ApiPublicTelegramWebhookRoute =
     path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicTelegramAvatarRoute = ApiPublicTelegramAvatarRouteImport.update({
+  id: '/api/public/telegram/avatar',
+  path: '/api/public/telegram/avatar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLicenseVerifyRoute = ApiPublicLicenseVerifyRouteImport.update({
   id: '/api/public/license/verify',
   path: '/api/public/license/verify',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/hub-admin': typeof HubAdminRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
+  '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/hub-admin': typeof HubAdminRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
+  '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/hub-admin': typeof HubAdminRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
+  '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/hub-admin'
     | '/api/public/ext/core'
     | '/api/public/license/verify'
+    | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/hub-admin'
     | '/api/public/ext/core'
     | '/api/public/license/verify'
+    | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
   id:
     | '__root__'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/hub-admin'
     | '/api/public/ext/core'
     | '/api/public/license/verify'
+    | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   HubAdminRoute: typeof HubAdminRoute
   ApiPublicExtCoreRoute: typeof ApiPublicExtCoreRoute
   ApiPublicLicenseVerifyRoute: typeof ApiPublicLicenseVerifyRoute
+  ApiPublicTelegramAvatarRoute: typeof ApiPublicTelegramAvatarRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
@@ -159,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/telegram/avatar': {
+      id: '/api/public/telegram/avatar'
+      path: '/api/public/telegram/avatar'
+      fullPath: '/api/public/telegram/avatar'
+      preLoaderRoute: typeof ApiPublicTelegramAvatarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/license/verify': {
       id: '/api/public/license/verify'
       path: '/api/public/license/verify'
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   HubAdminRoute: HubAdminRoute,
   ApiPublicExtCoreRoute: ApiPublicExtCoreRoute,
   ApiPublicLicenseVerifyRoute: ApiPublicLicenseVerifyRoute,
+  ApiPublicTelegramAvatarRoute: ApiPublicTelegramAvatarRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
