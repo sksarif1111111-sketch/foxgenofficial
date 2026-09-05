@@ -30,9 +30,22 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         const update = (await request.json()) as {
+          update_id?: number;
           message?: { chat: { id: number }; from?: TgUser; text?: string };
           callback_query?: { id: string; from: TgUser; data?: string; message?: { chat: { id: number } } };
         };
+
+        if (typeof update.update_id === "number") {
+          const { error: updateError } = await db
+            .from("telegram_processed_updates")
+            .insert({ update_id: update.update_id });
+          if (updateError?.code === "23505") return Response.json({ ok: true, duplicate: true });
+          if (updateError) return Response.json({ ok: false }, { status: 500 });
+          if (update.update_id % 100 === 0) {
+            const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            await db.from("telegram_processed_updates").delete().lt("processed_at", cutoff);
+          }
+        }
 
         const from = update.message?.from ?? update.callback_query?.from;
         const chatId = update.message?.chat.id ?? update.callback_query?.message?.chat.id;
@@ -220,7 +233,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (pending.length) {
             let body = `❌ <b>Verification Incomplete</b>\n\n`;
             if (joined.length) body += `You have joined:\n${joined.map((c) => `✅ ${esc(c.name)}`).join("\n")}\n\n`;
-            body += `You still need to join:\n${pending.map((c) => `❌ ${esc(c.name)}`).join("\n")}`;
+            body += `You still need to join:\n${pending.map((c) => `❌ ${esc(c.name)}${c.error ? `\n   ${esc(c.error)}` : ""}`).join("\n")}`;
             const rows: Array<Array<{ text: string; url?: string; callback_data?: string }>> = pending
               .filter((c) => c.url)
               .map((c) => [{ text: c.name, url: c.url as string }]);
@@ -241,7 +254,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
         if (action === "me") {
-          const fresh = await profileByTelegramId(from.id);
+          const { profile: fresh } = await ensureProfile(from);
           const { count } = await db
             .from("referrals")
             .select("id", { count: "exact", head: true })
@@ -251,7 +264,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const link = botUser ? `https://t.me/${botUser}?start=${profile.referral_code}` : profile.referral_code;
           const site = settings["site_url"] || "";
           await send(
-            `👤 <b>Account</b>\nStatus: <b>${esc(fresh?.status ?? profile.status)}</b>\nCredits: <b>${fresh?.credits_available ?? 0}</b>\nEarned: ${fresh?.credits_earned ?? 0} · Spent: ${fresh?.credits_spent ?? 0}\nVerified referrals: <b>${count ?? 0}</b>\n\nInvite link:\n<code>${esc(link)}</code>` +
+            `👤 <b>${esc([fresh.first_name, fresh.last_name].filter(Boolean).join(" ") || "FoxGEN Member")}</b>\n` +
+              (fresh.telegram_username ? `Username: <b>@${esc(fresh.telegram_username)}</b>\n` : "Username: <i>Not set in Telegram</i>\n") +
+              `Status: <b>${esc(fresh.status)}</b>\nCredits: <b>${fresh.credits_available}</b>\nEarned: ${fresh.credits_earned} · Spent: ${fresh.credits_spent}\nVerified referrals: <b>${count ?? 0}</b>\n\nInvite link:\n<code>${esc(link)}</code>` +
               (site ? `\n\nWeb dashboard:\n${site}/hub?t=${profile.web_token}` : ""),
             mainMenu,
           );

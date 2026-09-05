@@ -84,6 +84,22 @@ export async function ensureProfile(
 ): Promise<{ profile: Profile; created: boolean }> {
   const existing = await profileByTelegramId(tgUser.id);
   if (existing) {
+    const nextProfile = {
+      telegram_username: tgUser.username ?? null,
+      first_name: tgUser.first_name ?? null,
+      last_name: tgUser.last_name ?? null,
+      updated_at: new Date().toISOString(),
+    };
+    const profileChanged =
+      existing.telegram_username !== nextProfile.telegram_username ||
+      existing.first_name !== nextProfile.first_name ||
+      existing.last_name !== nextProfile.last_name;
+    if (profileChanged) {
+      await db.from("profiles").update(nextProfile).eq("id", existing.id);
+      existing.telegram_username = nextProfile.telegram_username;
+      existing.first_name = nextProfile.first_name;
+      existing.last_name = nextProfile.last_name;
+    }
     const attemptedCode = startPayload?.trim().toUpperCase();
     if (attemptedCode && attemptedCode !== existing.referral_code) {
       const { data: attemptedReferrer } = await db
@@ -156,7 +172,14 @@ export async function activeTasks(): Promise<TaskRow[]> {
     .select("*")
     .eq("enabled", true)
     .order("display_order", { ascending: true });
-  return (data ?? []) as TaskRow[];
+  const rows = (data ?? []) as TaskRow[];
+  const seen = new Set<string>();
+  return rows.filter((task) => {
+    const identity = `${task.platform.trim().toLowerCase()}:${(task.telegram_chat_id || task.url || task.name).trim().toLowerCase()}`;
+    if (seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
 }
 
 export async function completionsFor(userId: string) {
@@ -168,21 +191,32 @@ export async function completionsFor(userId: string) {
 export async function refreshVerification(profile: Profile) {
   const tasks = await activeTasks();
   const missing: string[] = [];
-  const telegram: Array<{ id: string; name: string; url: string | null; ok: boolean }> = [];
+  const telegram: Array<{ id: string; name: string; url: string | null; ok: boolean; error: string | null }> = [];
 
   for (const task of tasks) {
     if (task.verification_type !== "telegram_auto_verification") continue;
     const chat = (task.telegram_chat_id || "").trim();
-    if (!chat) continue;
+    if (!chat) {
+      telegram.push({ id: task.id, name: task.name, url: task.url, ok: false, error: "Channel ID is not configured." });
+      continue;
+    }
     let ok = false;
-    const res = await tg<{ status: string }>("getChatMember", {
+    const res = await tg<{ status: string; is_member?: boolean }>("getChatMember", {
       chat_id: chat.startsWith("-") ? chat : `@${chat.replace(/^@/, "")}`,
       user_id: profile.telegram_user_id,
     });
     if (res.ok && res.result) {
-      ok = ["creator", "administrator", "member", "restricted"].includes(res.result.status);
+      ok = ["creator", "administrator", "member"].includes(res.result.status) ||
+        (res.result.status === "restricted" && res.result.is_member === true);
     }
-    telegram.push({ id: task.id, name: task.name, url: task.url, ok });
+    const error = ok
+      ? null
+      : res.ok
+        ? "Telegram reports that this account has not joined yet."
+        : res.description?.includes("member list is inaccessible") || res.description?.includes("not enough rights")
+          ? "The FoxGEN bot must be an administrator in this channel before it can verify members."
+          : res.description || "Telegram could not verify this channel right now.";
+    telegram.push({ id: task.id, name: task.name, url: task.url, ok, error });
     // Never downgrade a previously verified membership on a transient API failure.
     if (ok) {
       await db.from("task_completions").upsert(

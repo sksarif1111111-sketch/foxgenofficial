@@ -653,6 +653,21 @@ export type Database = {
           },
         ]
       }
+      telegram_processed_updates: {
+        Row: {
+          processed_at: string
+          update_id: number
+        }
+        Insert: {
+          processed_at?: string
+          update_id: number
+        }
+        Update: {
+          processed_at?: string
+          update_id?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
