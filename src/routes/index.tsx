@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import extensionAsset from "@/assets/foxgen-extension-16.73.zip.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -72,8 +73,8 @@ export default function DownloadPage() {
             </div>
             <a
               className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-primary to-accent px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
-              href={`/foxgen-extension.zip?v=${BUILD_TAG}`}
-              download={`FoxGEN-Pro-Extension-${BUILD_TAG}.zip`}
+              href={extensionAsset.url}
+              download="FoxGEN-Pro-Extension-16.73.zip"
             >
               Download extension
             </a>
