@@ -110,8 +110,13 @@ export const Route = createFileRoute("/api/public/license/verify")({
           check_count: (row.check_count ?? 0) + 1,
         };
 
+        const durationSeconds =
+          row.duration_seconds && row.duration_seconds > 0
+            ? Number(row.duration_seconds)
+            : (row.plan_days ?? 1) * 24 * 60 * 60;
+
         if (!row.activated_at || !expiresAt) {
-          expiresAt = new Date(now.getTime() + row.plan_days * 24 * 60 * 60 * 1000);
+          expiresAt = new Date(now.getTime() + durationSeconds * 1000);
           patch.activated_at = now.toISOString();
           patch.expires_at = expiresAt.toISOString();
           if (deviceId) patch.device_id = deviceId;
