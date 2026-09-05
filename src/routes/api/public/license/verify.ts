@@ -87,7 +87,7 @@ export const Route = createFileRoute("/api/public/license/verify")({
               ok: false,
               valid: false,
               status: row.status,
-              reason: "license_blocked",
+              reason: "license_revoked",
               message: "This license key has been blocked.",
             },
             401,
