@@ -54,7 +54,10 @@ const LINK_FIELDS = [
   "whatsapp_url",
   "facebook_url",
   "telegram_channel_1",
+  "telegram_channel_1_name",
   "telegram_channel_2",
+  "telegram_channel_2_name",
+
   "support_url",
   "referral_message",
   "min_inventory_alert",
