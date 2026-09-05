@@ -188,9 +188,13 @@ export const adminImportLicenses = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
-    const lines = [...new Set(data.keys.split(/\r?\n/).map((l) => l.trim().toUpperCase()).filter(Boolean))];
+    const rawLines = data.keys.split(/\r?\n/).map((line) => line.trim().toUpperCase()).filter(Boolean);
+    const uniqueLines = [...new Set(rawLines)];
+    const lines = uniqueLines.filter((key) => /^[A-Z0-9][A-Z0-9-]{5,127}$/.test(key));
+    const invalid = uniqueLines.length - lines.length;
+    const duplicateInput = rawLines.length - uniqueLines.length;
     let imported = 0;
-    let duplicates = 0;
+    let duplicates = duplicateInput;
     for (const key of lines) {
       const { error } = await db
         .from("license_inventory")
@@ -209,16 +213,64 @@ export const adminImportLicenses = createServerFn({ method: "POST" })
           });
       }
     }
-    return { imported, duplicates, invalid: 0, total: lines.length };
+    return { imported, duplicates, invalid, total: rawLines.length };
   });
 
-export const adminInventory = createServerFn({ method: "POST" }).handler(async () => {
+export const adminInventory = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({
+      search: z.string().max(150).optional(),
+      status: z.enum(["all", "available", "redeemed", "disabled", "reserved"]).optional(),
+      durationDays: z.union([z.literal(0), z.literal(15), z.literal(30), z.literal(60)]).optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    let query = db
+      .from("license_inventory")
+      .select("id, license_key, duration_days, status, redeemed_by, redeemed_at, added_at")
+      .order("added_at", { ascending: false })
+      .limit(1000);
+    const search = (data.search ?? "").trim();
+    if (search) query = query.ilike("license_key", `%${search}%`);
+    if (data.status && data.status !== "all") query = query.eq("status", data.status);
+    if (data.durationDays) query = query.eq("duration_days", data.durationDays);
+    const { data: rows } = await query;
+    return rows ?? [];
+  });
+
+export const adminSetInventoryStatus = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({ id: z.string().uuid(), status: z.enum(["available", "disabled", "reserved"]) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    const { data: row } = await db.from("license_inventory").select("status").eq("id", data.id).maybeSingle();
+    if (!row) throw new Error("License not found.");
+    if (row.status === "redeemed") throw new Error("Redeemed licenses cannot be changed.");
+    await db.from("license_inventory").update({ status: data.status }).eq("id", data.id);
+    return { ok: true };
+  });
+
+export const adminDeleteInventoryLicense = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    const { data: row } = await db.from("license_inventory").select("license_key, status").eq("id", data.id).maybeSingle();
+    if (!row) throw new Error("License not found.");
+    if (row.status === "redeemed") throw new Error("Redeemed licenses cannot be deleted.");
+    await db.from("license_inventory").delete().eq("id", data.id);
+    await db.from("licenses").delete().eq("license_key", row.license_key).is("activated_at", null);
+    return { ok: true };
+  });
+
+export const adminRedemptions = createServerFn({ method: "POST" }).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db
-    .from("license_inventory")
-    .select("id, license_key, duration_days, status, redeemed_at")
-    .order("added_at", { ascending: false })
-    .limit(300);
+    .from("license_redemptions")
+    .select("id, license_key, duration_days, credits_used, reward_name, redeemed_at, user:profiles!license_redemptions_user_id_fkey(telegram_username,first_name,telegram_user_id)")
+    .order("redeemed_at", { ascending: false })
+    .limit(500);
   return data ?? [];
 });
 
