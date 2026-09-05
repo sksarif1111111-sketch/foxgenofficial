@@ -22,6 +22,8 @@ export const Route = createFileRoute("/")({
   component: DownloadPage,
 });
 
+const BUILD_TAG = "2026-09-05";
+
 const steps = [
   "Download the ZIP file and unzip it on your computer.",
   "Open your browser and go to the Extensions page, then turn on Developer mode.",
