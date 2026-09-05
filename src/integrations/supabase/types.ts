@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          preferences: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          preferences?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          preferences?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           created_at: string
@@ -86,9 +113,49 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_awards: {
+        Row: {
+          awarded_at: string
+          campaign_id: string
+          credits_awarded: number
+          id: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          campaign_id: string
+          credits_awarded: number
+          id?: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          campaign_id?: string
+          credits_awarded?: number
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_awards_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_awards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           bonus_credits: number
+          campaign_type: string
           conditions: string | null
           created_at: string
           description: string | null
@@ -97,9 +164,11 @@ export type Database = {
           name: string
           start_date: string | null
           status: string
+          target_referrals: number
         }
         Insert: {
           bonus_credits?: number
+          campaign_type?: string
           conditions?: string | null
           created_at?: string
           description?: string | null
@@ -108,9 +177,11 @@ export type Database = {
           name: string
           start_date?: string | null
           status?: string
+          target_referrals?: number
         }
         Update: {
           bonus_credits?: number
+          campaign_type?: string
           conditions?: string | null
           created_at?: string
           description?: string | null
@@ -119,6 +190,7 @@ export type Database = {
           name?: string
           start_date?: string | null
           status?: string
+          target_referrals?: number
         }
         Relationships: []
       }
@@ -587,6 +659,7 @@ export type Database = {
     }
     Functions: {
       award_referral: { Args: { _referred_user_id: string }; Returns: boolean }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       redeem_reward: {
         Args: { _generated_key: string; _reward_id: string; _user_id: string }
         Returns: {
@@ -597,6 +670,7 @@ export type Database = {
         }[]
       }
       reject_referral: { Args: { _referral_id: string }; Returns: boolean }
+      require_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
