@@ -58,7 +58,9 @@ export const Route = createFileRoute("/api/public/license/verify")({
 
         const { data: row, error } = await supabaseAdmin
           .from("licenses")
-          .select("id, license_key, plan_days, status, device_id, activated_at, expires_at, check_count")
+          .select(
+            "id, license_key, plan_days, duration_seconds, status, device_id, activated_at, expires_at, check_count",
+          )
           .eq("license_key", licenseKey)
           .maybeSingle();
 
