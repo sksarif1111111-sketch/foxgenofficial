@@ -151,36 +151,53 @@ export async function completionsFor(userId: string) {
 export async function refreshVerification(profile: Profile) {
   const tasks = await activeTasks();
   const missing: string[] = [];
+  const telegram: Array<{ id: string; name: string; url: string | null; ok: boolean }> = [];
 
   for (const task of tasks) {
     if (task.verification_type !== "telegram_auto_verification") continue;
-    const chat = (task.telegram_chat_id || task.url || "").trim();
+    const chat = (task.telegram_chat_id || "").trim();
     if (!chat) continue;
     let ok = false;
     const res = await tg<{ status: string }>("getChatMember", {
-      chat_id: chat.startsWith("-") || chat.startsWith("@") ? chat : `@${chat.replace(/^@/, "")}`,
+      chat_id: chat.startsWith("-") ? chat : `@${chat.replace(/^@/, "")}`,
       user_id: profile.telegram_user_id,
     });
     if (res.ok && res.result) {
       ok = ["creator", "administrator", "member", "restricted"].includes(res.result.status);
     }
-    await db.from("task_completions").upsert(
-      {
-        user_id: profile.id,
-        task_id: task.id,
-        completed: ok,
-        verification_status: ok ? "verified" : "pending",
-        completed_at: ok ? new Date().toISOString() : null,
-      },
-      { onConflict: "user_id,task_id" },
-    );
-    if (!ok && task.required) missing.push(task.name);
+    telegram.push({ id: task.id, name: task.name, url: task.url, ok });
+    // Never downgrade a previously verified membership on a transient API failure.
+    if (ok) {
+      await db.from("task_completions").upsert(
+        {
+          user_id: profile.id,
+          task_id: task.id,
+          completed: true,
+          verification_status: "verified",
+          completed_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,task_id" },
+      );
+    } else {
+      const { data: prev } = await db
+        .from("task_completions")
+        .select("completed")
+        .eq("user_id", profile.id)
+        .eq("task_id", task.id)
+        .maybeSingle();
+      if (!prev?.completed) {
+        await db.from("task_completions").upsert(
+          { user_id: profile.id, task_id: task.id, completed: false, verification_status: "pending" },
+          { onConflict: "user_id,task_id" },
+        );
+      }
+    }
   }
 
   const done = await completionsFor(profile.id);
   const doneIds = new Set(done.filter((d) => d.completed).map((d) => d.task_id));
   for (const task of tasks) {
-    if (task.required && !doneIds.has(task.id) && !missing.includes(task.name)) missing.push(task.name);
+    if (task.required && !doneIds.has(task.id)) missing.push(task.name);
   }
 
   const allDone = missing.length === 0;
@@ -194,8 +211,9 @@ export async function refreshVerification(profile: Profile) {
     });
     await db.rpc("award_referral", { _referred_user_id: profile.id });
   }
-  return { allDone, missing };
+  return { allDone, missing, telegram, doneIds: [...doneIds] };
 }
+
 
 export async function redeem(profileId: string, rewardId: string) {
   const { data, error } = await db.rpc("redeem_reward", {
