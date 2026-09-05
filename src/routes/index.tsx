@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import extensionZip from "@/assets/foxgen-extension.zip.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -54,13 +53,13 @@ function DownloadPage() {
             </p>
             <p className="text-2xl font-bold">Version 16.73</p>
             <p className="text-sm text-muted-foreground">
-              ZIP archive · {(extensionZip.size / 1024 / 1024).toFixed(2)} MB
+              ZIP archive · license protected
             </p>
           </div>
           <a
             className="mt-6 inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
-            href={extensionZip.url}
-            download={extensionZip.original_filename}
+            href="/foxgen-extension.zip"
+            download="FoxGEN-Old-Vibe-Extension.zip"
           >
             Download extension
           </a>
