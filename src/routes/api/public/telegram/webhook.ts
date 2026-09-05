@@ -138,6 +138,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const action = cb || text.replace(/^\//, "");
 
+        if (action === "community") {
+          await send(
+            `🦊 <b>FoxGEN PRO Official Community</b>\n\nStay connected with FoxGEN PRO for:\n🚀 Lovable Unlimited Updates\n📚 Tutorials\n🎁 Free License Giveaways\n🔥 Special Offers\n💡 Tips & Support\n\nChoose a platform below and join our community.`,
+            communityRows,
+          );
+          return Response.json({ ok: true });
+        }
+
+        if (action === "menu" || action === "help") {
+          await send(welcome, mainMenu);
+          return Response.json({ ok: true });
+        }
+
+
+
         if (action === "tasks") {
           const tasks = await activeTasks();
           const done = await completionsFor(profile.id);
