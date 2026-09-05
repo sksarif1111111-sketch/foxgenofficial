@@ -12,6 +12,7 @@ import {
   adminRewards,
   adminSaveReward,
   adminSaveSettings,
+  adminResetUserTasks,
   adminSaveTask,
   adminSetUserStatus,
   adminSetWebhook,
@@ -88,6 +89,7 @@ function HubAdmin() {
   const fSaveReward = useServerFn(adminSaveReward);
   const fTasks = useServerFn(adminTasks);
   const fSaveTask = useServerFn(adminSaveTask);
+  const fResetTasks = useServerFn(adminResetUserTasks);
   const fImport = useServerFn(adminImportLicenses);
   const fInventory = useServerFn(adminInventory);
   const fSettings = useServerFn(adminSettings);
@@ -234,6 +236,16 @@ function HubAdmin() {
                     {amount > 0 ? `+${amount}` : amount} credit
                   </button>
                 ))}
+                <button
+                  onClick={async () => {
+                    await fResetTasks({ data: { userId: u.id } });
+                    setFlash("Task progress reset");
+                    void loadSection("Users");
+                  }}
+                  className="rounded-lg border border-border px-3 py-1 text-xs font-semibold"
+                >
+                  Reset tasks
+                </button>
               </div>
             </div>
           ))}
