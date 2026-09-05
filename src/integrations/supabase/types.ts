@@ -596,6 +596,7 @@ export type Database = {
           reward_name: string
         }[]
       }
+      reject_referral: { Args: { _referral_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
