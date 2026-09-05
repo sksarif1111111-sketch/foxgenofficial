@@ -153,23 +153,43 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
 
 
-        if (action === "tasks") {
+        const hubButton = [{ text: "🚀 Go to Rewards Hub", callback_data: "me" }];
+
+        const activatedText =
+          `🎉 <b>Account Activated!</b>\n\n` +
+          `Your FoxGEN PRO Rewards account is now active.\n\n` +
+          `You can now:\n👥 Invite Friends\n💰 Earn Credits\n🎁 Redeem Licenses`;
+
+        const renderTasks = async () => {
           const tasks = await activeTasks();
           const done = await completionsFor(profile.id);
           const doneIds = new Set(done.filter((d) => d.completed).map((d) => d.task_id));
-          const rows = tasks.map((t) => {
-            const btns: Array<{ text: string; url?: string; callback_data?: string }> = [];
-            if (t.url) btns.push({ text: `🔗 ${t.name}`, url: t.url });
-            if (t.verification_type === "manual_confirmation") {
-              btns.push({
-                text: doneIds.has(t.id) ? "✅ Done" : "I completed this",
-                callback_data: `done:${t.id}`,
-              });
-            }
-            return btns.length ? btns : [{ text: t.name, callback_data: "tasks" }];
-          });
-          rows.push([{ text: "✅ Verify membership", callback_data: "verify" }]);
-          await send("<b>Required tasks</b>\nComplete every task, then press Verify.", rows);
+          const total = tasks.length || 1;
+          const completed = tasks.filter((t) => doneIds.has(t.id)).length;
+          const filled = Math.round((completed / total) * 10);
+          const bar = "█".repeat(filled) + "░".repeat(10 - filled);
+
+          let body = `🦊 <b>FOXGEN PRO TASKS</b>\n\n<b>Your Progress:</b>\n${bar}\n${completed} / ${tasks.length} Completed\n\n`;
+          const rows: Array<Array<{ text: string; url?: string; callback_data?: string }>> = [];
+          let hasTelegram = false;
+
+          for (const t of tasks) {
+            const isTg = t.verification_type === "telegram_auto_verification";
+            const ok = doneIds.has(t.id);
+            const status = ok ? (isTg ? "✅ Verified" : "✅ Completed") : isTg ? "❌ Not Joined" : "⏳ Pending";
+            body += `${esc(t.name)}\nStatus: ${status}\n${t.description ? esc(t.description) + "\n" : ""}\n`;
+            if (t.url) rows.push([{ text: t.name, url: t.url }]);
+            if (isTg) hasTelegram = true;
+            else if (!ok) rows.push([{ text: "✅ I Completed This Task", callback_data: `done:${t.id}` }]);
+          }
+
+          if (hasTelegram) rows.push([{ text: "🔍 Verify Telegram Membership", callback_data: "verify" }]);
+          rows.push([{ text: "⬅️ Back", callback_data: "menu" }]);
+          await send(body.trim(), rows);
+        };
+
+        if (action === "tasks") {
+          await renderTasks();
           return Response.json({ ok: true });
         }
 
@@ -186,25 +206,38 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             { onConflict: "user_id,task_id" },
           );
           const state = await refreshVerification(profile);
-          await send(
-            state.allDone
-              ? "🎉 All tasks completed — your account is now <b>active</b>!"
-              : `Saved. Still missing:\n• ${state.missing.map(esc).join("\n• ")}`,
-            mainMenu,
-          );
+          if (state.allDone) await send(activatedText, [hubButton]);
+          else await renderTasks();
           return Response.json({ ok: true });
         }
 
         if (action === "verify") {
           const state = await refreshVerification(profile);
+          const joined = state.telegram.filter((c) => c.ok);
+          const pending = state.telegram.filter((c) => !c.ok);
+
+          if (pending.length) {
+            let body = `❌ <b>Verification Incomplete</b>\n\n`;
+            if (joined.length) body += `You have joined:\n${joined.map((c) => `✅ ${esc(c.name)}`).join("\n")}\n\n`;
+            body += `You still need to join:\n${pending.map((c) => `❌ ${esc(c.name)}`).join("\n")}`;
+            const rows: Array<Array<{ text: string; url?: string; callback_data?: string }>> = pending
+              .filter((c) => c.url)
+              .map((c) => [{ text: c.name, url: c.url as string }]);
+
+            rows.push([{ text: "🔍 Verify Telegram Membership", callback_data: "verify" }]);
+            rows.push([{ text: "📋 My tasks", callback_data: "tasks" }]);
+            await send(body, rows);
+            return Response.json({ ok: true });
+          }
+
           await send(
-            state.allDone
-              ? "✅ Verified! Your account is <b>active</b>."
-              : `❌ Not verified yet. Missing:\n• ${state.missing.map(esc).join("\n• ")}`,
-            mainMenu,
+            `🎉 <b>Telegram Verification Successful!</b>\n\nYou have successfully joined both official FoxGEN PRO Telegram channels.\n\nContinue to complete your remaining tasks.`,
+            [[{ text: "📋 My tasks", callback_data: "tasks" }]],
           );
+          if (state.allDone) await send(activatedText, [hubButton]);
           return Response.json({ ok: true });
         }
+
 
         if (action === "me") {
           const fresh = await profileByTelegramId(from.id);

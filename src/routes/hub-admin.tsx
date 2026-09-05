@@ -12,6 +12,7 @@ import {
   adminRewards,
   adminSaveReward,
   adminSaveSettings,
+  adminResetUserTasks,
   adminSaveTask,
   adminSetUserStatus,
   adminSetWebhook,
@@ -88,6 +89,7 @@ function HubAdmin() {
   const fSaveReward = useServerFn(adminSaveReward);
   const fTasks = useServerFn(adminTasks);
   const fSaveTask = useServerFn(adminSaveTask);
+  const fResetTasks = useServerFn(adminResetUserTasks);
   const fImport = useServerFn(adminImportLicenses);
   const fInventory = useServerFn(adminInventory);
   const fSettings = useServerFn(adminSettings);
@@ -234,6 +236,16 @@ function HubAdmin() {
                     {amount > 0 ? `+${amount}` : amount} credit
                   </button>
                 ))}
+                <button
+                  onClick={async () => {
+                    await fResetTasks({ data: { userId: u.id } });
+                    setFlash("Task progress reset");
+                    void loadSection("Users");
+                  }}
+                  className="rounded-lg border border-border px-3 py-1 text-xs font-semibold"
+                >
+                  Reset tasks
+                </button>
               </div>
             </div>
           ))}
@@ -343,13 +355,34 @@ function HubAdmin() {
             <div key={t.id} className="space-y-2 rounded-2xl border border-border bg-card/60 p-4">
               <input
                 defaultValue={t.name}
+                placeholder="▶️ Task name (icon + text)"
                 onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), name: e.target.value } })}
                 className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-bold"
+              />
+              <textarea
+                defaultValue={t.description ?? ""}
+                rows={2}
+                placeholder="Description shown to members"
+                onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), description: e.target.value } })}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
               />
               <input
                 defaultValue={t.url ?? ""}
                 placeholder="https://…"
                 onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), url: e.target.value } })}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+              <input
+                type="number"
+                defaultValue={t.display_order}
+                placeholder="Display order"
+                onBlur={async () => {
+                  void 0;
+                }}
+                onChange={(e) => {
+                  const order = Number(e.target.value);
+                  if (Number.isFinite(order)) void fSaveTask({ data: { ...toTaskInput(t), display_order: order } });
+                }}
                 className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
               />
               {t.verification_type === "telegram_auto_verification" && (
@@ -360,6 +393,7 @@ function HubAdmin() {
                   className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
                 />
               )}
+
               <div className="flex flex-wrap gap-2 text-xs">
                 <button
                   onClick={async () => {
@@ -471,10 +505,13 @@ function toTaskInput(t: TaskRow) {
   return {
     id: t.id,
     name: t.name,
+    description: t.description ?? "",
     url: t.url ?? "",
     telegram_chat_id: t.telegram_chat_id ?? "",
     verification_type: t.verification_type as "manual_confirmation" | "telegram_auto_verification",
+    display_order: t.display_order,
     required: t.required,
     enabled: t.enabled,
   };
 }
+

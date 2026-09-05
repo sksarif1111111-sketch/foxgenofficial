@@ -148,9 +148,11 @@ export const adminSaveTask = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid(),
         name: z.string().trim().min(1).max(120),
+        description: z.string().trim().max(500).optional(),
         url: z.string().trim().max(500),
         telegram_chat_id: z.string().trim().max(120).optional(),
         verification_type: z.enum(["manual_confirmation", "telegram_auto_verification"]),
+        display_order: z.number().int().min(0).max(999).optional(),
         required: z.boolean(),
         enabled: z.boolean(),
       })
@@ -161,10 +163,24 @@ export const adminSaveTask = createServerFn({ method: "POST" })
     const { id, ...rest } = data;
     await db
       .from("social_tasks")
-      .update({ ...rest, telegram_chat_id: rest.telegram_chat_id ?? null })
+      .update({
+        ...rest,
+        description: rest.description ?? null,
+        telegram_chat_id: rest.telegram_chat_id ?? null,
+      })
       .eq("id", id);
     return { ok: true };
   });
+
+export const adminResetUserTasks = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    await db.from("task_completions").delete().eq("user_id", data.userId);
+    await db.from("profiles").update({ status: "pending", updated_at: new Date().toISOString() }).eq("id", data.userId);
+    return { ok: true };
+  });
+
 
 export const adminImportLicenses = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
