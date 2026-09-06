@@ -252,7 +252,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             { onConflict: "user_id,task_id" },
           );
           const state = await refreshVerification(profile);
-          if (state.allDone) await show(activatedText, [[{ text: "🏠 Main Menu", callback_data: "menu" }]]);
+          if (state.allDone) await show(activatedText, activatedRows);
           else await renderTasks();
           return Response.json({ ok: true });
         }
