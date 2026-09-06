@@ -225,7 +225,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             body += `${esc(t.name)}\nStatus: ${status}\n\n`;
             if (t.url) rows.push([{ text: t.name, url: t.url }]);
             if (isTg) hasTelegram = true;
-            else if (!ok) rows.push([{ text: "✅ I HAVE FOLLOWED", callback_data: `done:${t.id}` }]);
+            else if (!ok) rows.push([{ text: `✅ I Completed This Task — ${t.name}`, callback_data: `done:${t.id}` }]);
           }
 
           if (hasTelegram) rows.push([{ text: "🔄 VERIFY AGAIN", callback_data: "verify" }]);
