@@ -452,3 +452,16 @@ export const adminRejectReferral = createServerFn({ method: "POST" })
     if (!rejected) throw new Error("Only an uncredited pending referral can be rejected.");
     return { ok: true };
   });
+
+/** Every license duration that exists in inventory or rewards, for dynamic tabs. */
+export const adminLicenseDurations = createServerFn({ method: "POST" }).handler(async () => {
+  const { db } = await import("@/lib/hub.server");
+  const [inv, rewards] = await Promise.all([
+    db.from("license_inventory").select("duration_days"),
+    db.from("rewards").select("duration_days"),
+  ]);
+  const set = new Set<number>();
+  for (const r of inv.data ?? []) set.add(r.duration_days);
+  for (const r of rewards.data ?? []) set.add(r.duration_days);
+  return [...set].sort((a, b) => a - b);
+});

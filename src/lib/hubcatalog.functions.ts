@@ -249,3 +249,49 @@ export const catalogClearActivity = createServerFn({ method: "POST" }).handler(a
   await db.from("activity_logs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   return { ok: true };
 });
+
+/* ------------------------------ Product files ------------------------------ */
+
+const productFileSchema = z.object({
+  id: z.string().uuid().optional(),
+  product_id: z.string().uuid(),
+  label: z.string().trim().min(1).max(120),
+  file_url: z.string().trim().max(700).optional(),
+  telegram_file_id: z.string().trim().max(300).optional(),
+  version: z.string().trim().max(50).optional(),
+  enabled: z.boolean(),
+  display_order: z.number().int().min(0).max(9999),
+});
+
+export const catalogProductFiles = createServerFn({ method: "POST" }).handler(async () => {
+  const { db } = await import("@/lib/hub.server");
+  const { data } = await db.from("product_files").select("*").order("display_order").order("created_at");
+  return data ?? [];
+});
+
+export const catalogSaveProductFile = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => productFileSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { db, logActivity } = await import("@/lib/hub.server");
+    const { id, ...rest } = data;
+    const row = {
+      ...rest,
+      file_url: emptyToNull(rest.file_url),
+      telegram_file_id: emptyToNull(rest.telegram_file_id),
+      version: emptyToNull(rest.version),
+    };
+    if (!row.file_url && !row.telegram_file_id) throw new Error("Add a download URL or a Telegram file ID.");
+    if (id) await db.from("product_files").update(row).eq("id", id);
+    else await db.from("product_files").insert(row);
+    await logActivity("products", id ? "Product file updated" : "Product file added", "success", rest.label);
+    return { ok: true };
+  });
+
+export const catalogDeleteProductFile = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db, logActivity } = await import("@/lib/hub.server");
+    await db.from("product_files").delete().eq("id", data.id);
+    await logActivity("products", "Product file deleted", "warning", data.id);
+    return { ok: true };
+  });
