@@ -144,12 +144,18 @@ export const adminSaveReward = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
     if (data.id) {
-      const patch: Record<string, unknown> = { credit_cost: data.credit_cost, enabled: data.enabled };
-      if (data.name !== undefined) patch['name'] = data.name;
-      if (data.description !== undefined) patch['description'] = data.description;
-      if (data.duration_days !== undefined) patch['duration_days'] = data.duration_days;
-      if (data.display_order !== undefined) patch['display_order'] = data.display_order;
-      await db.from("rewards").update(patch).eq("id", data.id);
+      await db
+        .from("rewards")
+        .update({
+          credit_cost: data.credit_cost,
+          enabled: data.enabled,
+          ...(data.name !== undefined ? { name: data.name } : {}),
+          ...(data.description !== undefined ? { description: data.description } : {}),
+          ...(data.duration_days !== undefined ? { duration_days: data.duration_days } : {}),
+          ...(data.display_order !== undefined ? { display_order: data.display_order } : {}),
+        })
+        .eq("id", data.id);
+
       return { ok: true };
     }
     if (!data.name || !data.duration_days) throw new Error("Reward name and duration are required.");
