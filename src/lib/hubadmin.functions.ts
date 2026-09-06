@@ -259,7 +259,7 @@ export const adminInventory = createServerFn({ method: "POST" })
     z.object({
       search: z.string().max(150).optional(),
       status: z.enum(["all", "available", "redeemed", "disabled", "reserved"]).optional(),
-      durationDays: z.union([z.literal(0), z.literal(15), z.literal(30), z.literal(60)]).optional(),
+      durationDays: z.number().int().min(0).max(3650).optional(),
     }).parse(input),
   )
   .handler(async ({ data }) => {
