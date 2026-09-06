@@ -355,12 +355,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const rows: Keyboard = [];
             for (const t of tasks) {
               const label = shortLabel(t.platform, t.name);
-              body += `${esc(label)}  ${doneIds.has(t.id) ? "✅" : "❌"}\n`;
-              if (t.url) rows.push([{ text: label, url: t.url }]);
-              else rows.push([{ text: label, callback_data: "tasks" }]);
-              if (t.verification_type !== "telegram_auto_verification" && !doneIds.has(t.id))
-                rows.push([{ text: `✅ Mark done — ${label}`.slice(0, 40), callback_data: `done:${t.id}` }]);
+              const isTg = t.verification_type === "telegram_auto_verification";
+              const ok = doneIds.has(t.id);
+              body += `${esc(label)}\nStatus: <b>${ok ? "Completed ✅" : "Pending ❌"}</b>\n\n`;
+              if (t.url) rows.push([{ text: `${isTg ? "FOLLOW" : "OPEN"} — ${label}`.slice(0, 40), url: t.url }]);
+              if (!isTg && !ok)
+                rows.push([{ text: `✅ I Completed This — ${label}`.slice(0, 40), callback_data: `done:${t.id}` }]);
             }
+
             body += `${LINE}\nComplete all tasks to activate referrals.`;
             rows.push([{ text: "🔄 Verify Tasks", callback_data: "verify" }]);
             rows.push(backRow());
