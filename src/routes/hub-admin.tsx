@@ -619,6 +619,14 @@ function HubAdmin() {
             <p className="break-all text-xs text-muted-foreground">Webhook: {bot?.webhookUrl || "not set"}</p>
             {bot?.lastError && <p className="text-xs text-destructive">Last error: {bot.lastError}</p>}
             <p className="mt-2 text-xs text-muted-foreground">The bot token is stored securely and never shown.</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Required channel 1: {settings["telegram_channel_1_id"] || settings["telegram_channel_1"] || "not set"}
+              <br />
+              Required channel 2: {settings["telegram_channel_2_id"] || settings["telegram_channel_2"] || "not set"}
+              <br />
+              Pending updates: {bot?.pending ?? 0} · Last checked: {new Date().toLocaleString()}
+            </p>
+
             <button
               onClick={async () => {
                 const res = await fWebhook({ data: { baseUrl: window.location.origin } });
