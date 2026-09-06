@@ -199,39 +199,88 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         };
 
         const homeText =
-          `🦊 <b>FOXGEN PRO REWARDS</b>\n` +
-          `<i>Lovable Unlimited Extension Giveaway</i>\n` +
+          `🦊 <b>FOXGEN PRO</b>\n` +
+          `<i>Lovable Unlimited Extension Rewards</i>\n` +
           `${LINE}\n` +
           `🎁 Earn free license rewards\n` +
           `👥 1 verified referral = 1 credit\n` +
-          `💰 Collect credits and unlock rewards\n` +
           `${LINE}\n` +
           `🚀 Complete tasks and start earning!`;
+
+        /** Premium home screen with live stats. */
+        const homeBody = async (p: { id: string; credits_available: number; credits_earned: number }) => {
+          const [refs, lic, ahead] = await Promise.all([
+            db
+              .from("referrals")
+              .select("id", { count: "exact", head: true })
+              .eq("referrer_id", p.id)
+              .eq("status", "verified"),
+            db.from("license_redemptions").select("id", { count: "exact", head: true }).eq("user_id", p.id),
+            db
+              .from("profiles")
+              .select("id", { count: "exact", head: true })
+              .gt("credits_earned", p.credits_earned),
+          ]);
+          return (
+            `🦊 <b>FOXGEN PRO</b>\n` +
+            `<i>Lovable Unlimited Extension Rewards</i>\n` +
+            `${LINE}\n` +
+            `💰 Credits: <b>${p.credits_available}</b>\n` +
+            `👥 Verified Referrals: <b>${refs.count ?? 0}</b>\n` +
+            `🔑 Licenses Claimed: <b>${lic.count ?? 0}</b>\n` +
+            `🏆 Global Rank: <b>#${(ahead.count ?? 0) + 1}</b>\n` +
+            `${LINE}\n` +
+            `Complete tasks and invite friends to earn free rewards.`
+          );
+        };
+
+        const buildWelcomeKeyboard = (): Keyboard => [
+          [{ text: "🚀 Start Earning", callback_data: "tasks" }],
+          [
+            { text: "🎁 Rewards", callback_data: "rewards" },
+            { text: "👥 Invite", callback_data: "invite" },
+          ],
+          [{ text: "📢 Official Community", callback_data: "community" }],
+          [{ text: "📥 Extension Download", callback_data: "extension" }],
+          [{ text: "💬 Support", url: supportUrl }],
+        ];
 
         // ---------- /start ----------
         if (text.startsWith("/start")) {
           const payload = text.split(/\s+/)[1] ?? "";
-          const { profile: started } = await ensureProfile(from, payload);
-          const botUser = settings["bot_username"] || "";
-          const link = botUser ? `https://t.me/${botUser}?start=${started.referral_code}` : started.referral_code;
-          await send(`${homeText}\n\n🔗 <b>Your invite link:</b>\n<code>${esc(link)}</code>`, buildHomeKeyboard());
+          await ensureProfile(from, payload);
+          await send(
+            `🦊 <b>Welcome to FoxGEN PRO</b>\n${LINE}\n` +
+              `Get FREE Lovable Unlimited Extension licenses through our community rewards program.\n\n` +
+              `🎁 Complete tasks\n👥 Invite friends\n💰 Earn credits\n🔑 Redeem licenses\n${LINE}\n` +
+              `<b>How it works</b>\n` +
+              `1️⃣ Complete community tasks\n` +
+              `2️⃣ Get your referral link\n` +
+              `3️⃣ Invite real friends\n` +
+              `4️⃣ 1 verified referral = 1 credit\n` +
+              `5️⃣ Collect credits and unlock rewards`,
+            buildWelcomeKeyboard(),
+          );
           await tg("setMyCommands", {
             commands: [
               { command: "start", description: "🏠 Open FoxGEN PRO" },
               { command: "menu", description: "🏠 Main menu" },
+              { command: "home", description: "🏠 Home screen" },
               { command: "tasks", description: "📋 My tasks" },
               { command: "invite", description: "👥 Invite friends" },
               { command: "rewards", description: "🎁 View rewards" },
               { command: "licenses", description: "🔑 My licenses" },
-              { command: "profile", description: "👤 My account" },
+              { command: "profile", description: "👤 My credits & account" },
               { command: "leaderboard", description: "🏆 Leaderboard" },
               { command: "download", description: "📥 Download extension" },
               { command: "community", description: "📢 Official community" },
               { command: "support", description: "💬 Support" },
+              { command: "rules", description: "📜 Program rules" },
             ],
           });
           return Response.json({ ok: true });
         }
+
 
         const profile = await profileByTelegramId(from.id);
         if (!profile) {
