@@ -9,12 +9,15 @@ import {
   catalogDeleteCommunity,
   catalogDeletePaymentMethod,
   catalogDeleteProduct,
+  catalogDeleteProductFile,
   catalogPaymentMethods,
   catalogProducts,
+  catalogProductFiles,
   catalogSaveCategory,
   catalogSaveCommunity,
   catalogSavePaymentMethod,
   catalogSaveProduct,
+  catalogSaveProductFile,
   type ProductInput,
 } from "@/lib/hubcatalog.functions";
 
@@ -559,6 +562,166 @@ export function ActivityPanel({ notify }: { notify: Notify }) {
           </div>
         ))}
         {!rows.length && <p className="text-sm text-muted-foreground">No activity recorded for these filters.</p>}
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------ Product files ------------------------------ */
+
+type FileRow = {
+  id: string;
+  product_id: string;
+  label: string;
+  file_url: string | null;
+  telegram_file_id: string | null;
+  version: string | null;
+  enabled: boolean;
+  display_order: number;
+};
+
+const emptyFile = {
+  product_id: "",
+  label: "",
+  file_url: "",
+  telegram_file_id: "",
+  version: "",
+  enabled: true,
+  display_order: 0,
+};
+
+export function ProductFilesPanel({ notify }: { notify: Notify }) {
+  const listFiles = useServerFn(catalogProductFiles);
+  const saveFile = useServerFn(catalogSaveProductFile);
+  const removeFile = useServerFn(catalogDeleteProductFile);
+  const listProducts = useServerFn(catalogProducts);
+
+  const [files, setFiles] = useState<FileRow[]>([]);
+  const [products, setProducts] = useState<Array<{ id: string; name: string }>>([]);
+  const [draft, setDraft] = useState({ ...emptyFile });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const load = useCallback(async () => {
+    const [f, p] = await Promise.all([listFiles({ data: undefined }), listProducts({ data: undefined })]);
+    setFiles(f as FileRow[]);
+    setProducts((p as Array<{ id: string; name: string }>).map((x) => ({ id: x.id, name: x.name })));
+  }, [listFiles, listProducts]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const submit = async () => {
+    try {
+      await saveFile({ data: { ...draft, ...(editingId ? { id: editingId } : {}) } });
+      notify(editingId ? "File updated" : "File added");
+      setDraft({ ...emptyFile });
+      setEditingId(null);
+      setOpen(false);
+      await load();
+    } catch (err) {
+      notify(err instanceof Error ? err.message : "Could not save the file.");
+    }
+  };
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-black">Product files</h2>
+        <button
+          onClick={() => {
+            setDraft({ ...emptyFile, product_id: products[0]?.id ?? "" });
+            setEditingId(null);
+            setOpen(true);
+          }}
+          className={primaryBtn}
+        >
+          + Upload / Add File
+        </button>
+      </div>
+
+      {open && (
+        <div className={`${card} grid gap-3 sm:grid-cols-2`}>
+          <Field label="Product">
+            <select className={input} value={draft.product_id} onChange={(e) => setDraft({ ...draft, product_id: e.target.value })}>
+              <option value="">Select product</option>
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Label / description">
+            <input className={input} value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
+          </Field>
+          <Field label="Version">
+            <input className={input} value={draft.version} onChange={(e) => setDraft({ ...draft, version: e.target.value })} />
+          </Field>
+          <Field label="Display order">
+            <input type="number" className={input} value={draft.display_order} onChange={(e) => setDraft({ ...draft, display_order: Number(e.target.value) })} />
+          </Field>
+          <Field label="Download URL">
+            <input className={input} value={draft.file_url} onChange={(e) => setDraft({ ...draft, file_url: e.target.value })} placeholder="https://..." />
+          </Field>
+          <Field label="Telegram file ID (optional)">
+            <input className={input} value={draft.telegram_file_id} onChange={(e) => setDraft({ ...draft, telegram_file_id: e.target.value })} />
+          </Field>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={draft.enabled} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} />
+            Visible / enabled
+          </label>
+          <div className="flex gap-2 sm:col-span-2">
+            <button onClick={submit} className={primaryBtn} disabled={!draft.product_id || !draft.label}>
+              Save file
+            </button>
+            <button onClick={() => { setOpen(false); setEditingId(null); }} className={ghostBtn}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {files.length === 0 && <p className="text-sm text-muted-foreground">No files yet. Add one to enable downloads.</p>}
+        {files.map((f) => (
+          <div key={f.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/60 p-3 text-sm">
+            <div>
+              <p className="font-bold">{f.label} {f.version ? `· v${f.version}` : ""}</p>
+              <p className="text-xs text-muted-foreground">
+                {products.find((p) => p.id === f.product_id)?.name ?? "Unlinked product"} · {f.enabled ? "Enabled" : "Disabled"} ·{" "}
+                {f.file_url ? "URL" : "Telegram file"}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setDraft({
+                    product_id: f.product_id,
+                    label: f.label,
+                    file_url: f.file_url ?? "",
+                    telegram_file_id: f.telegram_file_id ?? "",
+                    version: f.version ?? "",
+                    enabled: f.enabled,
+                    display_order: f.display_order,
+                  });
+                  setEditingId(f.id);
+                  setOpen(true);
+                }}
+                className={ghostBtn}
+              >
+                Edit
+              </button>
+              <button
+                onClick={async () => {
+                  await removeFile({ data: { id: f.id } });
+                  notify("File removed");
+                  await load();
+                }}
+                className="rounded-xl border border-destructive px-4 py-2 text-xs font-bold text-destructive"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
