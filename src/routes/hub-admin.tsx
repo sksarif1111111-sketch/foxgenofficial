@@ -6,9 +6,11 @@ import {
   adminApproveReferral,
   adminBotStatus,
   adminBroadcast,
+  adminClearLogs,
   adminImportLicenses,
   adminInventory,
   adminDeleteInventoryLicense,
+  adminLogs,
   adminRedemptions,
   adminSetInventoryStatus,
   adminOverview,
@@ -44,20 +46,37 @@ export const Route = createFileRoute("/hub-admin")({
   component: HubAdmin,
 });
 
-const SECTIONS = ["Overview", "Users", "Referrals", "Licenses", "Rewards", "Tasks", "Links", "Bot"] as const;
+const SECTIONS = [
+  "Overview",
+  "Users",
+  "Referrals",
+  "Licenses",
+  "Rewards",
+  "Tasks",
+  "Extension",
+  "Links",
+  "Bot",
+  "Logs",
+] as const;
 type Section = (typeof SECTIONS)[number];
 
-const LINK_FIELDS = [
-  "brand_name",
-  "brand_description",
-  "site_url",
+const EXTENSION_FIELDS = [
   "extension_name",
   "extension_version",
   "extension_release_date",
   "extension_description",
   "extension_download_url",
+  "extension_file_url",
+  "extension_telegram_file_id",
   "installation_guide_url",
   "tutorial_url",
+];
+
+const LINK_FIELDS = [
+  "brand_name",
+  "brand_description",
+  "site_url",
+  "logo_url",
   "youtube_url",
   "whatsapp_url",
   "facebook_url",
@@ -67,11 +86,14 @@ const LINK_FIELDS = [
   "telegram_channel_2",
   "telegram_channel_2_name",
   "telegram_channel_2_id",
-
   "support_url",
+  "extension_download_url",
+  "installation_guide_url",
+  "tutorial_url",
   "referral_message",
   "min_inventory_alert",
 ];
+
 
 type UserRow = Awaited<ReturnType<typeof adminUsers>>[number];
 type RewardRow = Awaited<ReturnType<typeof adminRewards>>[number];
@@ -80,6 +102,8 @@ type InvRow = Awaited<ReturnType<typeof adminInventory>>[number];
 type RedemptionRow = Awaited<ReturnType<typeof adminRedemptions>>[number];
 type RefRow = Awaited<ReturnType<typeof adminReferrals>>[number];
 type BotInfo = Awaited<ReturnType<typeof adminBotStatus>>;
+type LogRow = Awaited<ReturnType<typeof adminLogs>>[number];
+
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
@@ -113,6 +137,8 @@ function HubAdmin() {
   const fReferrals = useServerFn(adminReferrals);
   const fApproveReferral = useServerFn(adminApproveReferral);
   const fRejectReferral = useServerFn(adminRejectReferral);
+  const fLogs = useServerFn(adminLogs);
+  const fClearLogs = useServerFn(adminClearLogs);
 
   const [section, setSection] = useState<Section>("Overview");
   const [flash, setFlash] = useState<string | null>(null);
@@ -131,6 +157,8 @@ function HubAdmin() {
   const [referralStatus, setReferralStatus] = useState<"all" | "pending" | "verified" | "rejected" | "suspicious">("all");
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [bot, setBot] = useState<BotInfo | null>(null);
+  const [logs, setLogs] = useState<LogRow[]>([]);
+  const [logCategory, setLogCategory] = useState("all");
   const [keys, setKeys] = useState("");
   const [days, setDays] = useState(30);
   const [broadcast, setBroadcast] = useState("");
@@ -151,7 +179,8 @@ function HubAdmin() {
         }
         if (s === "Rewards") setRewards(await fRewards({ data: undefined }));
         if (s === "Tasks") setTasks(await fTasks({ data: undefined }));
-        if (s === "Links") setSettings(await fSettings({ data: undefined }));
+        if (s === "Links" || s === "Extension") setSettings(await fSettings({ data: undefined }));
+        if (s === "Logs") setLogs(await fLogs({ data: { category: logCategory } }));
         if (s === "Bot") {
           setSettings(await fSettings({ data: undefined }));
           setBot(await fBot({ data: undefined }));
@@ -160,8 +189,9 @@ function HubAdmin() {
         setFlash(err instanceof Error ? err.message : "Could not load data.");
       }
     },
-    [fOverview, fUsers, fReferrals, fInventory, fRedemptions, fRewards, fTasks, fSettings, fBot, search, referralSearch, referralStatus, inventorySearch, inventoryStatus, inventoryDays],
+    [fOverview, fUsers, fReferrals, fInventory, fRedemptions, fRewards, fTasks, fSettings, fBot, fLogs, logCategory, search, referralSearch, referralStatus, inventorySearch, inventoryStatus, inventoryDays],
   );
+
 
   useEffect(() => {
     void loadSection(section);
@@ -484,7 +514,83 @@ function HubAdmin() {
         </section>
       )}
 
+      {section === "Extension" && (
+        <section className="space-y-4">
+          <div className="rounded-2xl border border-border bg-card/60 p-5">
+            <p className="font-bold">🦊 FoxGEN PRO Extension management</p>
+            <p className="text-xs text-muted-foreground">
+              Everything here is used by the website and the Telegram bot instantly — no code changes needed. Leave the
+              Telegram file ID empty to disable in-chat file delivery.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {EXTENSION_FIELDS.map((key) => (
+              <label key={key} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {key.replace(/^extension_/, "").replace(/_/g, " ")}
+                <input
+                  defaultValue={settings[key] ?? ""}
+                  onBlur={async (e) => {
+                    await fSaveSettings({ data: { values: { [key]: e.target.value } } });
+                    setFlash("💾 Saved");
+                  }}
+                  className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-normal normal-case text-foreground"
+                />
+              </label>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {section === "Logs" && (
+        <section className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={logCategory}
+              onChange={(e) => setLogCategory(e.target.value)}
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            >
+              {["all", "webhook", "telegram_api", "channel_verification", "redemption", "callback", "verification"].map(
+                (c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ),
+              )}
+            </select>
+            <button
+              onClick={() => void loadSection("Logs")}
+              className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+            >
+              Refresh
+            </button>
+            <button
+              onClick={async () => {
+                await fClearLogs({ data: undefined });
+                setFlash("Logs cleared");
+                void loadSection("Logs");
+              }}
+              className="rounded-xl border border-destructive px-4 py-2 text-xs font-bold text-destructive"
+            >
+              Clear logs
+            </button>
+          </div>
+          {logs.length === 0 && <p className="text-sm text-muted-foreground">No errors recorded. 🎉</p>}
+          {logs.map((l) => (
+            <div key={l.id} className="rounded-xl border border-border bg-card/60 p-3 text-xs">
+              <p className="font-bold">
+                {l.category}
+                {l.telegram_user_id ? ` · TG ${l.telegram_user_id}` : ""}{" "}
+                <span className="text-muted-foreground">{new Date(l.created_at).toLocaleString()}</span>
+              </p>
+              <p className="break-all text-destructive">{l.message}</p>
+              {l.context && <p className="text-muted-foreground">{l.context}</p>}
+            </div>
+          ))}
+        </section>
+      )}
+
       {section === "Links" && (
+
         <section className="grid gap-3 sm:grid-cols-2">
           {LINK_FIELDS.map((key) => (
             <label key={key} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -513,6 +619,14 @@ function HubAdmin() {
             <p className="break-all text-xs text-muted-foreground">Webhook: {bot?.webhookUrl || "not set"}</p>
             {bot?.lastError && <p className="text-xs text-destructive">Last error: {bot.lastError}</p>}
             <p className="mt-2 text-xs text-muted-foreground">The bot token is stored securely and never shown.</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Required channel 1: {settings["telegram_channel_1_id"] || settings["telegram_channel_1"] || "not set"}
+              <br />
+              Required channel 2: {settings["telegram_channel_2_id"] || settings["telegram_channel_2"] || "not set"}
+              <br />
+              Pending updates: {bot?.pending ?? 0} · Last checked: {new Date().toLocaleString()}
+            </p>
+
             <button
               onClick={async () => {
                 const res = await fWebhook({ data: { baseUrl: window.location.origin } });

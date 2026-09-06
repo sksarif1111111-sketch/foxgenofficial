@@ -44,6 +44,37 @@ export async function tg<T = unknown>(method: string, payload: Record<string, un
   return json;
 }
 
+/** Records a technical failure for the admin debug page. Users never see these strings. */
+export async function logBotError(
+  category: string,
+  message: string,
+  telegramUserId?: number | null,
+  context?: string | null,
+) {
+  try {
+    await db.from("bot_error_logs").insert({
+      category,
+      message: message.slice(0, 1000),
+      telegram_user_id: telegramUserId ?? null,
+      context: context ? context.slice(0, 1000) : null,
+    });
+  } catch {
+    // logging must never break the bot
+  }
+}
+
+/** Short-lived lock so rapid double taps cannot run the same action twice. */
+export async function acquireLock(key: string, ttlMs = 15000): Promise<boolean> {
+  const cutoff = new Date(Date.now() - ttlMs).toISOString();
+  await db.from("bot_action_locks").delete().lt("created_at", cutoff);
+  const { error } = await db.from("bot_action_locks").insert({ lock_key: key });
+  return !error;
+}
+
+export async function releaseLock(key: string) {
+  await db.from("bot_action_locks").delete().eq("lock_key", key);
+}
+
 export async function webhookSecret(): Promise<string> {
   const data = new TextEncoder().encode(`foxgen-webhook:${botToken()}`);
   const digest = await crypto.subtle.digest("SHA-256", data);

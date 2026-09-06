@@ -287,7 +287,30 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const adminLogs = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({ category: z.string().max(40).optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    let query = db
+      .from("bot_error_logs")
+      .select("id, category, message, telegram_user_id, context, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (data.category && data.category !== "all") query = query.eq("category", data.category);
+    const { data: rows } = await query;
+    return rows ?? [];
+  });
+
+export const adminClearLogs = createServerFn({ method: "POST" }).handler(async () => {
+  const { db } = await import("@/lib/hub.server");
+  await db.from("bot_error_logs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  return { ok: true };
+});
+
 export const adminBotStatus = createServerFn({ method: "POST" }).handler(async () => {
+
   const { tg, setSetting } = await import("@/lib/hub.server");
   try {
     const me = await tg<{ username: string; first_name: string }>("getMe");

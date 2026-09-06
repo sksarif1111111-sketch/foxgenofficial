@@ -113,6 +113,48 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_action_locks: {
+        Row: {
+          created_at: string
+          lock_key: string
+        }
+        Insert: {
+          created_at?: string
+          lock_key: string
+        }
+        Update: {
+          created_at?: string
+          lock_key?: string
+        }
+        Relationships: []
+      }
+      bot_error_logs: {
+        Row: {
+          category: string
+          context: string | null
+          created_at: string
+          id: string
+          message: string
+          telegram_user_id: number | null
+        }
+        Insert: {
+          category: string
+          context?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          telegram_user_id?: number | null
+        }
+        Update: {
+          category?: string
+          context?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          telegram_user_id?: number | null
+        }
+        Relationships: []
+      }
       campaign_awards: {
         Row: {
           awarded_at: string
