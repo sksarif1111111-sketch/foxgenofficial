@@ -28,6 +28,7 @@ import {
   adminUsers,
   type AdminOverview,
 } from "@/lib/hubadmin.functions";
+import { ActivityPanel, CatalogPanel, ProductsPanel } from "@/components/admin/catalog-panels";
 
 export const Route = createFileRoute("/hub-admin")({
   head: () => ({
