@@ -468,9 +468,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           try {
             const row = await redeem(profile.id, action.slice(7));
             await send(
-              `🎉 <b>${esc(row.reward_name)}</b> unlocked!\n\nYour license key:\n<code>${esc(row.license_key)}</code>\n\nValid for ${row.duration_days} days. Paste it into the Lovable Unlimited Extension.`,
+              `🎉 <b>License Redeemed Successfully!</b>\n\n🔑 Your License:\n<code>${esc(row.license_key)}</code>\n\n📅 Duration: <b>${row.duration_days} Days</b>\n💰 Credits Used: <b>${row.credits_used}</b>\n\nPaste the key into the Lovable Unlimited Extension.`,
+              [[{ text: "📥 Download Extension", callback_data: "download" }], [{ text: "⬅️ Back", callback_data: "rewards" }]],
             );
-            await show("🎁 <b>License Rewards</b>\n\nYour license key was sent above.", [backRow]);
+            await show("🎁 <b>LICENSE REWARDS</b>\n\nYour license key was sent above.", [backRow]);
+
           } catch (err) {
             const msg = err instanceof Error ? err.message : "error";
             const human = msg.includes("insufficient_credits")
