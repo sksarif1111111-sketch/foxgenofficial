@@ -334,47 +334,111 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true });
         }
 
-        if (action === "me") {
-          const { profile: fresh } = await ensureProfile(from);
+        const verifiedReferrals = async (id: string) => {
           const { count } = await db
             .from("referrals")
             .select("id", { count: "exact", head: true })
-            .eq("referrer_id", profile.id)
+            .eq("referrer_id", id)
             .eq("status", "verified");
-          const botUser = settings["bot_username"] || "";
-          const link = botUser ? `https://t.me/${botUser}?start=${profile.referral_code}` : profile.referral_code;
+          return count ?? 0;
+        };
+
+        const botUser = settings["bot_username"] || "";
+        const inviteLink = botUser
+          ? `https://t.me/${botUser}?start=${profile.referral_code}`
+          : profile.referral_code;
+
+        if (action === "me") {
+          const { profile: fresh } = await ensureProfile(from);
+          const [refs, licenses, ranked] = await Promise.all([
+            verifiedReferrals(profile.id),
+            db.from("redemptions").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
+            db.from("profiles").select("id, credits_earned").order("credits_earned", { ascending: false }).limit(500),
+          ]);
+          const rank = (ranked.data ?? []).findIndex((p) => p.id === profile.id) + 1;
           await show(
-            `👤 <b>${esc([fresh.first_name, fresh.last_name].filter(Boolean).join(" ") || "FoxGEN Member")}</b>\n` +
+            `👤 <b>MY ACCOUNT</b>\n\n` +
+              `Name: <b>${esc([fresh.first_name, fresh.last_name].filter(Boolean).join(" ") || "FoxGEN Member")}</b>\n` +
               (fresh.telegram_username
                 ? `Username: <b>@${esc(fresh.telegram_username)}</b>\n`
                 : "Username: <i>Not set in Telegram</i>\n") +
-              `Status: <b>${esc(fresh.status)}</b>\nCredits: <b>${fresh.credits_available}</b>\nEarned: ${fresh.credits_earned} · Spent: ${fresh.credits_spent}\nVerified referrals: <b>${count ?? 0}</b>\n\nInvite link:\n<code>${esc(link)}</code>` +
-              `\n\nWeb dashboard:\n${siteUrl}/hub?t=${profile.web_token}`,
-            [[{ text: "👥 Invite Friends", callback_data: "invite" }], backRow],
+              `Status: <b>${esc(fresh.status)}</b>\n\n━━━━━━━━━━\n\n` +
+              `💰 Available Credits: <b>${fresh.credits_available}</b>\n` +
+              `👥 Valid Referrals: <b>${refs}</b>\n` +
+              `📈 Total Credits Earned: <b>${fresh.credits_earned}</b>\n` +
+              `📉 Total Credits Spent: <b>${fresh.credits_spent}</b>\n` +
+              `🔑 Licenses Claimed: <b>${licenses.count ?? 0}</b>\n` +
+              `🏆 Global Rank: <b>${rank > 0 ? `#${rank}` : "—"}</b>\n` +
+              `📅 Registered: ${new Date(fresh.created_at).toISOString().slice(0, 10)}\n\n` +
+              `🔗 Web dashboard:\n${siteUrl}/hub?t=${profile.web_token}`,
+            [
+              [{ text: "👥 Invite Friends", callback_data: "invite" }],
+              [
+                { text: "🔑 My Licenses", url: `${siteUrl}/hub?t=${profile.web_token}` },
+                { text: "🏆 Leaderboard", callback_data: "board" },
+              ],
+              [{ text: "🏠 Back Home", callback_data: "menu" }],
+            ],
           );
+          return Response.json({ ok: true });
+        }
+
+        if (action === "board") {
+          const { data: top } = await db
+            .from("profiles")
+            .select("id, first_name, telegram_username, credits_earned")
+            .order("credits_earned", { ascending: false })
+            .limit(500);
+          const list = top ?? [];
+          const medals = ["🥇", "🥈", "🥉"];
+          let body = `🏆 <b>FOXGEN PRO LEADERBOARD</b>\n🌍 All Time\n\n`;
+          for (let i = 0; i < Math.min(10, list.length); i++) {
+            const p = list[i];
+            const label = p.telegram_username ? `@${p.telegram_username}` : p.first_name || "FoxGEN Member";
+            body += `${medals[i] ?? `#${i + 1}`} <b>${esc(label)}</b> — 💰 ${p.credits_earned} credits\n`;
+          }
+          const myRank = list.findIndex((p) => p.id === profile.id) + 1;
+          const myRefs = await verifiedReferrals(profile.id);
+          body +=
+            `\n━━━━━━━━━━\n\n<b>YOUR POSITION</b>\nRank: <b>${myRank > 0 ? `#${myRank}` : "—"}</b>\n` +
+            `Referrals: <b>${myRefs}</b>\n\n🔥 Invite more friends and climb the leaderboard!`;
+          await show(body, [[{ text: "👥 Invite Friends", callback_data: "invite" }], backRow]);
           return Response.json({ ok: true });
         }
 
         if (action === "invite") {
           const fresh = await profileByTelegramId(from.id);
-          const { count } = await db
-            .from("referrals")
-            .select("id", { count: "exact", head: true })
-            .eq("referrer_id", profile.id)
-            .eq("status", "verified");
-          const botUser = settings["bot_username"] || "";
-          const link = botUser ? `https://t.me/${botUser}?start=${profile.referral_code}` : profile.referral_code;
-          const message = `🦊 Join FoxGEN PRO Rewards Hub!\n\n🎁 Earn FREE Lovable Unlimited Extension licenses.\n\nComplete tasks, invite friends and earn credits.\n\nStart using my referral link:\n${link}`;
+          const refs = await verifiedReferrals(profile.id);
+          const credits = fresh?.credits_available ?? 0;
+          const { data: nextReward } = await db
+            .from("rewards")
+            .select("name, credit_cost")
+            .eq("enabled", true)
+            .gt("credit_cost", credits - 1)
+            .order("credit_cost", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          const target = nextReward?.credit_cost ?? 0;
+          const filled = target > 0 ? Math.min(10, Math.round((credits / target) * 10)) : 10;
+          const bar = "█".repeat(filled) + "░".repeat(10 - filled);
+          const message = `🦊 Join FoxGEN PRO!\n\nEarn FREE Lovable Unlimited Extension licenses.\nComplete community tasks and invite friends.\n\n🎁 1 verified referral = 1 credit.\n\nJoin using my link:\n${inviteLink}`;
           await show(
-            `👥 <b>INVITE & EARN</b>\n\nYour Referral Code:\n<code>${esc(profile.referral_code)}</code>\n\nYour Referral Link:\n<code>${esc(link)}</code>\n\nValid Referrals: <b>${count ?? 0}</b>\nCredits: <b>${fresh?.credits_available ?? 0}</b>`,
+            `👥 <b>INVITE FRIENDS</b>\n\nInvite real friends and earn free license rewards.\n\n` +
+              `Your Referral Link:\n<code>${esc(inviteLink)}</code>\n\n` +
+              `Valid Referrals: <b>${refs}</b>\nAvailable Credits: <b>${credits}</b>\n\n` +
+              (nextReward
+                ? `Next Reward: <b>${esc(nextReward.name)}</b>\nProgress:\n${bar}\n${credits} / ${target} Credits\n\n` +
+                  `🔥 Invite ${Math.max(1, target - credits)} more verified friend(s) to unlock your next reward!`
+                : `🎉 You have enough credits to redeem a reward now!`),
             [
               [
                 {
-                  text: "✈️ Share on Telegram",
-                  url: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message.replace(link, ""))}`,
+                  text: "📤 Share on Telegram",
+                  url: `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(message.replace(inviteLink, ""))}`,
                 },
               ],
-              [{ text: "💬 Share on WhatsApp", url: `https://wa.me/?text=${encodeURIComponent(message)}` }],
+              [{ text: "📤 Share on WhatsApp", url: `https://wa.me/?text=${encodeURIComponent(message)}` }],
+              [{ text: "🎁 Rewards", callback_data: "rewards" }],
               backRow,
             ],
           );
@@ -382,21 +446,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         if (action === "rewards") {
+          const fresh = await profileByTelegramId(from.id);
           const { data: rewards } = await db
             .from("rewards")
             .select("*")
             .eq("enabled", true)
             .order("display_order", { ascending: true });
-          const rows: Keyboard = (rewards ?? []).map((r) => [
-            { text: `💜 ${r.name} — ${r.credit_cost} Credits`, callback_data: `redeem:${r.id}` },
-          ]);
+          let body = `🎁 <b>LICENSE REWARDS</b>\n\nRedeem your credits for a FREE Lovable Unlimited Extension license.\n\n💰 Your Credits: <b>${fresh?.credits_available ?? 0}</b>\n\n━━━━━━━━━━\n\n`;
+          const rows: Keyboard = [];
+          for (const r of rewards ?? []) {
+            body += `🦊 <b>${esc(r.name)}</b>\n💰 ${r.credit_cost} Credits\n\n`;
+            rows.push([{ text: `🦊 ${r.name} — ${r.credit_cost} Credits`, callback_data: `redeem:${r.id}` }]);
+          }
           rows.push(backRow);
-          await show(
-            "🎁 <b>License Rewards</b>\n\nRedeem your credits for a FREE Lovable Unlimited Extension license.",
-            rows,
-          );
+          await show(body.trim(), rows);
           return Response.json({ ok: true });
         }
+
 
         if (action.startsWith("redeem:")) {
           try {
