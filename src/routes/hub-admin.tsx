@@ -137,6 +137,8 @@ function HubAdmin() {
   const fReferrals = useServerFn(adminReferrals);
   const fApproveReferral = useServerFn(adminApproveReferral);
   const fRejectReferral = useServerFn(adminRejectReferral);
+  const fLogs = useServerFn(adminLogs);
+  const fClearLogs = useServerFn(adminClearLogs);
 
   const [section, setSection] = useState<Section>("Overview");
   const [flash, setFlash] = useState<string | null>(null);
@@ -155,6 +157,8 @@ function HubAdmin() {
   const [referralStatus, setReferralStatus] = useState<"all" | "pending" | "verified" | "rejected" | "suspicious">("all");
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [bot, setBot] = useState<BotInfo | null>(null);
+  const [logs, setLogs] = useState<LogRow[]>([]);
+  const [logCategory, setLogCategory] = useState("all");
   const [keys, setKeys] = useState("");
   const [days, setDays] = useState(30);
   const [broadcast, setBroadcast] = useState("");
@@ -175,7 +179,8 @@ function HubAdmin() {
         }
         if (s === "Rewards") setRewards(await fRewards({ data: undefined }));
         if (s === "Tasks") setTasks(await fTasks({ data: undefined }));
-        if (s === "Links") setSettings(await fSettings({ data: undefined }));
+        if (s === "Links" || s === "Extension") setSettings(await fSettings({ data: undefined }));
+        if (s === "Logs") setLogs(await fLogs({ data: { category: logCategory } }));
         if (s === "Bot") {
           setSettings(await fSettings({ data: undefined }));
           setBot(await fBot({ data: undefined }));
@@ -184,8 +189,9 @@ function HubAdmin() {
         setFlash(err instanceof Error ? err.message : "Could not load data.");
       }
     },
-    [fOverview, fUsers, fReferrals, fInventory, fRedemptions, fRewards, fTasks, fSettings, fBot, search, referralSearch, referralStatus, inventorySearch, inventoryStatus, inventoryDays],
+    [fOverview, fUsers, fReferrals, fInventory, fRedemptions, fRewards, fTasks, fSettings, fBot, fLogs, logCategory, search, referralSearch, referralStatus, inventorySearch, inventoryStatus, inventoryDays],
   );
+
 
   useEffect(() => {
     void loadSection(section);
