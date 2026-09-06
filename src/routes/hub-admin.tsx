@@ -10,6 +10,8 @@ import {
   adminImportLicenses,
   adminInventory,
   adminDeleteInventoryLicense,
+  adminDeleteReward,
+  adminLicenseDurations,
   adminLogs,
   adminRedemptions,
   adminSetInventoryStatus,
@@ -28,7 +30,7 @@ import {
   adminUsers,
   type AdminOverview,
 } from "@/lib/hubadmin.functions";
-import { ActivityPanel, CatalogPanel, ProductsPanel } from "@/components/admin/catalog-panels";
+import { ActivityPanel, CatalogPanel, ProductFilesPanel, ProductsPanel } from "@/components/admin/catalog-panels";
 
 export const Route = createFileRoute("/hub-admin")({
   head: () => ({
@@ -125,6 +127,8 @@ function HubAdmin() {
   const fCredits = useServerFn(adminAdjustCredits);
   const fRewards = useServerFn(adminRewards);
   const fSaveReward = useServerFn(adminSaveReward);
+  const fDeleteReward = useServerFn(adminDeleteReward);
+  const fDurations = useServerFn(adminLicenseDurations);
   const fTasks = useServerFn(adminTasks);
   const fSaveTask = useServerFn(adminSaveTask);
   const fResetTasks = useServerFn(adminResetUserTasks);
@@ -155,7 +159,9 @@ function HubAdmin() {
   const [redemptions, setRedemptions] = useState<RedemptionRow[]>([]);
   const [inventorySearch, setInventorySearch] = useState("");
   const [inventoryStatus, setInventoryStatus] = useState<"all" | "available" | "redeemed" | "disabled" | "reserved">("all");
-  const [inventoryDays, setInventoryDays] = useState<0 | 15 | 30 | 60>(0);
+  const [inventoryDays, setInventoryDays] = useState<number>(0);
+  const [durations, setDurations] = useState<number[]>([15, 30, 60]);
+  const [newReward, setNewReward] = useState({ name: "", duration_days: 15, credit_cost: 5 });
   const [referrals, setReferrals] = useState<RefRow[]>([]);
   const [referralSearch, setReferralSearch] = useState("");
   const [referralStatus, setReferralStatus] = useState<"all" | "pending" | "verified" | "rejected" | "suspicious">("all");
@@ -180,8 +186,12 @@ function HubAdmin() {
           ]);
           setInventory(stock);
           setRedemptions(history);
+          setDurations(await fDurations({ data: undefined }));
         }
-        if (s === "Rewards") setRewards(await fRewards({ data: undefined }));
+        if (s === "Rewards") {
+          setRewards(await fRewards({ data: undefined }));
+          setDurations(await fDurations({ data: undefined }));
+        }
         if (s === "Tasks") setTasks(await fTasks({ data: undefined }));
         if (s === "Links" || s === "Extension") setSettings(await fSettings({ data: undefined }));
         if (s === "Logs") setLogs(await fLogs({ data: { category: logCategory } }));
@@ -193,7 +203,7 @@ function HubAdmin() {
         setFlash(err instanceof Error ? err.message : "Could not load data.");
       }
     },
-    [fOverview, fUsers, fReferrals, fInventory, fRedemptions, fRewards, fTasks, fSettings, fBot, fLogs, logCategory, search, referralSearch, referralStatus, inventorySearch, inventoryStatus, inventoryDays],
+    [fOverview, fUsers, fReferrals, fInventory, fRedemptions, fRewards, fDurations, fTasks, fSettings, fBot, fLogs, logCategory, search, referralSearch, referralStatus, inventorySearch, inventoryStatus, inventoryDays],
   );
 
 
@@ -389,7 +399,7 @@ function HubAdmin() {
           </div>
           <div className="flex flex-wrap gap-2">
             <input value={inventorySearch} onChange={(e) => setInventorySearch(e.target.value)} placeholder="Search license key" className="min-w-56 flex-1 rounded-xl border border-border bg-background px-4 py-2 text-sm" />
-            <select value={inventoryDays} onChange={(e) => setInventoryDays(Number(e.target.value) as typeof inventoryDays)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm"><option value={0}>All durations</option>{[15,30,60].map((d) => <option key={d} value={d}>{d} days</option>)}</select>
+            <select value={inventoryDays} onChange={(e) => setInventoryDays(Number(e.target.value) as typeof inventoryDays)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm"><option value={0}>All durations</option>{durations.map((d) => <option key={d} value={d}>{d} days</option>)}</select>
             <select value={inventoryStatus} onChange={(e) => setInventoryStatus(e.target.value as typeof inventoryStatus)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">{["all","available","redeemed","disabled","reserved"].map((status) => <option key={status} value={status}>{status}</option>)}</select>
             <button onClick={() => void loadSection("Licenses")} className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Search</button>
             <button onClick={() => exportInventory(inventory)} className="rounded-xl border border-border px-4 py-2 text-xs font-bold">Export CSV</button>
@@ -408,6 +418,32 @@ function HubAdmin() {
 
       {section === "Rewards" && (
         <section className="space-y-3">
+          <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-card/60 p-4">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Reward name
+              <input value={newReward.name} onChange={(e) => setNewReward({ ...newReward, name: e.target.value })} className="mt-1 w-56 rounded-xl border border-border bg-background px-3 py-2 text-sm font-normal normal-case text-foreground" />
+            </label>
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Days
+              <input type="number" value={newReward.duration_days} onChange={(e) => setNewReward({ ...newReward, duration_days: Number(e.target.value) })} className="mt-1 w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm font-normal text-foreground" />
+            </label>
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Credits
+              <input type="number" value={newReward.credit_cost} onChange={(e) => setNewReward({ ...newReward, credit_cost: Number(e.target.value) })} className="mt-1 w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm font-normal text-foreground" />
+            </label>
+            <button
+              onClick={async () => {
+                try {
+                  await fSaveReward({ data: { name: newReward.name, duration_days: newReward.duration_days, credit_cost: newReward.credit_cost, enabled: true } });
+                  setNewReward({ name: "", duration_days: 15, credit_cost: 5 });
+                  setFlash("Reward created");
+                  void loadSection("Rewards");
+                } catch (err) {
+                  setFlash(err instanceof Error ? err.message : "Could not create reward.");
+                }
+              }}
+              className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+            >
+              + Add Reward
+            </button>
+          </div>
           {rewards.map((r) => (
             <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card/60 p-4">
               <span className="flex-1 font-bold">
@@ -432,6 +468,16 @@ function HubAdmin() {
                 className="rounded-lg border border-border px-3 py-1 text-xs font-semibold"
               >
                 {r.enabled ? "Disable" : "Enable"}
+              </button>
+              <button
+                onClick={async () => {
+                  await fDeleteReward({ data: { id: r.id } });
+                  setFlash("Reward removed");
+                  void loadSection("Rewards");
+                }}
+                className="rounded-lg border border-destructive px-3 py-1 text-xs font-bold text-destructive"
+              >
+                Delete
               </button>
             </div>
           ))}
@@ -549,6 +595,7 @@ function HubAdmin() {
               </label>
             ))}
           </div>
+          <ProductFilesPanel notify={setFlash} />
         </section>
       )}
 
