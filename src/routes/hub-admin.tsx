@@ -238,6 +238,9 @@ function HubAdmin() {
           <Stat label="Credits issued" value={overview.creditsIssued} />
           <Stat label="Credits spent" value={overview.creditsSpent} />
           <Stat label="Licenses redeemed" value={overview.redemptions} />
+          <Stat label="Total products" value={overview.totalProducts} />
+          <Stat label="Active products" value={overview.activeProducts} />
+          <Stat label="Available licenses" value={overview.availableLicenses} />
           {overview.inventory.map((i) => (
             <Stat key={i.duration_days} label={`${i.duration_days}d available`} value={i.available} />
           ))}
