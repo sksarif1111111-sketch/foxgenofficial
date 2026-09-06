@@ -131,17 +131,48 @@ export const adminSaveReward = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        id: z.string().uuid(),
+        id: z.string().uuid().optional(),
+        name: z.string().trim().min(1).max(120).optional(),
+        description: z.string().trim().max(400).optional(),
+        duration_days: z.number().int().min(1).max(3650).optional(),
         credit_cost: z.number().int().min(1).max(100000),
+        display_order: z.number().int().min(0).max(999).optional(),
         enabled: z.boolean(),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
-    await db.from("rewards").update({ credit_cost: data.credit_cost, enabled: data.enabled }).eq("id", data.id);
+    if (data.id) {
+      const patch: Record<string, unknown> = { credit_cost: data.credit_cost, enabled: data.enabled };
+      if (data.name !== undefined) patch['name'] = data.name;
+      if (data.description !== undefined) patch['description'] = data.description;
+      if (data.duration_days !== undefined) patch['duration_days'] = data.duration_days;
+      if (data.display_order !== undefined) patch['display_order'] = data.display_order;
+      await db.from("rewards").update(patch).eq("id", data.id);
+      return { ok: true };
+    }
+    if (!data.name || !data.duration_days) throw new Error("Reward name and duration are required.");
+    const { error } = await db.from("rewards").insert({
+      name: data.name,
+      description: data.description ?? null,
+      duration_days: data.duration_days,
+      credit_cost: data.credit_cost,
+      enabled: data.enabled,
+      display_order: data.display_order ?? 0,
+    });
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const adminDeleteReward = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    await db.from("rewards").delete().eq("id", data.id);
+    return { ok: true };
+  });
+
 
 export const adminTasks = createServerFn({ method: "POST" }).handler(async () => {
   const { db } = await import("@/lib/hub.server");
