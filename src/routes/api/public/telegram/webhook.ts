@@ -181,10 +181,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           [{ text: "📘 Facebook", url: facebookUrl }],
           [{ text: `✈️ ${channel1Name}`, url: channel1Url }],
           [{ text: `✈️ ${channel2Name}`, url: channel2Url }],
-          [{ text: "🌐 Official Website", url: S("official_website_url", siteUrl) }],
+          [{ text: "🌐 Official Website", url: S("official_website_url", "https://nextgen.lovableunlimitedc.workers.dev") }],
           [{ text: "💬 Support", url: supportUrl }],
           backRow(),
         ];
+
 
         const buildExtensionKeyboard = (): Keyboard => {
           const rows: Keyboard = [];
