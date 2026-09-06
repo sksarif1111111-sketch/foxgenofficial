@@ -352,7 +352,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const { profile: fresh } = await ensureProfile(from);
           const [refs, licenses, ranked] = await Promise.all([
             verifiedReferrals(profile.id),
-            db.from("redemptions").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
+            db.from("license_redemptions").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
             db.from("profiles").select("id, credits_earned").order("credits_earned", { ascending: false }).limit(500),
           ]);
           const rank = (ranked.data ?? []).findIndex((p) => p.id === profile.id) + 1;
