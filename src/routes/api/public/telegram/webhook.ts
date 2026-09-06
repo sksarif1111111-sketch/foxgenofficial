@@ -110,16 +110,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const mainMenu: Keyboard = [
           [{ text: "🚀 Start Earning", callback_data: "tasks" }],
-          [{ text: "📢 Official Community", callback_data: "community" }],
-          [{ text: "📥 Download Extension", callback_data: "download" }],
           [
-            { text: "👤 My Account", callback_data: "me" },
-            { text: "👥 Invite Friends", callback_data: "invite" },
+            { text: "📋 Tasks", callback_data: "tasks" },
+            { text: "👥 My Referral", callback_data: "invite" },
           ],
           [
             { text: "🎁 Rewards", callback_data: "rewards" },
-            { text: "✅ Verify Tasks", callback_data: "verify" },
+            { text: "🏆 Leaderboard", callback_data: "board" },
           ],
+          [
+            { text: "👤 My Account", callback_data: "me" },
+            { text: "📥 Download Extension", callback_data: "download" },
+          ],
+          [{ text: "📢 Official Community", callback_data: "community" }],
           [{ text: "🌐 Official Website", url: siteUrl }],
           [{ text: "💬 Support", url: supportUrl }],
         ];
@@ -129,7 +132,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const communityRows: Keyboard = [
           [{ text: "▶️ YouTube", url: youtubeUrl }],
           [{ text: "💬 WhatsApp Channel", url: whatsappUrl }],
-          [{ text: "📘 Facebook Page", url: facebookUrl }],
+          [{ text: "📘 Facebook", url: facebookUrl }],
           [{ text: `✈️ ${channel1Name}`, url: channel1Url }],
           [{ text: `✈️ ${channel2Name}`, url: channel2Url }],
           [{ text: "🌐 Official Website", url: siteUrl }],
@@ -138,27 +141,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         ];
 
         const welcome =
-          `🦊 <b>FoxGEN PRO Rewards Hub</b>\n` +
-          `🎁 <b>FREE Lovable Unlimited Extension License Giveaway</b>\n\n` +
-          `Welcome to the official FoxGEN PRO Rewards system!\n` +
-          `Earn FREE Lovable Unlimited Extension licenses by completing community tasks and inviting real friends.\n\n` +
-          `━━━━━━━━━━━━━━\n\n` +
-          `🚀 <b>How It Works</b>\n` +
-          `1️⃣ Follow our official community platforms\n` +
-          `2️⃣ Complete the required tasks\n` +
-          `3️⃣ Get your personal referral link\n` +
-          `4️⃣ Invite friends\n` +
-          `5️⃣ 1 Verified Referral = 1 Credit\n` +
-          `6️⃣ Collect credits & redeem licenses\n\n` +
-          `━━━━━━━━━━━━━━\n\n` +
-          `🎁 <b>License Rewards</b>\n` +
-          `💜 15 Days — 5 Credits\n` +
-          `💜 30 Days — 10 Credits\n` +
-          `💜 60 Days — 20 Credits\n\n` +
-          `━━━━━━━━━━━━━━\n\n` +
-          `💰 <b>1 Verified Referral = 1 Credit</b>\n` +
-          `Invite. Earn. Redeem.\n\n` +
-          `Complete your tasks and start earning!`;
+          `🦊 <b>Welcome to FoxGEN PRO!</b>\n\n` +
+          `🎁 Earn FREE Lovable Unlimited Extension licenses.\n\n` +
+          `Complete tasks → Invite friends → Earn credits → Unlock rewards.\n\n` +
+          `<b>How it works:</b>\n` +
+          `👥 1 verified referral = 1 credit\n` +
+          `🎁 Collect credits and redeem available licenses\n\n` +
+          `⚡ Premium Access • Unlimited Possibilities\n\n` +
+          `🚀 Start earning now!`;
 
         // /start [referral code]
         if (text.startsWith("/start")) {
@@ -182,7 +172,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         if (action === "community") {
           await show(
-            `🦊 <b>FOXGEN PRO COMMUNITY</b>\n\nStay connected with FoxGEN PRO!\n\nGet:\n🚀 Lovable Unlimited Updates\n📚 Tutorials & Guides\n🎁 Free License Giveaways\n🔥 Special Offers\n💡 Support & Community Updates\n\nChoose a platform below:`,
+            `🦊 <b>FOXGEN PRO COMMUNITY</b>\n\n` +
+              `Stay connected with the official FoxGEN PRO community.\n\n` +
+              `▶️ <b>YouTube</b>\nWatch tutorials, updates and guides.\n\n` +
+              `💬 <b>WhatsApp Channel</b>\nGet latest updates and offers.\n\n` +
+              `📘 <b>Facebook</b>\nFollow our official Facebook page.\n\n` +
+              `✈️ <b>${esc(channel1Name)}</b>\nFollow our official Telegram channel.\n\n` +
+              `✈️ <b>${esc(channel2Name)}</b>\nFollow our second official Telegram channel.\n\n` +
+              `🌐 <b>Official Website</b>\nVisit our official platform.\n\n` +
+              `💬 <b>Support</b>\nContact official support.`,
             communityRows,
           );
           return Response.json({ ok: true });
@@ -194,9 +192,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         const activatedText =
-          `🎉 <b>ALL TASKS COMPLETED!</b>\n\n` +
-          `Your FoxGEN PRO Rewards account is now activated.\n\n` +
-          `You can now:\n👥 Invite Friends\n💰 Earn Credits\n🎁 Redeem Licenses\n📥 Download the Extension`;
+          `🎉 <b>Congratulations!</b>\n\n` +
+          `All required community tasks are completed successfully.\n` +
+          `Your FoxGEN PRO Rewards account is now active.\n\n` +
+          `You can now:\n👥 Invite friends\n💰 Earn credits\n🎁 Redeem license rewards\n\n` +
+          `Remember: 1 verified referral = 1 credit.`;
+
+        const activatedRows: Keyboard = [
+          [{ text: "👥 Get My Referral Link", callback_data: "invite" }],
+          [{ text: "🎁 View Rewards", callback_data: "rewards" }],
+          [{ text: "🏠 Dashboard", callback_data: "menu" }],
+        ];
+
 
         const renderTasks = async () => {
           const tasks = await activeTasks();
