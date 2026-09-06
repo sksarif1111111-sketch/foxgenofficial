@@ -102,6 +102,8 @@ type InvRow = Awaited<ReturnType<typeof adminInventory>>[number];
 type RedemptionRow = Awaited<ReturnType<typeof adminRedemptions>>[number];
 type RefRow = Awaited<ReturnType<typeof adminReferrals>>[number];
 type BotInfo = Awaited<ReturnType<typeof adminBotStatus>>;
+type LogRow = Awaited<ReturnType<typeof adminLogs>>[number];
+
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
