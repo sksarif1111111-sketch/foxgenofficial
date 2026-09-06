@@ -364,8 +364,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             }
 
             body += `${LINE}\nComplete all tasks to activate referrals.`;
-            rows.push([{ text: "🔄 Verify Tasks", callback_data: "verify" }]);
+            rows.push([{ text: "🔄 Verify Telegram Tasks", callback_data: "verify" }]);
             rows.push(backRow());
+
             await render(body, rows);
           };
 
