@@ -28,6 +28,7 @@ import {
   adminUsers,
   type AdminOverview,
 } from "@/lib/hubadmin.functions";
+import { ActivityPanel, CatalogPanel, ProductsPanel } from "@/components/admin/catalog-panels";
 
 export const Route = createFileRoute("/hub-admin")({
   head: () => ({
@@ -48,6 +49,8 @@ export const Route = createFileRoute("/hub-admin")({
 
 const SECTIONS = [
   "Overview",
+  "Products",
+  "Catalog",
   "Users",
   "Referrals",
   "Licenses",
@@ -56,6 +59,7 @@ const SECTIONS = [
   "Extension",
   "Links",
   "Bot",
+  "Activity",
   "Logs",
 ] as const;
 type Section = (typeof SECTIONS)[number];
@@ -234,11 +238,18 @@ function HubAdmin() {
           <Stat label="Credits issued" value={overview.creditsIssued} />
           <Stat label="Credits spent" value={overview.creditsSpent} />
           <Stat label="Licenses redeemed" value={overview.redemptions} />
+          <Stat label="Total products" value={overview.totalProducts} />
+          <Stat label="Active products" value={overview.activeProducts} />
+          <Stat label="Available licenses" value={overview.availableLicenses} />
           {overview.inventory.map((i) => (
             <Stat key={i.duration_days} label={`${i.duration_days}d available`} value={i.available} />
           ))}
         </section>
       )}
+
+      {section === "Products" && <ProductsPanel notify={setFlash} />}
+      {section === "Catalog" && <CatalogPanel notify={setFlash} />}
+      {section === "Activity" && <ActivityPanel notify={setFlash} />}
 
       {section === "Users" && (
         <section className="space-y-3">
