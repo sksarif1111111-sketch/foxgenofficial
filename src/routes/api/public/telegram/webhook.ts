@@ -428,10 +428,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (apiIssue) {
               body = `⚠️ <b>Verification temporarily unavailable</b>\n${LINE}\nPlease try again shortly.`;
             } else {
-              body = `❌ <b>Verification Incomplete</b>\n${LINE}\nPlease complete:\n`;
+              const tgMissing = pending.map((c) => c.name.replace(/^follow\s+/i, "").trim());
+              if (tgMissing.length === 1) {
+                body = `❌ <b>Please follow ${esc(tgMissing[0]!)} first.</b>\n${LINE}\n`;
+              } else if (tgMissing.length > 1) {
+                body = `❌ <b>Please follow both required Telegram channels.</b>\n${LINE}\n`;
+              } else {
+                body = `❌ <b>Verification Incomplete</b>\n${LINE}\nPlease complete:\n`;
+              }
               for (const name of state.missing) body += `• ${esc(name.replace(/^follow\s+/i, ""))}\n`;
               body += `${LINE}\nAfter following, tap Verify Again.`;
             }
+
             for (const c of pending) if (c.url) rows.push([{ text: shortLabel("", c.name), url: c.url }]);
             rows.push([{ text: "🔄 Verify Again", callback_data: "verify" }]);
             rows.push(backRow("tasks"));
