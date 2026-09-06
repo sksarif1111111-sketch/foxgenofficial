@@ -63,6 +63,29 @@ export async function logBotError(
   }
 }
 
+/** Platform-wide activity trail shown in the admin Activity page. */
+export async function logActivity(
+  module: string,
+  action: string,
+  status: "success" | "warning" | "error" | "info" = "info",
+  details?: string | null,
+  userId?: string | null,
+  actor?: string | null,
+) {
+  try {
+    await db.from("activity_logs").insert({
+      module,
+      action,
+      status,
+      details: details ? details.slice(0, 1000) : null,
+      user_id: userId ?? null,
+      actor: actor ?? "admin",
+    });
+  } catch {
+    // logging must never break a request
+  }
+}
+
 /** Short-lived lock so rapid double taps cannot run the same action twice. */
 export async function acquireLock(key: string, ttlMs = 15000): Promise<boolean> {
   const cutoff = new Date(Date.now() - ttlMs).toISOString();
