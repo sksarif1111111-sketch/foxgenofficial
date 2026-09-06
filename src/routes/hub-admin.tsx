@@ -63,8 +63,10 @@ const LINK_FIELDS = [
   "facebook_url",
   "telegram_channel_1",
   "telegram_channel_1_name",
+  "telegram_channel_1_id",
   "telegram_channel_2",
   "telegram_channel_2_name",
+  "telegram_channel_2_id",
 
   "support_url",
   "referral_message",
