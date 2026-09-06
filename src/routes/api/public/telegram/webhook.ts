@@ -213,6 +213,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const botUser = settings["bot_username"] || "";
           const link = botUser ? `https://t.me/${botUser}?start=${started.referral_code}` : started.referral_code;
           await send(`${homeText}\n\n🔗 <b>Your invite link:</b>\n<code>${esc(link)}</code>`, buildHomeKeyboard());
+          await tg("setMyCommands", {
+            commands: [
+              { command: "start", description: "🏠 Open FoxGEN PRO" },
+              { command: "menu", description: "🏠 Main menu" },
+              { command: "tasks", description: "📋 My tasks" },
+              { command: "invite", description: "👥 Invite friends" },
+              { command: "rewards", description: "🎁 View rewards" },
+              { command: "licenses", description: "🔑 My licenses" },
+              { command: "profile", description: "👤 My account" },
+              { command: "leaderboard", description: "🏆 Leaderboard" },
+              { command: "download", description: "📥 Download extension" },
+              { command: "community", description: "📢 Official community" },
+              { command: "support", description: "💬 Support" },
+            ],
+          });
           return Response.json({ ok: true });
         }
 
@@ -222,7 +237,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true });
         }
 
-        const action = cb || text.replace(/^\//, "") || "menu";
+        const COMMAND_ALIASES: Record<string, string> = {
+          home: "menu",
+          help: "menu",
+          rules: "menu",
+          profile: "me",
+          account: "me",
+          credits: "me",
+          licenses: "me",
+          leaderboard: "board",
+          ranking: "board",
+          support: "community",
+          links: "community",
+          task: "tasks",
+          referral: "invite",
+        };
+        const rawAction = cb || text.replace(/^\//, "").split(/[\s@]/)[0] || "menu";
+        const action = cb ? rawAction : (COMMAND_ALIASES[rawAction.toLowerCase()] ?? rawAction.toLowerCase());
 
         // ---------- double-click protection for slow actions ----------
         const guarded = ["verify", "extfile"].includes(action) || action.startsWith("redeem:") || action.startsWith("done:");
