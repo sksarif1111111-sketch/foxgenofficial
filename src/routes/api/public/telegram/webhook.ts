@@ -181,10 +181,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           [{ text: "📘 Facebook", url: facebookUrl }],
           [{ text: `✈️ ${channel1Name}`, url: channel1Url }],
           [{ text: `✈️ ${channel2Name}`, url: channel2Url }],
-          [{ text: "🌐 Official Website", url: S("official_website_url", siteUrl) }],
+          [{ text: "🌐 Official Website", url: S("official_website_url", "https://nextgen.lovableunlimitedc.workers.dev") }],
           [{ text: "💬 Support", url: supportUrl }],
           backRow(),
         ];
+
 
         const buildExtensionKeyboard = (): Keyboard => {
           const rows: Keyboard = [];
@@ -198,39 +199,88 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         };
 
         const homeText =
-          `🦊 <b>FOXGEN PRO REWARDS</b>\n` +
-          `<i>Lovable Unlimited Extension Giveaway</i>\n` +
+          `🦊 <b>FOXGEN PRO</b>\n` +
+          `<i>Lovable Unlimited Extension Rewards</i>\n` +
           `${LINE}\n` +
           `🎁 Earn free license rewards\n` +
           `👥 1 verified referral = 1 credit\n` +
-          `💰 Collect credits and unlock rewards\n` +
           `${LINE}\n` +
           `🚀 Complete tasks and start earning!`;
+
+        /** Premium home screen with live stats. */
+        const homeBody = async (p: { id: string; credits_available: number; credits_earned: number }) => {
+          const [refs, lic, ahead] = await Promise.all([
+            db
+              .from("referrals")
+              .select("id", { count: "exact", head: true })
+              .eq("referrer_id", p.id)
+              .eq("status", "verified"),
+            db.from("license_redemptions").select("id", { count: "exact", head: true }).eq("user_id", p.id),
+            db
+              .from("profiles")
+              .select("id", { count: "exact", head: true })
+              .gt("credits_earned", p.credits_earned),
+          ]);
+          return (
+            `🦊 <b>FOXGEN PRO</b>\n` +
+            `<i>Lovable Unlimited Extension Rewards</i>\n` +
+            `${LINE}\n` +
+            `💰 Credits: <b>${p.credits_available}</b>\n` +
+            `👥 Verified Referrals: <b>${refs.count ?? 0}</b>\n` +
+            `🔑 Licenses Claimed: <b>${lic.count ?? 0}</b>\n` +
+            `🏆 Global Rank: <b>#${(ahead.count ?? 0) + 1}</b>\n` +
+            `${LINE}\n` +
+            `Complete tasks and invite friends to earn free rewards.`
+          );
+        };
+
+        const buildWelcomeKeyboard = (): Keyboard => [
+          [{ text: "🚀 Start Earning", callback_data: "tasks" }],
+          [
+            { text: "🎁 Rewards", callback_data: "rewards" },
+            { text: "👥 Invite", callback_data: "invite" },
+          ],
+          [{ text: "📢 Official Community", callback_data: "community" }],
+          [{ text: "📥 Extension Download", callback_data: "extension" }],
+          [{ text: "💬 Support", url: supportUrl }],
+        ];
 
         // ---------- /start ----------
         if (text.startsWith("/start")) {
           const payload = text.split(/\s+/)[1] ?? "";
-          const { profile: started } = await ensureProfile(from, payload);
-          const botUser = settings["bot_username"] || "";
-          const link = botUser ? `https://t.me/${botUser}?start=${started.referral_code}` : started.referral_code;
-          await send(`${homeText}\n\n🔗 <b>Your invite link:</b>\n<code>${esc(link)}</code>`, buildHomeKeyboard());
+          await ensureProfile(from, payload);
+          await send(
+            `🦊 <b>Welcome to FoxGEN PRO</b>\n${LINE}\n` +
+              `Get FREE Lovable Unlimited Extension licenses through our community rewards program.\n\n` +
+              `🎁 Complete tasks\n👥 Invite friends\n💰 Earn credits\n🔑 Redeem licenses\n${LINE}\n` +
+              `<b>How it works</b>\n` +
+              `1️⃣ Complete community tasks\n` +
+              `2️⃣ Get your referral link\n` +
+              `3️⃣ Invite real friends\n` +
+              `4️⃣ 1 verified referral = 1 credit\n` +
+              `5️⃣ Collect credits and unlock rewards`,
+            buildWelcomeKeyboard(),
+          );
           await tg("setMyCommands", {
             commands: [
               { command: "start", description: "🏠 Open FoxGEN PRO" },
               { command: "menu", description: "🏠 Main menu" },
+              { command: "home", description: "🏠 Home screen" },
               { command: "tasks", description: "📋 My tasks" },
               { command: "invite", description: "👥 Invite friends" },
               { command: "rewards", description: "🎁 View rewards" },
               { command: "licenses", description: "🔑 My licenses" },
-              { command: "profile", description: "👤 My account" },
+              { command: "profile", description: "👤 My credits & account" },
               { command: "leaderboard", description: "🏆 Leaderboard" },
               { command: "download", description: "📥 Download extension" },
               { command: "community", description: "📢 Official community" },
               { command: "support", description: "💬 Support" },
+              { command: "rules", description: "📜 Program rules" },
             ],
           });
           return Response.json({ ok: true });
         }
+
 
         const profile = await profileByTelegramId(from.id);
         if (!profile) {
@@ -266,18 +316,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         try {
           if (action === "menu" || action === "help" || action === "home") {
-            await render(homeText, buildHomeKeyboard());
+            await render(await homeBody(profile), buildHomeKeyboard());
             return Response.json({ ok: true });
           }
 
           if (action === "community") {
             await render(
-              `📢 <b>OFFICIAL COMMUNITY</b>\n${LINE}\n` +
-                `Follow the official FoxGEN PRO channels for updates, tutorials and giveaways.`,
+              `🦊 <b>FOXGEN PRO COMMUNITY</b>\n${LINE}\n` +
+                `Stay connected with official updates, tutorials and offers.`,
               buildCommunityKeyboard(),
             );
             return Response.json({ ok: true });
           }
+
 
           // ---------- tasks ----------
           const activatedText =
@@ -304,15 +355,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const rows: Keyboard = [];
             for (const t of tasks) {
               const label = shortLabel(t.platform, t.name);
-              body += `${esc(label)}  ${doneIds.has(t.id) ? "✅" : "❌"}\n`;
-              if (t.url) rows.push([{ text: label, url: t.url }]);
-              else rows.push([{ text: label, callback_data: "tasks" }]);
-              if (t.verification_type !== "telegram_auto_verification" && !doneIds.has(t.id))
-                rows.push([{ text: `✅ Mark done — ${label}`.slice(0, 40), callback_data: `done:${t.id}` }]);
+              const isTg = t.verification_type === "telegram_auto_verification";
+              const ok = doneIds.has(t.id);
+              body += `${esc(label)}\nStatus: <b>${ok ? "Completed ✅" : "Pending ❌"}</b>\n\n`;
+              if (t.url) rows.push([{ text: `${isTg ? "FOLLOW" : "OPEN"} — ${label}`.slice(0, 40), url: t.url }]);
+              if (!isTg && !ok)
+                rows.push([{ text: `✅ I Completed This — ${label}`.slice(0, 40), callback_data: `done:${t.id}` }]);
             }
+
             body += `${LINE}\nComplete all tasks to activate referrals.`;
-            rows.push([{ text: "🔄 Verify Tasks", callback_data: "verify" }]);
+            rows.push([{ text: "🔄 Verify Telegram Tasks", callback_data: "verify" }]);
             rows.push(backRow());
+
             await render(body, rows);
           };
 
@@ -340,9 +394,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
 
           if (action === "verify") {
+            await render(`⏳ <b>Checking your Telegram memberships...</b>\n${LINE}\nThis takes a moment.`, [
+              backRow("tasks"),
+            ]);
             let state: Awaited<ReturnType<typeof refreshVerification>> | null = null;
             try {
               state = await refreshVerification(profile);
+
             } catch (err) {
               await logBotError("verification", err instanceof Error ? err.message : "verify failed", from.id);
             }
@@ -370,10 +428,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             if (apiIssue) {
               body = `⚠️ <b>Verification temporarily unavailable</b>\n${LINE}\nPlease try again shortly.`;
             } else {
-              body = `❌ <b>Verification Incomplete</b>\n${LINE}\nPlease complete:\n`;
+              const tgMissing = pending.map((c) => c.name.replace(/^follow\s+/i, "").trim());
+              if (tgMissing.length === 1) {
+                body = `❌ <b>Please follow ${esc(tgMissing[0]!)} first.</b>\n${LINE}\n`;
+              } else if (tgMissing.length > 1) {
+                body = `❌ <b>Please follow both required Telegram channels.</b>\n${LINE}\n`;
+              } else {
+                body = `❌ <b>Verification Incomplete</b>\n${LINE}\nPlease complete:\n`;
+              }
               for (const name of state.missing) body += `• ${esc(name.replace(/^follow\s+/i, ""))}\n`;
               body += `${LINE}\nAfter following, tap Verify Again.`;
             }
+
             for (const c of pending) if (c.url) rows.push([{ text: shortLabel("", c.name), url: c.url }]);
             rows.push([{ text: "🔄 Verify Again", callback_data: "verify" }]);
             rows.push(backRow("tasks"));
