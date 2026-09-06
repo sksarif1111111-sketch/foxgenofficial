@@ -11,6 +11,9 @@ export type AdminOverview = {
   creditsIssued: number;
   creditsSpent: number;
   redemptions: number;
+  totalProducts: number;
+  activeProducts: number;
+  availableLicenses: number;
   inventory: Array<{ duration_days: number; available: number; redeemed: number; total: number }>;
 };
 
@@ -23,6 +26,7 @@ export const adminOverview = createServerFn({ method: "POST" }).handler(async ()
     db.from("license_redemptions").select("id"),
     db.from("license_inventory").select("duration_days, status"),
   ]);
+  const { data: productRows } = await db.from("products").select("status");
   const today = new Date().toISOString().slice(0, 10);
   const buckets = new Map<number, { available: number; redeemed: number; total: number }>();
   for (const row of inv.data ?? []) {
@@ -42,6 +46,9 @@ export const adminOverview = createServerFn({ method: "POST" }).handler(async ()
     creditsIssued: (txs.data ?? []).filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0),
     creditsSpent: (txs.data ?? []).filter((t) => t.amount < 0).reduce((s, t) => s - t.amount, 0),
     redemptions: (redemptions.data ?? []).length,
+    totalProducts: (productRows ?? []).length,
+    activeProducts: (productRows ?? []).filter((p) => p.status === "active").length,
+    availableLicenses: (inv.data ?? []).filter((i) => i.status === "available").length,
     inventory: [...buckets.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([duration_days, v]) => ({ duration_days, ...v })),
