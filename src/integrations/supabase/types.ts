@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          actor: string | null
+          created_at: string
+          details: string | null
+          id: string
+          module: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          module: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          module?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_profiles: {
         Row: {
           avatar_url: string | null
@@ -233,6 +274,45 @@ export type Database = {
           start_date?: string | null
           status?: string
           target_referrals?: number
+        }
+        Relationships: []
+      }
+      communities: {
+        Row: {
+          created_at: string
+          display_order: number
+          enabled: boolean
+          icon: string | null
+          id: string
+          name: string
+          platform: string
+          telegram_chat_id: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          icon?: string | null
+          id?: string
+          name: string
+          platform?: string
+          telegram_chat_id?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          icon?: string | null
+          id?: string
+          name?: string
+          platform?: string
+          telegram_chat_id?: string | null
+          updated_at?: string
+          url?: string
         }
         Relationships: []
       }
@@ -470,6 +550,264 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods: {
+        Row: {
+          config: Json
+          created_at: string
+          currency: string
+          display_order: number
+          enabled: boolean
+          id: string
+          instructions: string | null
+          name: string
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          currency?: string
+          display_order?: number
+          enabled?: boolean
+          id?: string
+          instructions?: string | null
+          name: string
+          provider?: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          currency?: string
+          display_order?: number
+          enabled?: boolean
+          id?: string
+          instructions?: string | null
+          name?: string
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      product_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          enabled: boolean
+          icon_url: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          enabled?: boolean
+          icon_url?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          enabled?: boolean
+          icon_url?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      product_files: {
+        Row: {
+          created_at: string
+          display_order: number
+          enabled: boolean
+          file_url: string | null
+          id: string
+          label: string
+          product_id: string
+          telegram_file_id: string | null
+          version: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          file_url?: string | null
+          id?: string
+          label: string
+          product_id: string
+          telegram_file_id?: string | null
+          version?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          file_url?: string | null
+          id?: string
+          label?: string
+          product_id?: string
+          telegram_file_id?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_files_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_prices: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_cost: number
+          currency: string
+          display_order: number
+          duration_days: number | null
+          enabled: boolean
+          id: string
+          label: string
+          product_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          credit_cost?: number
+          currency?: string
+          display_order?: number
+          duration_days?: number | null
+          enabled?: boolean
+          id?: string
+          label: string
+          product_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_cost?: number
+          currency?: string
+          display_order?: number
+          duration_days?: number | null
+          enabled?: boolean
+          id?: string
+          label?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          banner_url: string | null
+          category_id: string | null
+          created_at: string
+          credit_cost: number
+          currency: string
+          description: string | null
+          display_order: number
+          download_file_path: string | null
+          download_url: string | null
+          featured: boolean
+          giveaway_enabled: boolean
+          icon_url: string | null
+          id: string
+          installation_guide_url: string | null
+          is_free: boolean
+          license_required: boolean
+          logo_url: string | null
+          name: string
+          price: number
+          product_type: string
+          referral_required: boolean
+          short_name: string | null
+          status: string
+          tutorial_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          credit_cost?: number
+          currency?: string
+          description?: string | null
+          display_order?: number
+          download_file_path?: string | null
+          download_url?: string | null
+          featured?: boolean
+          giveaway_enabled?: boolean
+          icon_url?: string | null
+          id?: string
+          installation_guide_url?: string | null
+          is_free?: boolean
+          license_required?: boolean
+          logo_url?: string | null
+          name: string
+          price?: number
+          product_type?: string
+          referral_required?: boolean
+          short_name?: string | null
+          status?: string
+          tutorial_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          credit_cost?: number
+          currency?: string
+          description?: string | null
+          display_order?: number
+          download_file_path?: string | null
+          download_url?: string | null
+          featured?: boolean
+          giveaway_enabled?: boolean
+          icon_url?: string | null
+          id?: string
+          installation_guide_url?: string | null
+          is_free?: boolean
+          license_required?: boolean
+          logo_url?: string | null
+          name?: string
+          price?: number
+          product_type?: string
+          referral_required?: boolean
+          short_name?: string | null
+          status?: string
+          tutorial_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
             referencedColumns: ["id"]
           },
         ]
