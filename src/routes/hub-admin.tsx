@@ -6,9 +6,11 @@ import {
   adminApproveReferral,
   adminBotStatus,
   adminBroadcast,
+  adminClearLogs,
   adminImportLicenses,
   adminInventory,
   adminDeleteInventoryLicense,
+  adminLogs,
   adminRedemptions,
   adminSetInventoryStatus,
   adminOverview,
@@ -44,20 +46,37 @@ export const Route = createFileRoute("/hub-admin")({
   component: HubAdmin,
 });
 
-const SECTIONS = ["Overview", "Users", "Referrals", "Licenses", "Rewards", "Tasks", "Links", "Bot"] as const;
+const SECTIONS = [
+  "Overview",
+  "Users",
+  "Referrals",
+  "Licenses",
+  "Rewards",
+  "Tasks",
+  "Extension",
+  "Links",
+  "Bot",
+  "Logs",
+] as const;
 type Section = (typeof SECTIONS)[number];
 
-const LINK_FIELDS = [
-  "brand_name",
-  "brand_description",
-  "site_url",
+const EXTENSION_FIELDS = [
   "extension_name",
   "extension_version",
   "extension_release_date",
   "extension_description",
   "extension_download_url",
+  "extension_file_url",
+  "extension_telegram_file_id",
   "installation_guide_url",
   "tutorial_url",
+];
+
+const LINK_FIELDS = [
+  "brand_name",
+  "brand_description",
+  "site_url",
+  "logo_url",
   "youtube_url",
   "whatsapp_url",
   "facebook_url",
@@ -67,11 +86,14 @@ const LINK_FIELDS = [
   "telegram_channel_2",
   "telegram_channel_2_name",
   "telegram_channel_2_id",
-
   "support_url",
+  "extension_download_url",
+  "installation_guide_url",
+  "tutorial_url",
   "referral_message",
   "min_inventory_alert",
 ];
+
 
 type UserRow = Awaited<ReturnType<typeof adminUsers>>[number];
 type RewardRow = Awaited<ReturnType<typeof adminRewards>>[number];
