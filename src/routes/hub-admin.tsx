@@ -244,6 +244,10 @@ function HubAdmin() {
         </section>
       )}
 
+      {section === "Products" && <ProductsPanel notify={setFlash} />}
+      {section === "Catalog" && <CatalogPanel notify={setFlash} />}
+      {section === "Activity" && <ActivityPanel notify={setFlash} />}
+
       {section === "Users" && (
         <section className="space-y-3">
           <div className="flex gap-2">
