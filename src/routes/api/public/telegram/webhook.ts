@@ -275,20 +275,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const rows: Keyboard = [];
 
           if (state.allDone) {
-            body += `🎉 <b>ALL TASKS COMPLETED!</b>\n\nYour FoxGEN PRO Rewards account is now activated.`;
-            rows.push([{ text: "👥 Invite Friends", callback_data: "invite" }]);
-            rows.push([{ text: "📥 Download Extension", callback_data: "download" }]);
-          } else {
-            body += `❌ <b>Verification Incomplete</b>\n\nYou still need to follow:\n`;
-            for (const c of pending) body += `✈️ ${esc(c.name)}${c.error ? `\n   <i>${esc(c.error)}</i>` : ""}\n`;
-            for (const t of tasks) {
-              if (t.verification_type === "telegram_auto_verification") continue;
-              if (!doneIds.has(t.id)) body += `• ${esc(t.name)}\n`;
-            }
-            for (const c of pending) if (c.url) rows.push([{ text: `FOLLOW ${c.name.toUpperCase()}`, url: c.url }]);
-            rows.push([{ text: "🔄 VERIFY AGAIN", callback_data: "verify" }]);
-            rows.push([{ text: "📋 My Tasks", callback_data: "tasks" }]);
+            await show(activatedText, activatedRows);
+            return Response.json({ ok: true });
           }
+
+          const apiIssue = pending.some((c) => c.error && !c.error.includes("has not joined"));
+          body += apiIssue
+            ? `⚠️ <b>Unable to verify channel membership right now.</b>\n\nPlease make sure you followed both official Telegram channels and try again.\n\n`
+            : `❌ <b>Verification Incomplete</b>\n\nYou still need to follow:\n`;
+          for (const c of pending) body += `✈️ ${esc(c.name)}${c.error ? `\n   <i>${esc(c.error)}</i>` : ""}\n`;
+          for (const t of tasks) {
+            if (t.verification_type === "telegram_auto_verification") continue;
+            if (!doneIds.has(t.id)) body += `• ${esc(t.name)}\n`;
+          }
+          for (const c of pending) if (c.url) rows.push([{ text: `FOLLOW ${c.name.toUpperCase()}`, url: c.url }]);
+          rows.push([{ text: "🔄 VERIFY AGAIN", callback_data: "verify" }]);
+          rows.push([{ text: "📋 My Tasks", callback_data: "tasks" }]);
+
           rows.push(backRow);
           await show(body.trim(), rows);
           return Response.json({ ok: true });
