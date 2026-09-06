@@ -181,7 +181,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           [{ text: "📘 Facebook", url: facebookUrl }],
           [{ text: `✈️ ${channel1Name}`, url: channel1Url }],
           [{ text: `✈️ ${channel2Name}`, url: channel2Url }],
-          [{ text: "🌐 Website", url: siteUrl }],
+          [{ text: "🌐 Official Website", url: S("official_website_url", siteUrl) }],
+          [{ text: "💬 Support", url: supportUrl }],
           backRow(),
         ];
 
