@@ -70,6 +70,7 @@ const EXTENSION_FIELDS = [
   "extension_name",
   "extension_version",
   "extension_release_date",
+  "extension_file_size",
   "extension_description",
   "extension_download_url",
   "extension_file_url",
