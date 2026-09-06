@@ -394,9 +394,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
 
           if (action === "verify") {
+            await render(`⏳ <b>Checking your Telegram memberships...</b>\n${LINE}\nThis takes a moment.`, [
+              backRow("tasks"),
+            ]);
             let state: Awaited<ReturnType<typeof refreshVerification>> | null = null;
             try {
               state = await refreshVerification(profile);
+
             } catch (err) {
               await logBotError("verification", err instanceof Error ? err.message : "verify failed", from.id);
             }
