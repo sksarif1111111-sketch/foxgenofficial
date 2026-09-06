@@ -48,6 +48,8 @@ export const Route = createFileRoute("/hub-admin")({
 
 const SECTIONS = [
   "Overview",
+  "Products",
+  "Catalog",
   "Users",
   "Referrals",
   "Licenses",
@@ -56,6 +58,7 @@ const SECTIONS = [
   "Extension",
   "Links",
   "Bot",
+  "Activity",
   "Logs",
 ] as const;
 type Section = (typeof SECTIONS)[number];
