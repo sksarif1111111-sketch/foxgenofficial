@@ -190,7 +190,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const buildExtensionKeyboard = (): Keyboard => {
           const rows: Keyboard = [];
           if (extensionUrl.startsWith("http")) rows.push([{ text: "📥 Download Extension", url: extensionUrl }]);
-          rows.push([{ text: "📦 Receive File in Telegram", callback_data: "extfile" }]);
+          if (extensionFileId || extensionFileUrl.startsWith("http")) {
+            rows.push([{ text: "📦 Receive File in Telegram", callback_data: "extfile" }]);
+          }
           if (guideUrl.startsWith("http")) rows.push([{ text: "📖 Installation Guide", url: guideUrl }]);
           if (tutorialUrl.startsWith("http")) rows.push([{ text: "▶️ Video Tutorial", url: tutorialUrl }]);
           rows.push([{ text: "💬 Contact Support", url: supportUrl }]);
@@ -462,6 +464,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 `Get the latest version of FoxGEN PRO.\n\n` +
                 `📦 Version: <b>${esc(extensionVersion)}</b>\n` +
                 (extensionDate ? `📅 Released: ${esc(extensionDate)}\n` : "") +
+                (S("extension_file_size", "") ? `💾 Size: ${esc(S("extension_file_size", ""))}\n` : "") +
                 `📝 ${esc(extensionDesc)}`,
               buildExtensionKeyboard(),
             );

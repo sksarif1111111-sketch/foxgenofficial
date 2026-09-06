@@ -131,17 +131,54 @@ export const adminSaveReward = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        id: z.string().uuid(),
+        id: z.string().uuid().optional(),
+        name: z.string().trim().min(1).max(120).optional(),
+        description: z.string().trim().max(400).optional(),
+        duration_days: z.number().int().min(1).max(3650).optional(),
         credit_cost: z.number().int().min(1).max(100000),
+        display_order: z.number().int().min(0).max(999).optional(),
         enabled: z.boolean(),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
-    await db.from("rewards").update({ credit_cost: data.credit_cost, enabled: data.enabled }).eq("id", data.id);
+    if (data.id) {
+      await db
+        .from("rewards")
+        .update({
+          credit_cost: data.credit_cost,
+          enabled: data.enabled,
+          ...(data.name !== undefined ? { name: data.name } : {}),
+          ...(data.description !== undefined ? { description: data.description } : {}),
+          ...(data.duration_days !== undefined ? { duration_days: data.duration_days } : {}),
+          ...(data.display_order !== undefined ? { display_order: data.display_order } : {}),
+        })
+        .eq("id", data.id);
+
+      return { ok: true };
+    }
+    if (!data.name || !data.duration_days) throw new Error("Reward name and duration are required.");
+    const { error } = await db.from("rewards").insert({
+      name: data.name,
+      description: data.description ?? null,
+      duration_days: data.duration_days,
+      credit_cost: data.credit_cost,
+      enabled: data.enabled,
+      display_order: data.display_order ?? 0,
+    });
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const adminDeleteReward = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    await db.from("rewards").delete().eq("id", data.id);
+    return { ok: true };
+  });
+
 
 export const adminTasks = createServerFn({ method: "POST" }).handler(async () => {
   const { db } = await import("@/lib/hub.server");
@@ -228,7 +265,7 @@ export const adminInventory = createServerFn({ method: "POST" })
     z.object({
       search: z.string().max(150).optional(),
       status: z.enum(["all", "available", "redeemed", "disabled", "reserved"]).optional(),
-      durationDays: z.union([z.literal(0), z.literal(15), z.literal(30), z.literal(60)]).optional(),
+      durationDays: z.number().int().min(0).max(3650).optional(),
     }).parse(input),
   )
   .handler(async ({ data }) => {
@@ -421,3 +458,16 @@ export const adminRejectReferral = createServerFn({ method: "POST" })
     if (!rejected) throw new Error("Only an uncredited pending referral can be rejected.");
     return { ok: true };
   });
+
+/** Every license duration that exists in inventory or rewards, for dynamic tabs. */
+export const adminLicenseDurations = createServerFn({ method: "POST" }).handler(async () => {
+  const { db } = await import("@/lib/hub.server");
+  const [inv, rewards] = await Promise.all([
+    db.from("license_inventory").select("duration_days"),
+    db.from("rewards").select("duration_days"),
+  ]);
+  const set = new Set<number>();
+  for (const r of inv.data ?? []) set.add(r.duration_days);
+  for (const r of rewards.data ?? []) set.add(r.duration_days);
+  return [...set].sort((a, b) => a - b);
+});
