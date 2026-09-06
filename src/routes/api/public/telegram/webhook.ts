@@ -316,18 +316,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         try {
           if (action === "menu" || action === "help" || action === "home") {
-            await render(homeText, buildHomeKeyboard());
+            await render(await homeBody(profile), buildHomeKeyboard());
             return Response.json({ ok: true });
           }
 
           if (action === "community") {
             await render(
-              `📢 <b>OFFICIAL COMMUNITY</b>\n${LINE}\n` +
-                `Follow the official FoxGEN PRO channels for updates, tutorials and giveaways.`,
+              `🦊 <b>FOXGEN PRO COMMUNITY</b>\n${LINE}\n` +
+                `Stay connected with official updates, tutorials and offers.`,
               buildCommunityKeyboard(),
             );
             return Response.json({ ok: true });
           }
+
 
           // ---------- tasks ----------
           const activatedText =
