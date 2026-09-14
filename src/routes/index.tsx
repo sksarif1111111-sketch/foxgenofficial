@@ -66,15 +66,15 @@ export default function DownloadPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
                 Latest build
               </p>
-              <p className="text-2xl font-bold">Version 16.73</p>
+              <p className="text-2xl font-bold">Zokys × Trivis 5.1.5</p>
               <p className="text-sm text-muted-foreground">
                 ZIP archive · build {BUILD_TAG} · license gate on lovable.dev
               </p>
             </div>
             <a
               className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-primary to-accent px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
-              href={extensionAsset.url}
-              download="FoxGEN-Pro-Extension-16.73.zip"
+              href="/zokys-x-trivis.zip"
+              download="Zokys-X-Trivis-5.1.5.zip"
             >
               Download extension
             </a>
