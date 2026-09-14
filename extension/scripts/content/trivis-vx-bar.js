@@ -7,18 +7,22 @@
   window.__TRIVIS_VX_BAR_V9__ = true;
 
   const LINKS = {
-    instagram: "https://www.instagram.com/reel/Dc3Fwb2vuPi/?igsh=bDg2dHZhYnl6bTU1",
-    youtube: "https://youtube.com/@triv1s?si=c3SP8PaSiYFIq-YD",
-    telegram: "https://t.me/Zokysvx",
-    discord: "https://discord.com/invite/SvxytM8Y2p"
+    telegramChannel: "https://t.me/foxgenofficial",
+    telegramGroup: "https://t.me/lovableunlimitedfoxgen",
+    facebook: "https://www.facebook.com/share/18PfyFqPJ3/",
+    youtube: "https://youtube.com/@mirza-p7x6s?si=21Eq6GmwCZ66wXu2",
+    whatsappChannel: "https://whatsapp.com/channel/0029VbDK6SHKLaHn5vxOQa0v",
+    community: "https://chat.whatsapp.com/KvOy0Fw8IWL0NGwc5zVTxf",
+    support: "https://t.me/FoXGENSPORT",
+    whatsapp: "https://wa.me/917699355860",
+    store: "https://nextgen.lovableunlimitedc.workers.dev"
   };
   const PLANS = [
-    { price: "₹99", label: "5 days", id: "5d", devices: "2 devices", tag: "STARTER", feats: ["Fix path active", "2 max devices", "Standard support"] },
-    { price: "₹229", label: "12 days", id: "12d", devices: "3 devices", tag: "POPULAR", feats: ["Fix path active", "3 max devices", "Priority support"], hot: true },
-    { price: "₹399", label: "22 days", id: "22d", devices: "5 devices", tag: "PRO", feats: ["Fix path active", "5 max devices", "Fast support"] },
-    { price: "₹599", label: "35 days", id: "35d", devices: "Custom devices", tag: "MAX", feats: ["Fix path active", "Custom max devices", "VIP support"] },
-    { price: "₹1999", label: "1 month", id: "res", devices: "Reseller", tag: "RESELLER", feats: ["Admin panel access", "Full source code updates", "Commission 30% to us"] },
-    { price: "₹4999", label: "1 month", id: "pres", devices: "Pro Reseller", tag: "PRO RESELLER", feats: ["VIP admin panel", "Unlimited license keys", "Full source + setup", "Commission 0%"] }
+    { price: "FREE", label: "30-Minute Free Trial", id: "trial", devices: "Instant access", tag: "TRIAL", feats: ["Full premium features", "Fast activation", "No payment needed"] },
+    { price: "$15", label: "14 Days", id: "14d", devices: "One-time payment", tag: "STARTER", feats: ["100% genuine license", "Installation guide", "24/7 support"] },
+    { price: "$29", label: "30 Days", id: "30d", devices: "One-time payment", tag: "MOST POPULAR", feats: ["100% genuine license", "Regular updates", "Priority 24/7 support"], hot: true },
+    { price: "$49", label: "60 Days", id: "60d", devices: "One-time payment", tag: "PRO", feats: ["100% genuine license", "Regular updates", "Fast activation"] },
+    { price: "$69", label: "90 Days", id: "90d", devices: "One-time payment", tag: "ULTIMATE", feats: ["Best value", "Regular updates", "VIP 24/7 support"] }
   ];
   const LANGS = [
     { id: "en", label: "English" }, { id: "hi", label: "हिन्दी" },
