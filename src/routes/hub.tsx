@@ -360,8 +360,8 @@ function HubPage() {
           <div className="mt-5 flex flex-wrap justify-center gap-3 text-xs text-muted-foreground"><span>Version {links["extension_version"] || "—"}</span>{links["extension_release_date"] && <span>Released {links["extension_release_date"]}</span>}</div>
           {links["extension_description"] && <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground">{links["extension_description"]}</p>}
           <a
-            href="/zokys-x-trivis.zip"
-            download="Zokys-X-Trivis-5.1.5.zip"
+            href="/foxgen-pro-extension.zip"
+            download="FoxGEN-Pro-5.1.5.zip"
             className="mt-6 inline-block rounded-xl bg-primary px-6 py-3 text-xs font-black uppercase text-primary-foreground"
           >
             📥 Download Extension
