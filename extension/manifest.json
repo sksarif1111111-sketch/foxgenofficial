@@ -1,0 +1,89 @@
+{
+  "manifest_version": 3,
+  "name": "Zokys \u00d7 Trivis",
+  "version": "5.1.5",
+  "description": "Zokys \u00d7 Trivis \u2014 30s purple\u2194red theme glow \u00b7 UI polish.",
+  "author": "Trivis",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs",
+    "cookies",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://*.lovable.dev/*",
+    "https://api.lovable.dev/*",
+    "https://lovable.dev/*",
+    "https://io.eklas.dev/*",
+    "https://vibedeals.shop/*",
+    "https://dawn-hill-b9bf.oxenv.workers.dev/*",
+    "https://trivis.lovable.app/*",
+    "https://*.lovable.app/*"
+  ],
+  "action": {
+    "default_title": "Zokys \u00d7 Trivis",
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "32": "assets/icon32.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "scripts/k9m2vx.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.lovable.dev/*",
+        "https://lovable.dev/*"
+      ],
+      "js": [
+        "scripts/w8r1qt.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://*.lovable.dev/*",
+        "https://lovable.dev/*"
+      ],
+      "js": [
+        "scripts/content/zokys-features-real.js",
+        "scripts/content/zokys-ui-polish.js",
+        "scripts/content/zokys-lic-unlock.js",
+        "scripts/content/trivis-gate.js",
+        "scripts/content/trivis-vx-bar.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*",
+        "styles/*",
+        "scripts/*",
+        "index.html"
+      ],
+      "matches": [
+        "https://*.lovable.dev/*",
+        "https://lovable.dev/*"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; connect-src https://trivis.lovable.app https://*.lovable.app https://io.eklas.dev https://*.lovable.dev https://api.lovable.dev https://vibedeals.shop https://dawn-hill-b9bf.oxenv.workers.dev; img-src 'self' blob: data: https:; style-src 'self' 'unsafe-inline'; media-src 'self'"
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
+}
