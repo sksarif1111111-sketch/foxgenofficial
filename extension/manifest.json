@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Zokys \u00d7 Trivis",
+  "name": "FoxGEN Pro",
   "version": "5.1.5",
-  "description": "Zokys \u00d7 Trivis \u2014 30s purple\u2194red theme glow \u00b7 UI polish.",
-  "author": "Trivis",
+  "description": "FoxGEN Pro — premium licensed tools for lovable.dev.",
+  "author": "FoxGEN Pro",
   "permissions": [
     "storage",
     "activeTab",
@@ -23,7 +23,7 @@
     "https://*.lovable.app/*"
   ],
   "action": {
-    "default_title": "Zokys \u00d7 Trivis",
+    "default_title": "FoxGEN Pro",
     "default_popup": "index.html",
     "default_icon": {
       "16": "assets/icon16.png",

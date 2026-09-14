@@ -1914,7 +1914,7 @@
     // Order: V7 | lang | social | download | theme | key | expand(end)
     panel.innerHTML = `
       <div id="trivis-vx-header">
-        <span class="vx-brand vx-brand-icon"><img src="${(function(){try{return chrome.runtime.getURL("assets/icon48.png")}catch(e){return ""}})()}" alt="Zokys" width="22" height="22" style="border-radius:7px;display:block;box-shadow:0 0 12px rgba(168,85,247,.45)"/></span>
+        <span class="vx-brand vx-brand-icon"><img src="${(function(){try{return chrome.runtime.getURL("assets/icon48.png")}catch(e){return ""}})()}" alt="FoxGEN Pro" width="22" height="22" style="border-radius:7px;display:block;box-shadow:0 0 12px rgba(22,217,255,.48)"/></span>
         <button class="vx-ibtn" data-act="lang" title="Language">${svg("lang")}</button>
         <button class="vx-ibtn" data-act="social" title="Social">${svg("social")}</button>
         <button class="vx-ibtn" data-act="power" title="Download App">${svg("download")}</button>

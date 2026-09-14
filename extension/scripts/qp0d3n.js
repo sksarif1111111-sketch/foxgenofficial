@@ -1,5 +1,5 @@
 /**
- * Trivis popup license gate
+ * FoxGEN Pro popup license gate
  * Loads original panel scripts only after valid license.
  */
 (function () {
@@ -55,8 +55,8 @@
       setMsg("Please enter your name");
       return;
     }
-    if (!/^TRIVIS-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(key)) {
-      setMsg("Key format: TRIVIS-XXXX-XXXX");
+    if (!/^[A-Z0-9]{3,16}(?:-[A-Z0-9]{2,16}){1,5}$/i.test(key)) {
+      setMsg("Enter a valid FoxGEN license key");
       return;
     }
     setMsg("Validating…", true);

@@ -1,5 +1,5 @@
 /* ============================================================
-   design by lovable.dev - Refined for Trivis
+   FoxGEN Pro premium interface
    ============================================================ */
 
 * {
@@ -9,24 +9,24 @@
 }
 
 :root {
-  --lovable-bg: #0a0c10;
-  --lovable-bg-elevated: #161b22;
-  --lovable-bg-surface: #1f242c;
-  --lovable-bg-hover: #2d333b;
-  --lovable-border: rgba(255, 255, 255, 0.08);
-  --lovable-text-primary: #f0f6fc;
-  --lovable-text-secondary: #8b949e;
-  --lovable-text-muted: #6e7681;
-  --lovable-accent: #DD0D10;
-  --lovable-accent-soft: rgba(221, 13, 16, 0.14);
+  --lovable-bg: #03050b;
+  --lovable-bg-elevated: #0c1020;
+  --lovable-bg-surface: #12182a;
+  --lovable-bg-hover: #191f36;
+  --lovable-border: rgba(73, 225, 255, 0.16);
+  --lovable-text-primary: #f5fbff;
+  --lovable-text-secondary: #a7b4cc;
+  --lovable-text-muted: #66738b;
+  --lovable-accent: #16d9ff;
+  --lovable-accent-soft: rgba(22, 217, 255, 0.14);
   --lovable-success: #3fb950;
   --lovable-success-soft: rgba(63, 185, 80, 0.12);
   --lovable-danger: #f85149;
   --lovable-danger-soft: rgba(248, 81, 73, 0.12);
   --lovable-radius: 12px;
   --lovable-radius-sm: 9px;
-  --lovable-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.18);
-  --lovable-shadow-shell: 0 20px 60px rgba(0, 0, 0, 0.45);
+  --lovable-shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 12px 30px rgba(0, 0, 0, 0.32);
+  --lovable-shadow-shell: 0 24px 70px rgba(0, 0, 0, 0.55);
   --lovable-transition: 0.2s ease;
 }
 
@@ -40,9 +40,11 @@ body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--lovable-bg);
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 20px 20px;
+    radial-gradient(circle at 12% 0%, rgba(22, 217, 255, 0.12), transparent 34%),
+    radial-gradient(circle at 92% 105%, rgba(235, 36, 255, 0.13), transparent 36%),
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: auto, auto, 24px 24px, 24px 24px;
   color: var(--lovable-text-primary);
   width: 420px;
   height: auto;
@@ -119,8 +121,8 @@ svg {
 
 .sp-header {
   padding: 14px 16px;
-  background: rgba(22, 27, 34, 0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(8, 11, 22, 0.82);
+  backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--lovable-border);
   display: flex;
   align-items: center;
@@ -137,23 +139,29 @@ svg {
 }
 
 .sp-brand-logo {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  border: 1px solid var(--lovable-border);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(22, 217, 255, 0.34);
   flex-shrink: 0;
   object-fit: contain;
   background: var(--lovable-bg-elevated);
+  box-shadow: 0 0 18px rgba(22, 217, 255, 0.2), 0 0 26px rgba(235, 36, 255, 0.1);
 }
 
 .sp-brand-text {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 800;
   color: #fff;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.sp-brand-text strong {
+  color: #ed35ff;
+  font-weight: 900;
 }
 
 .sp-header-actions {
@@ -557,6 +565,21 @@ svg {
   font-size: 11px;
   color: var(--lovable-text-muted);
   white-space: nowrap;
+  letter-spacing: 0;
+}
+
+.trivis-popup-msg::before {
+  content: "LICENSE SECURED";
+  display: inline-flex;
+  margin-bottom: 16px;
+  border: 1px solid rgba(22, 217, 255, 0.25);
+  border-radius: 999px;
+  background: rgba(22, 217, 255, 0.08);
+  color: var(--lovable-accent);
+  padding: 6px 10px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 /* Scrollbar styling */
