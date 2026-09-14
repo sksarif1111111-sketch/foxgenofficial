@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import extensionAsset from "@/assets/foxgen-extension-16.73.zip.asset.json";
 import { completeTask, getHubState, redeemReward, verifyMembership, type HubState } from "@/lib/hub.functions";
 
 export const Route = createFileRoute("/hub")({

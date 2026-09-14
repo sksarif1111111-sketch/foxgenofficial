@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import extensionAsset from "@/assets/foxgen-extension-16.73.zip.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
