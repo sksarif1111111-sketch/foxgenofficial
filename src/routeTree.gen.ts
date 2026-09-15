@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ShopRouteImport } from './routes/shop'
 import { Route as HubAdminRouteImport } from './routes/hub-admin'
 import { Route as HubRouteImport } from './routes/hub'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -18,6 +19,11 @@ import { Route as ApiPublicTelegramAvatarRouteImport } from './routes/api/public
 import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HubAdminRoute = HubAdminRouteImport.update({
   id: '/hub-admin',
   path: '/hub-admin',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/shop': typeof ShopRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/shop': typeof ShopRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/shop': typeof ShopRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/hub'
     | '/hub-admin'
+    | '/shop'
     | '/api/public/ext/core'
     | '/api/public/license/verify'
     | '/api/public/telegram/avatar'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/hub'
     | '/hub-admin'
+    | '/shop'
     | '/api/public/ext/core'
     | '/api/public/license/verify'
     | '/api/public/telegram/avatar'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/hub'
     | '/hub-admin'
+    | '/shop'
     | '/api/public/ext/core'
     | '/api/public/license/verify'
     | '/api/public/telegram/avatar'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   HubRoute: typeof HubRoute
   HubAdminRoute: typeof HubAdminRoute
+  ShopRoute: typeof ShopRoute
   ApiPublicExtCoreRoute: typeof ApiPublicExtCoreRoute
   ApiPublicLicenseVerifyRoute: typeof ApiPublicLicenseVerifyRoute
   ApiPublicTelegramAvatarRoute: typeof ApiPublicTelegramAvatarRoute
@@ -137,6 +150,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hub-admin': {
       id: '/hub-admin'
       path: '/hub-admin'
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   HubRoute: HubRoute,
   HubAdminRoute: HubAdminRoute,
+  ShopRoute: ShopRoute,
   ApiPublicExtCoreRoute: ApiPublicExtCoreRoute,
   ApiPublicLicenseVerifyRoute: ApiPublicLicenseVerifyRoute,
   ApiPublicTelegramAvatarRoute: ApiPublicTelegramAvatarRoute,

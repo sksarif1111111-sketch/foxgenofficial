@@ -65,7 +65,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const update = (await request.json()) as {
           update_id?: number;
-          message?: { chat: { id: number }; from?: TgUser; text?: string };
+          message?: {
+            chat: { id: number };
+            from?: TgUser;
+            text?: string;
+            successful_payment?: {
+              currency: string;
+              total_amount: number;
+              invoice_payload: string;
+              telegram_payment_charge_id: string;
+            };
+          };
+          pre_checkout_query?: { id: string; from: TgUser; total_amount: number; invoice_payload: string };
           callback_query?: {
             id: string;
             from: TgUser;
