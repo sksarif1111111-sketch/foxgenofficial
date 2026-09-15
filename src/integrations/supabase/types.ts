@@ -998,7 +998,9 @@ export type Database = {
           id: string
           task_id: string
           user_id: string
+          verification_method: string
           verification_status: string
+          verified_at: string | null
         }
         Insert: {
           completed?: boolean
@@ -1006,7 +1008,9 @@ export type Database = {
           id?: string
           task_id: string
           user_id: string
+          verification_method?: string
           verification_status?: string
+          verified_at?: string | null
         }
         Update: {
           completed?: boolean
@@ -1014,7 +1018,9 @@ export type Database = {
           id?: string
           task_id?: string
           user_id?: string
+          verification_method?: string
           verification_status?: string
+          verified_at?: string | null
         }
         Relationships: [
           {
