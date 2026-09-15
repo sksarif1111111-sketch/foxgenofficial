@@ -166,7 +166,6 @@ export const redeemReward = createServerFn({ method: "POST" })
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("insufficient_credits")) throw new Error("Not enough credits yet.");
       if (msg.includes("account_not_active")) throw new Error("Complete every required task first.");
-      if (msg.includes("inventory_empty")) throw new Error("This license duration is temporarily out of stock.");
       throw new Error("This reward is unavailable right now.");
     }
   });

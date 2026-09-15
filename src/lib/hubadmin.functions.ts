@@ -13,28 +13,23 @@ export type AdminOverview = {
   redemptions: number;
   totalProducts: number;
   activeProducts: number;
-  availableLicenses: number;
-  inventory: Array<{ duration_days: number; available: number; redeemed: number; total: number }>;
+  generatedLicenses: number;
+  generatedByDuration: Array<{ duration_days: number; total: number }>;
 };
 
 export const adminOverview = createServerFn({ method: "POST" }).handler(async (): Promise<AdminOverview> => {
   const { db } = await import("@/lib/hub.server");
-  const [profiles, refs, txs, redemptions, inv] = await Promise.all([
+  const [profiles, refs, txs, redemptions] = await Promise.all([
     db.from("profiles").select("status, created_at"),
     db.from("referrals").select("status"),
     db.from("credit_transactions").select("amount"),
-    db.from("license_redemptions").select("id"),
-    db.from("license_inventory").select("duration_days, status"),
+    db.from("license_redemptions").select("id, duration_days"),
   ]);
   const { data: productRows } = await db.from("products").select("status");
   const today = new Date().toISOString().slice(0, 10);
-  const buckets = new Map<number, { available: number; redeemed: number; total: number }>();
-  for (const row of inv.data ?? []) {
-    const b = buckets.get(row.duration_days) ?? { available: 0, redeemed: 0, total: 0 };
-    b.total += 1;
-    if (row.status === "available") b.available += 1;
-    if (row.status === "redeemed") b.redeemed += 1;
-    buckets.set(row.duration_days, b);
+  const buckets = new Map<number, number>();
+  for (const row of redemptions.data ?? []) {
+    buckets.set(row.duration_days, (buckets.get(row.duration_days) ?? 0) + 1);
   }
   return {
     totalUsers: (profiles.data ?? []).length,
@@ -48,10 +43,10 @@ export const adminOverview = createServerFn({ method: "POST" }).handler(async ()
     redemptions: (redemptions.data ?? []).length,
     totalProducts: (productRows ?? []).length,
     activeProducts: (productRows ?? []).filter((p) => p.status === "active").length,
-    availableLicenses: (inv.data ?? []).filter((i) => i.status === "available").length,
-    inventory: [...buckets.entries()]
+    generatedLicenses: (redemptions.data ?? []).length,
+    generatedByDuration: [...buckets.entries()]
       .sort((a, b) => a[0] - b[0])
-      .map(([duration_days, v]) => ({ duration_days, ...v })),
+      .map(([duration_days, total]) => ({ duration_days, total })),
   };
 });
 
@@ -501,16 +496,12 @@ export const adminRejectReferral = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Every license duration that exists in inventory or rewards, for dynamic tabs. */
+/** Every configured reward duration, for dynamic reward controls. */
 export const adminLicenseDurations = createServerFn({ method: "POST" }).handler(async () => {
   const { db } = await import("@/lib/hub.server");
-  const [inv, rewards] = await Promise.all([
-    db.from("license_inventory").select("duration_days"),
-    db.from("rewards").select("duration_days"),
-  ]);
+  const { data: rewards } = await db.from("rewards").select("duration_days");
   const set = new Set<number>();
-  for (const r of inv.data ?? []) set.add(r.duration_days);
-  for (const r of rewards.data ?? []) set.add(r.duration_days);
+  for (const r of rewards ?? []) set.add(r.duration_days);
   return [...set].sort((a, b) => a - b);
 });
 

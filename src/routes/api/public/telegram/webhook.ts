@@ -904,8 +904,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const rows: Keyboard = [];
             (rewards ?? []).forEach((r, i) => {
               const dot = dots[i] ?? "🎁";
-              body += `${dot} ${esc(r.name)} — ${E("credits", "💰")} ${r.credit_cost} Credits\n`;
-              rows.push([{ text: `${dot} ${r.duration_days} Days · ${r.credit_cost} Credits`, callback_data: `redeem:${r.id}` }]);
+              body += `${dot} ${esc(r.name)} — ${E("credits", "💰")} ${r.credit_cost} Credits · instant key\n`;
+              rows.push([{ text: `${dot} Generate ${r.duration_days}d Key · ${r.credit_cost} Credits`, callback_data: `redeem:${r.id}` }]);
             });
             body += `${LINE}\nYour Credits: <b>${fresh?.credits_available ?? 0}</b>`;
             rows.push([{ text: `${E("invite", "👥")} Earn More Credits`, callback_data: "invite" }]);
@@ -1051,7 +1051,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 .maybeSingle();
               const detail = saved ?? { id: "", ...row };
               await send(
-                `${E("success", "✅")} <b>License redeemed successfully!</b>\n${LINE}\n` + (await licenseBody(detail)),
+                `${E("success", "✅")} <b>Your license was generated instantly!</b>\n${LINE}\n` + (await licenseBody(detail)),
                 detail.id ? licenseKeyboard(detail.id) : [[{ text: "📘 How to Use", callback_data: "guide:1" }], backRow("rewards")],
               );
               await render(`${E("rewards", "🎁")} <b>FREE LICENSE REWARDS</b>\n${LINE}\nYour license details were sent above.`, [
