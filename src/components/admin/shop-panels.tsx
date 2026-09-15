@@ -71,6 +71,8 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
   const fInfo = useServerFn(shopRequestInfo);
   const fFulfill = useServerFn(shopAddFulfillment);
   const fSend = useServerFn(shopSendDelivery);
+  const fDraftEmail = useServerFn(shopDraftEmail);
+  const fSaveEmail = useServerFn(shopSaveEmailDraft);
 
   const [summary, setSummary] = useState<BuyingSummary | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -81,6 +83,9 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
   const [reason, setReason] = useState("");
   const [material, setMaterial] = useState("");
   const [kind, setKind] = useState<"link" | "code" | "instructions">("link");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [drafting, setDrafting] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
