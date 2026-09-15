@@ -352,6 +352,45 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true });
         }
 
+        // ---------- delivery email capture for a paid Telegram order ----------
+        if (text && !text.startsWith("/") && text.includes("@")) {
+          const { data: pending } = await db
+            .from("shop_orders")
+            .select("id, order_number")
+            .eq("profile_id", profile.id)
+            .eq("channel", "telegram")
+            .eq("status", "awaiting_email")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (pending) {
+            const { setOrderEmails, reviewMinutes } = await import("@/lib/shop.server");
+            try {
+              const result = await setOrderEmails(pending.id, text);
+              await db
+                .from("shop_orders")
+                .update({ status: "awaiting_fulfillment", updated_at: new Date().toISOString() })
+                .eq("id", pending.id)
+                .eq("status", "under_review");
+              const minutes = await reviewMinutes();
+              await send(
+                `Please wait. My owner is checking your payment.\n` +
+                  `Your delivery email: ${esc(result.emails.join(", "))}\n` +
+                  `Estimated review time: about ${minutes} minutes.\n` +
+                  `Order ID: ${esc(result.order_number)}\n` +
+                  `You will receive an update when your order is confirmed.`,
+                [[{ text: "🧾 My Orders", callback_data: "myorders" }], [{ text: `${E("back", "⬅️")} Home`, callback_data: "menu" }]],
+              );
+            } catch (error) {
+              await send(
+                `${E("error", "⚠️")} ${esc(error instanceof Error ? error.message : "That email could not be saved.")}\nPlease send the email address again.`,
+                [],
+              );
+            }
+            return Response.json({ ok: true });
+          }
+        }
+
         const COMMAND_ALIASES: Record<string, string> = {
           home: "menu",
           start: "menu",
