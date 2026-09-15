@@ -105,6 +105,58 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
         }
 
+        // ---------- Telegram Stars: pre-checkout validation ----------
+        if (update.pre_checkout_query) {
+          const q = update.pre_checkout_query;
+          const { data: order } = await db
+            .from("shop_orders")
+            .select("id, status, stars_total")
+            .eq("id", q.invoice_payload)
+            .maybeSingle();
+          const valid =
+            !!order && order.status === "awaiting_payment" && Number(order.stars_total) === Number(q.total_amount);
+          await tg("answerPreCheckoutQuery", {
+            pre_checkout_query_id: q.id,
+            ok: valid,
+            ...(valid ? {} : { error_message: "This order is no longer available. Please open the Shop and start again." }),
+          });
+          return Response.json({ ok: true });
+        }
+
+        // ---------- Telegram Stars: confirmed payment ----------
+        if (update.message?.successful_payment) {
+          const sp = update.message.successful_payment;
+          const now = new Date().toISOString();
+          const { data: updated } = await db
+            .from("shop_orders")
+            .update({
+              status: "awaiting_email",
+              stock_consumed: true,
+              telegram_charge_id: sp.telegram_payment_charge_id,
+              submitted_at: now,
+              confirmed_at: now,
+              updated_at: now,
+            })
+            .eq("id", sp.invoice_payload)
+            .eq("status", "awaiting_payment")
+            .select("order_number")
+            .maybeSingle();
+          await db.from("shop_order_events").insert({
+            order_id: sp.invoice_payload,
+            event: "stars_payment_received",
+            actor: "telegram",
+            details: sp.telegram_payment_charge_id,
+          });
+          await tg("sendMessage", {
+            chat_id: update.message.chat.id,
+            text:
+              `⭐ Payment received for order <b>${updated?.order_number ?? ""}</b>.\n\n` +
+              `Please enter the email address where you want to receive your activation link or product access.`,
+            parse_mode: "HTML",
+          });
+          return Response.json({ ok: true });
+        }
+
         const from = update.message?.from ?? update.callback_query?.from;
         const chatId = update.message?.chat.id ?? update.callback_query?.message?.chat.id;
         if (!from || !chatId) return Response.json({ ok: true });
