@@ -157,16 +157,17 @@ export const verifyMembership = createServerFn({ method: "POST" })
 export const redeemReward = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => tokenSchema.extend({ rewardId: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
-    const { profileByToken, redeem } = await import("@/lib/hub.server");
+    const { acquireLock, profileByToken, redeem } = await import("@/lib/hub.server");
     const profile = await profileByToken(data.token);
     if (!profile) throw new Error("Invalid access link.");
+    const locked = await acquireLock(`${profile.id}:redeem:${data.rewardId}`);
+    if (!locked) throw new Error("A license is already being generated. Please wait a moment.");
     try {
       return await redeem(profile.id, data.rewardId);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("insufficient_credits")) throw new Error("Not enough credits yet.");
       if (msg.includes("account_not_active")) throw new Error("Complete every required task first.");
-      if (msg.includes("inventory_empty")) throw new Error("This license duration is temporarily out of stock.");
       throw new Error("This reward is unavailable right now.");
     }
   });

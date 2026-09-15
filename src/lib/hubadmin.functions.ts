@@ -13,28 +13,23 @@ export type AdminOverview = {
   redemptions: number;
   totalProducts: number;
   activeProducts: number;
-  availableLicenses: number;
-  inventory: Array<{ duration_days: number; available: number; redeemed: number; total: number }>;
+  generatedLicenses: number;
+  generatedByDuration: Array<{ duration_days: number; total: number }>;
 };
 
 export const adminOverview = createServerFn({ method: "POST" }).handler(async (): Promise<AdminOverview> => {
   const { db } = await import("@/lib/hub.server");
-  const [profiles, refs, txs, redemptions, inv] = await Promise.all([
+  const [profiles, refs, txs, redemptions] = await Promise.all([
     db.from("profiles").select("status, created_at"),
     db.from("referrals").select("status"),
     db.from("credit_transactions").select("amount"),
-    db.from("license_redemptions").select("id"),
-    db.from("license_inventory").select("duration_days, status"),
+    db.from("license_redemptions").select("id, duration_days"),
   ]);
   const { data: productRows } = await db.from("products").select("status");
   const today = new Date().toISOString().slice(0, 10);
-  const buckets = new Map<number, { available: number; redeemed: number; total: number }>();
-  for (const row of inv.data ?? []) {
-    const b = buckets.get(row.duration_days) ?? { available: 0, redeemed: 0, total: 0 };
-    b.total += 1;
-    if (row.status === "available") b.available += 1;
-    if (row.status === "redeemed") b.redeemed += 1;
-    buckets.set(row.duration_days, b);
+  const buckets = new Map<number, number>();
+  for (const row of redemptions.data ?? []) {
+    buckets.set(row.duration_days, (buckets.get(row.duration_days) ?? 0) + 1);
   }
   return {
     totalUsers: (profiles.data ?? []).length,
@@ -48,10 +43,10 @@ export const adminOverview = createServerFn({ method: "POST" }).handler(async ()
     redemptions: (redemptions.data ?? []).length,
     totalProducts: (productRows ?? []).length,
     activeProducts: (productRows ?? []).filter((p) => p.status === "active").length,
-    availableLicenses: (inv.data ?? []).filter((i) => i.status === "available").length,
-    inventory: [...buckets.entries()]
+    generatedLicenses: (redemptions.data ?? []).length,
+    generatedByDuration: [...buckets.entries()]
       .sort((a, b) => a[0] - b[0])
-      .map(([duration_days, v]) => ({ duration_days, ...v })),
+      .map(([duration_days, total]) => ({ duration_days, total })),
   };
 });
 
@@ -268,88 +263,6 @@ export const adminResetUserTasks = createServerFn({ method: "POST" })
   });
 
 
-export const adminImportLicenses = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
-    z.object({ keys: z.string().max(200000), durationDays: z.number().int().min(1).max(3650) }).parse(input),
-  )
-  .handler(async ({ data }) => {
-    const { db } = await import("@/lib/hub.server");
-    const rawLines = data.keys.split(/\r?\n/).map((line) => line.trim().toUpperCase()).filter(Boolean);
-    const uniqueLines = [...new Set(rawLines)];
-    const lines = uniqueLines.filter((key) => /^[A-Z0-9][A-Z0-9-]{5,127}$/.test(key));
-    const invalid = uniqueLines.length - lines.length;
-    const duplicateInput = rawLines.length - uniqueLines.length;
-    let imported = 0;
-    let duplicates = duplicateInput;
-    for (const key of lines) {
-      const { error } = await db
-        .from("license_inventory")
-        .insert({ license_key: key, duration_days: data.durationDays, status: "available" });
-      if (error) duplicates += 1;
-      else {
-        imported += 1;
-        await db
-          .from("licenses")
-          .insert({
-            license_key: key,
-            plan_days: data.durationDays,
-            duration_seconds: data.durationDays * 86400,
-            status: "active",
-            note: "Rewards Hub inventory",
-          });
-      }
-    }
-    return { imported, duplicates, invalid, total: rawLines.length };
-  });
-
-export const adminInventory = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
-    z.object({
-      search: z.string().max(150).optional(),
-      status: z.enum(["all", "available", "redeemed", "disabled", "reserved"]).optional(),
-      durationDays: z.number().int().min(0).max(3650).optional(),
-    }).parse(input),
-  )
-  .handler(async ({ data }) => {
-    const { db } = await import("@/lib/hub.server");
-    let query = db
-      .from("license_inventory")
-      .select("id, license_key, duration_days, status, redeemed_by, redeemed_at, added_at")
-      .order("added_at", { ascending: false })
-      .limit(1000);
-    const search = (data.search ?? "").trim();
-    if (search) query = query.ilike("license_key", `%${search}%`);
-    if (data.status && data.status !== "all") query = query.eq("status", data.status);
-    if (data.durationDays) query = query.eq("duration_days", data.durationDays);
-    const { data: rows } = await query;
-    return rows ?? [];
-  });
-
-export const adminSetInventoryStatus = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
-    z.object({ id: z.string().uuid(), status: z.enum(["available", "disabled", "reserved"]) }).parse(input),
-  )
-  .handler(async ({ data }) => {
-    const { db } = await import("@/lib/hub.server");
-    const { data: row } = await db.from("license_inventory").select("status").eq("id", data.id).maybeSingle();
-    if (!row) throw new Error("License not found.");
-    if (row.status === "redeemed") throw new Error("Redeemed licenses cannot be changed.");
-    await db.from("license_inventory").update({ status: data.status }).eq("id", data.id);
-    return { ok: true };
-  });
-
-export const adminDeleteInventoryLicense = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
-  .handler(async ({ data }) => {
-    const { db } = await import("@/lib/hub.server");
-    const { data: row } = await db.from("license_inventory").select("license_key, status").eq("id", data.id).maybeSingle();
-    if (!row) throw new Error("License not found.");
-    if (row.status === "redeemed") throw new Error("Redeemed licenses cannot be deleted.");
-    await db.from("license_inventory").delete().eq("id", data.id);
-    await db.from("licenses").delete().eq("license_key", row.license_key).is("activated_at", null);
-    return { ok: true };
-  });
-
 export const adminRedemptions = createServerFn({ method: "POST" }).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db
@@ -501,16 +414,12 @@ export const adminRejectReferral = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Every license duration that exists in inventory or rewards, for dynamic tabs. */
+/** Every configured reward duration, for dynamic reward controls. */
 export const adminLicenseDurations = createServerFn({ method: "POST" }).handler(async () => {
   const { db } = await import("@/lib/hub.server");
-  const [inv, rewards] = await Promise.all([
-    db.from("license_inventory").select("duration_days"),
-    db.from("rewards").select("duration_days"),
-  ]);
+  const { data: rewards } = await db.from("rewards").select("duration_days");
   const set = new Set<number>();
-  for (const r of inv.data ?? []) set.add(r.duration_days);
-  for (const r of rewards.data ?? []) set.add(r.duration_days);
+  for (const r of rewards ?? []) set.add(r.duration_days);
   return [...set].sort((a, b) => a - b);
 });
 
