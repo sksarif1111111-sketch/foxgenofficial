@@ -188,6 +188,14 @@ function HubAdmin() {
   const fRejectReferral = useServerFn(adminRejectReferral);
   const fLogs = useServerFn(adminLogs);
   const fClearLogs = useServerFn(adminClearLogs);
+  const fGuidePages = useServerFn(adminGuidePages);
+  const fSaveGuidePage = useServerFn(adminSaveGuidePage);
+  const fDeleteGuidePage = useServerFn(adminDeleteGuidePage);
+  const [guidePages, setGuidePages] = useState<
+    Array<{ id: string; heading: string; body: string; display_order: number; published: boolean; updated_at: string }>
+  >([]);
+  const [newGuidePage, setNewGuidePage] = useState({ heading: "", body: "", display_order: 10 });
+  const [guidePreview, setGuidePreview] = useState(false);
 
   const [section, setSection] = useState<Section>("Overview");
   const [flash, setFlash] = useState<string | null>(null);
