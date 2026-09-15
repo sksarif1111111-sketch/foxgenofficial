@@ -354,6 +354,36 @@ export type Database = {
           },
         ]
       }
+      extension_guide_pages: {
+        Row: {
+          body: string
+          created_at: string
+          display_order: number
+          heading: string
+          id: string
+          published: boolean
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          display_order?: number
+          heading: string
+          id?: string
+          published?: boolean
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          display_order?: number
+          heading?: string
+          id?: string
+          published?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fraud_flags: {
         Row: {
           created_at: string
