@@ -40,7 +40,7 @@ export const Route = createFileRoute("/hub-admin")({
       { title: "Rewards Hub Admin — FoxGEN PRO" },
       {
         name: "description",
-          "Manage members, referrals, credits, generated licenses, tasks, rewards and the Telegram bot.",
+        content: "Manage members, referrals, credits, generated licenses, tasks, rewards and the Telegram bot.",
       },
       { property: "og:title", content: "Rewards Hub Admin — FoxGEN PRO" },
       { property: "og:description", content: "Full control panel for the FoxGEN PRO Rewards Hub." },
