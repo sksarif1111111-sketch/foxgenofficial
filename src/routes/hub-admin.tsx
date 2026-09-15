@@ -725,6 +725,160 @@ function HubAdmin() {
         </section>
       )}
 
+      {section === "Instructions" && (
+        <section className="space-y-5">
+          <div className="rounded-2xl border border-border bg-card/60 p-5">
+            <p className="font-bold">📘 Extension Instructions</p>
+            <p className="text-xs text-muted-foreground">
+              The setup &amp; usage guide shown in the bot after a license redemption. Edits reach new and existing
+              licenses immediately and never affect license validity or credits.
+            </p>
+            {!settings["tutorial_url"] && (
+              <p className="mt-2 text-xs text-amber-500">
+                ⚠️ No tutorial video URL configured yet — add <b>tutorial_url</b> in the Extension tab. The written guide
+                still works.
+              </p>
+            )}
+          </div>
+
+          <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Guide title
+            <input
+              defaultValue={settings["guide_title"] ?? "Lovable Extension — Setup & Usage Guide"}
+              onBlur={async (e) => {
+                await fSaveSettings({ data: { values: { guide_title: e.target.value } } });
+                setFlash("💾 Saved");
+              }}
+              className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-normal normal-case text-foreground"
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={() => setGuidePreview((v) => !v)}
+            className="rounded-xl border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider"
+          >
+            {guidePreview ? "Close preview" : "Preview guide"}
+          </button>
+
+          {guidePreview && (
+            <div className="rounded-2xl border border-border bg-background p-5 text-sm">
+              <p className="font-bold">{settings["guide_title"] ?? "Lovable Extension — Setup & Usage Guide"}</p>
+              {guidePages
+                .filter((p) => p.published)
+                .map((p, i) => (
+                  <div key={p.id} className="mt-4">
+                    <p className="font-semibold">{p.heading}</p>
+                    <p className="whitespace-pre-wrap text-muted-foreground">{p.body}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Page {i + 1} of {guidePages.filter((x) => x.published).length}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {guidePages.map((p) => (
+              <div key={p.id} className="rounded-2xl border border-border bg-card/60 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    defaultValue={p.heading}
+                    onBlur={async (e) => {
+                      await fSaveGuidePage({
+                        data: { id: p.id, heading: e.target.value, body: p.body, display_order: p.display_order, published: p.published },
+                      });
+                      setFlash("💾 Saved");
+                      setGuidePages(await fGuidePages({ data: undefined }));
+                    }}
+                    className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold"
+                  />
+                  <input
+                    type="number"
+                    defaultValue={p.display_order}
+                    onBlur={async (e) => {
+                      await fSaveGuidePage({
+                        data: { id: p.id, heading: p.heading, body: p.body, display_order: Number(e.target.value) || 0, published: p.published },
+                      });
+                      setGuidePages(await fGuidePages({ data: undefined }));
+                    }}
+                    className="w-20 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await fSaveGuidePage({
+                        data: { id: p.id, heading: p.heading, body: p.body, display_order: p.display_order, published: !p.published },
+                      });
+                      setGuidePages(await fGuidePages({ data: undefined }));
+                    }}
+                    className="rounded-xl border border-border px-3 py-2 text-xs font-bold uppercase"
+                  >
+                    {p.published ? "Published" : "Draft"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await fDeleteGuidePage({ data: { id: p.id } });
+                      setGuidePages(await fGuidePages({ data: undefined }));
+                    }}
+                    className="rounded-xl border border-destructive px-3 py-2 text-xs font-bold uppercase text-destructive"
+                  >
+                    Delete
+                  </button>
+                </div>
+                <textarea
+                  defaultValue={p.body}
+                  rows={6}
+                  onBlur={async (e) => {
+                    await fSaveGuidePage({
+                      data: { id: p.id, heading: p.heading, body: e.target.value, display_order: p.display_order, published: p.published },
+                    });
+                    setFlash("💾 Saved");
+                    setGuidePages(await fGuidePages({ data: undefined }));
+                  }}
+                  className="mt-3 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">Last updated: {new Date(p.updated_at).toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-dashed border-border p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Add a section</p>
+            <input
+              placeholder="Heading"
+              value={newGuidePage.heading}
+              onChange={(e) => setNewGuidePage({ ...newGuidePage, heading: e.target.value })}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <textarea
+              placeholder="Section text"
+              rows={4}
+              value={newGuidePage.body}
+              onChange={(e) => setNewGuidePage({ ...newGuidePage, body: e.target.value })}
+              className="mt-2 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              onClick={async () => {
+                if (!newGuidePage.heading.trim() || !newGuidePage.body.trim()) {
+                  setFlash("Heading and text are required.");
+                  return;
+                }
+                await fSaveGuidePage({ data: { ...newGuidePage, published: true } });
+                setNewGuidePage({ heading: "", body: "", display_order: 10 });
+                setGuidePages(await fGuidePages({ data: undefined }));
+                setFlash("💾 Section added");
+              }}
+              className="mt-3 rounded-xl bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground"
+            >
+              Add section
+            </button>
+          </div>
+        </section>
+      )}
+
       {section === "Branding" && (
         <section className="space-y-5">
           <div className="rounded-2xl border border-border bg-card/60 p-5">
