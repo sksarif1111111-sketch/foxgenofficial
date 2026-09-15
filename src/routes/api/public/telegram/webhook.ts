@@ -473,66 +473,146 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true });
           }
 
-          // ---------- shop ----------
-          if (action === "shop") {
-            const { data: products } = await db
-              .from("products")
-              .select("id, name, short_name, description, price, currency, is_free, status, display_order")
-              .eq("status", "active")
-              .order("display_order", { ascending: true })
-              .limit(20);
+          // ---------- shop (database-driven, Telegram Stars channel) ----------
+          if (action === "shop" || action.startsWith("shop:")) {
+            const { shopProductRows } = await import("@/lib/shop.server");
+            const page = Math.max(1, Number(action.split(":")[1] ?? 1) || 1);
+            const perPage = 5;
+            const all = await shopProductRows("telegram");
+            const totalPages = Math.max(1, Math.ceil(all.length / perPage));
+            const current = Math.min(page, totalPages);
+            const slice = all.slice((current - 1) * perPage, current * perPage);
             const rows: Keyboard = [];
-            let body = `${E("shop", "🛍️")} <b>SHOP</b>\n${LINE}\n`;
-            if (products && products.length > 0) {
-              for (const p of products) {
-                body += `${p.is_free ? "🎁" : "💎"} <b>${esc(p.short_name || p.name)}</b> — ${p.is_free ? "FREE" : `${esc(p.currency)} ${p.price}`}\n`;
-                rows.push([
-                  { text: `${p.is_free ? "🎁" : "💎"} ${(p.short_name || p.name).slice(0, 28)}`, callback_data: `prod:${p.id}` },
-                ]);
-              }
-              body += `${LINE}\nTap a product for details.`;
-            } else {
-              body +=
-                (pricingMessage ? `${pricingMessage}\n` : `💎 14 Days – $15\n⭐ 30 Days (Most Popular) – $29\n💎 60 Days – $49\n👑 90 Days – $69\n`) +
-                `${LINE}\n📩 Choose a plan and contact us for instant activation.`;
+            let body =
+              `${E("brand", "🦊")} <b>${esc(storeName.toUpperCase())}</b>\n` +
+              `Choose a product to view its details.\n` +
+              `📄 Page ${current} of ${totalPages}\n${LINE}\n`;
+            if (slice.length === 0) {
+              body += `No products are published yet.\n`;
             }
-            rows.push([{ text: "🌐 Pricing & Access", url: pricingUrl }]);
-            rows.push([{ text: `${E("support", "💬")} Buy / Contact`, url: supportUrl }]);
+            for (const p of slice) {
+              body += `${p.emoji ?? "💎"} <b>${esc(p.name)}</b> — ${esc(p.price_label)} · ${esc(p.stock_label)}\n`;
+              rows.push([{ text: `${p.emoji ?? "💎"} ${p.name.slice(0, 30)}`, callback_data: `prod:${p.id}` }]);
+            }
+            const nav: Btn[] = [];
+            if (current > 1) nav.push({ text: "◀️ Previous", callback_data: `shop:${current - 1}` });
+            if (current < totalPages) nav.push({ text: "Next ▶️", callback_data: `shop:${current + 1}` });
+            if (nav.length) rows.push(nav);
+            rows.push([
+              { text: "🔄 Refresh", callback_data: `shop:${current}` },
+              { text: "🧾 My Orders", callback_data: "myorders" },
+            ]);
+            rows.push([{ text: `${E("support", "💬")} Support`, url: supportUrl }]);
             rows.push(backRow());
             await render(body, rows);
             return Response.json({ ok: true });
           }
 
           if (action.startsWith("prod:")) {
-            const productId = action.slice(5);
-            const [{ data: product }, { data: prices }] = await Promise.all([
-              db.from("products").select("*").eq("id", productId).maybeSingle(),
-              db
-                .from("product_prices")
-                .select("label, amount, currency, duration_days, enabled, display_order")
-                .eq("product_id", productId)
-                .eq("enabled", true)
-                .order("display_order", { ascending: true }),
-            ]);
+            const { shopProductById, maxUnits } = await import("@/lib/shop.server");
+            const product = await shopProductById(action.slice(5), "telegram");
             if (!product) {
               await render(`${E("error", "⚠️")} This product is no longer available.`, [backRow("shop")]);
               return Response.json({ ok: true });
             }
             let body =
-              `${product.is_free ? "🎁" : "💎"} <b>${esc(product.name)}</b>\n${LINE}\n` +
+              `${product.emoji ?? "💎"} <b>${esc(product.name)}</b>\n${LINE}\n` +
               (product.description ? `${esc(product.description)}\n\n` : "");
-            if (prices && prices.length > 0) {
-              for (const p of prices) body += `• ${esc(p.label)} — <b>${esc(p.currency)} ${p.amount}</b>\n`;
-            } else {
-              body += `💰 Price: <b>${product.is_free ? "FREE" : `${esc(product.currency)} ${product.price}`}</b>\n`;
+            for (const feature of product.features) body += `✅ ${esc(feature)}\n`;
+            if (product.duration_label) body += `\n⏳ Duration: <b>${esc(product.duration_label)}</b>\n`;
+            if (product.credits_per_interval !== null) {
+              body += `💠 Includes ${product.credits_per_interval} credits every ${esc(product.renewal_interval ?? "month")}.\n`;
             }
-            body += `${LINE}\n✅ Genuine license · ✅ Fast activation · ✅ 24/7 support`;
+            body += `\n💰 Price: <b>${esc(product.price_label)}</b>\n📦 ${esc(product.stock_label)}\n`;
+            body += `📧 Access details are emailed to you after your payment is confirmed.\n`;
+            if (product.terms) body += `\n<i>${esc(product.terms)}</i>\n`;
             const rows: Keyboard = [];
-            if (product.tutorial_url) rows.push([{ text: "▶️ Tutorial", url: product.tutorial_url }]);
-            rows.push([{ text: "🌐 Get This Plan", url: pricingUrl }]);
-            rows.push([{ text: `${E("support", "💬")} Contact to Buy`, url: supportUrl }]);
+            if (product.purchasable && maxUnits(product) > 0) {
+              rows.push([{ text: "🛒 Buy Now", callback_data: `qty:${product.id}` }]);
+            } else if (product.price_stars === null) {
+              body += `\n<i>Telegram purchase is not enabled for this product yet. Details only.</i>\n`;
+            }
+            rows.push([{ text: `${E("support", "💬")} Support`, url: supportUrl }]);
             rows.push(backRow("shop"));
             await render(body, rows);
+            return Response.json({ ok: true });
+          }
+
+          if (action.startsWith("qty:")) {
+            const { shopProductById, maxUnits } = await import("@/lib/shop.server");
+            const product = await shopProductById(action.slice(4), "telegram");
+            if (!product || !product.purchasable) {
+              await render(`${E("error", "⚠️")} This product cannot be purchased right now.`, [backRow("shop")]);
+              return Response.json({ ok: true });
+            }
+            const limit = maxUnits(product);
+            const rows: Keyboard = [];
+            const choices: Btn[] = [];
+            for (let n = 1; n <= Math.min(4, limit); n += 1) {
+              choices.push({ text: `${n}x`, callback_data: `buy:${product.id}:${n}` });
+            }
+            rows.push(choices);
+            rows.push([{ text: `${E("back", "⬅️")} Back`, callback_data: `prod:${product.id}` }]);
+            await render(
+              `🛒 <b>${esc(product.name)}</b>\n${LINE}\nHow many units would you like?\nMaximum for this product: <b>${limit}</b>\nUnit price: <b>${esc(product.price_label)}</b>`,
+              rows,
+            );
+            return Response.json({ ok: true });
+          }
+
+          if (action.startsWith("buy:")) {
+            const [, productId, qtyRaw] = action.split(":");
+            const quantity = Math.max(1, Number(qtyRaw) || 1);
+            const { createOrder, shopProductById } = await import("@/lib/shop.server");
+            const product = await shopProductById(productId ?? "", "telegram");
+            if (!product || !product.price_stars) {
+              await render(`${E("error", "⚠️")} Telegram purchase is not configured for this product.`, [backRow("shop")]);
+              return Response.json({ ok: true });
+            }
+            try {
+              const order = await createOrder({
+                channel: "telegram",
+                profileId: profile.id,
+                telegramUserId: from.id,
+                customerName: [from.first_name, from.last_name].filter(Boolean).join(" ") || null,
+                productId: product.id,
+                quantity,
+              });
+              await tg("sendInvoice", {
+                chat_id: chatId,
+                title: product.name.slice(0, 32),
+                description: (product.short_description ?? product.name).slice(0, 255),
+                payload: order.id,
+                currency: "XTR",
+                prices: [{ label: `${product.name} x${quantity}`.slice(0, 32), amount: product.price_stars * quantity }],
+              });
+              await render(
+                `🧾 Order <b>${esc(String(order.order_number))}</b> created.\n${LINE}\n${esc(product.name)} x${quantity}\nTotal: <b>${product.price_stars * quantity} ⭐</b>\n\nComplete the Telegram Stars invoice sent below.`,
+                [[{ text: "🧾 My Orders", callback_data: "myorders" }], backRow("shop")],
+              );
+            } catch (error) {
+              await render(
+                `${E("error", "⚠️")} ${esc(error instanceof Error ? error.message : "Could not create this order.")}`,
+                [backRow("shop")],
+              );
+            }
+            return Response.json({ ok: true });
+          }
+
+          if (action === "myorders") {
+            const { data: orders } = await db
+              .from("shop_orders")
+              .select("order_number, status, currency, total, stars_total, delivery_emails, created_at")
+              .eq("profile_id", profile.id)
+              .order("created_at", { ascending: false })
+              .limit(10);
+            let body = `🧾 <b>MY ORDERS</b>\n${LINE}\n`;
+            if (!orders || orders.length === 0) body += "You have no orders yet.\n";
+            for (const o of orders ?? []) {
+              const amount = o.currency === "XTR" ? `${o.stars_total ?? 0} ⭐` : `${Number(o.total ?? 0).toFixed(2)} ${o.currency}`;
+              body += `• <b>${esc(o.order_number)}</b> — ${esc(amount)}\n  Status: ${esc(String(o.status).replace(/_/g, " "))}\n`;
+            }
+            await render(body, [[{ text: `${E("shop", "🛍️")} Shop`, callback_data: "shop" }], backRow()]);
             return Response.json({ ok: true });
           }
 
