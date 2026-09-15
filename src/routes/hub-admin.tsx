@@ -101,6 +101,8 @@ const LINK_FIELDS = [
   "telegram_channel_2_id",
   "support_url",
   "pricing_url",
+  "official_website_url",
+  "whatsapp_support_url",
   "pricing_message",
   "extension_download_url",
   "installation_guide_url",
@@ -108,6 +110,30 @@ const LINK_FIELDS = [
   "referral_message",
   "min_inventory_alert",
 ];
+
+const BRAND_FIELDS = ["store_name", "store_tagline", "brand_name", "brand_description", "logo_url"];
+
+const EMOJI_FIELDS = [
+  "emoji_brand",
+  "emoji_shop",
+  "emoji_rewards",
+  "emoji_profile",
+  "emoji_invite",
+  "emoji_support",
+  "emoji_community",
+  "emoji_tasks",
+  "emoji_extension",
+  "emoji_credits",
+  "emoji_license",
+  "emoji_rank",
+  "emoji_help",
+  "emoji_back",
+  "emoji_success",
+  "emoji_error",
+  "emoji_loading",
+];
+
+
 
 
 type UserRow = Awaited<ReturnType<typeof adminUsers>>[number];
