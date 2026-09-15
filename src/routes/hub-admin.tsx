@@ -27,6 +27,9 @@ import {
   adminSetUserStatus,
   adminSetWebhook,
   adminSettings,
+  adminGuidePages,
+  adminSaveGuidePage,
+  adminDeleteGuidePage,
   adminTasks,
   adminTestTelegramChannels,
   adminUsers,
@@ -61,6 +64,7 @@ const SECTIONS = [
   "Rewards",
   "Tasks",
   "Extension",
+  "Instructions",
   "Branding",
   "Links",
 
