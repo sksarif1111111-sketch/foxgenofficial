@@ -217,6 +217,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           if (guideUrl.startsWith("http")) rows.push([{ text: "📖 Installation Guide", url: guideUrl }]);
           if (tutorialUrl.startsWith("http")) rows.push([{ text: "▶️ Video Tutorial", url: tutorialUrl }]);
+          rows.push([{ text: "📘 How to Use", callback_data: "guide:1" }]);
+          rows.push([{ text: `${E("license", "🔑")} My Licenses`, callback_data: "mylic" }]);
           rows.push([{ text: `${E("support", "💬")} Contact Support`, url: supportUrl }]);
           rows.push(backRow());
           return rows;
@@ -294,7 +296,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           profile: "me",
           account: "me",
           credits: "me",
-          licenses: "me",
+          licenses: "mylic",
+          license: "mylic",
+          guide: "guide:1",
+          howto: "guide:1",
           leaderboard: "board",
           ranking: "board",
           links: "community",
