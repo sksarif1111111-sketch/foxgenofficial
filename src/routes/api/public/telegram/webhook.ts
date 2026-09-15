@@ -15,16 +15,26 @@ function bar(done: number, total: number) {
   return "█".repeat(filled) + "░".repeat(10 - filled);
 }
 
-/** Compact premium label for a task, so Telegram never compresses or cuts the button. */
+/** Compact premium label for a task button, so Telegram never cuts it. */
 function shortLabel(platform: string, name: string) {
+  const clean = name
+    .replace(/^follow\s+/i, "")
+    .replace(/^subscribe to\s+/i, "")
+    .replace(/^join\s+/i, "")
+    .trim();
+  const label = clean.length > 26 ? `${clean.slice(0, 25)}…` : clean;
+  if (/^[^\w\s]/.test(label)) return label;
   const p = (platform || "").toLowerCase();
-  if (p.includes("youtube")) return "▶️ YouTube";
-  if (p.includes("whatsapp")) return "💬 WhatsApp";
-  if (p.includes("facebook")) return "📘 Facebook";
-  const clean = name.replace(/^follow\s+/i, "").replace(/follow/gi, "").trim();
-  const compact = clean.replace(/foxgen official/i, "FoxGEN Official").replace(/lovable unlimited.*/i, "Lovable Unlimited");
-  const label = compact.length > 22 ? `${compact.slice(0, 21)}…` : compact;
-  return /^[^\w\s]/.test(label) ? label : `✈️ ${label}`;
+  const icon = p.includes("youtube")
+    ? "▶️"
+    : p.includes("whatsapp")
+      ? "💬"
+      : p.includes("facebook")
+        ? "📘"
+        : p.includes("telegram")
+          ? "✈️"
+          : "🔗";
+  return `${icon} ${label}`;
 }
 
 export const Route = createFileRoute("/api/public/telegram/webhook")({
@@ -93,6 +103,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const editMessageId = update.callback_query?.message?.message_id;
         const settings = await getSettings();
 
+        const S = (key: string, fallback: string) => (settings[key] || fallback).trim();
+        /** Every icon is admin-configurable through Admin → Branding (emoji_* settings). */
+        const E = (key: string, fallback: string) => (settings[`emoji_${key}`] || fallback).trim();
+
         const send = (body: string, keyboard: Keyboard) =>
           tg("sendMessage", {
             chat_id: chatId,
@@ -131,65 +145,69 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (!sent.ok) await logBotError("telegram_api", sent.description ?? "sendMessage failed", from.id, "render");
         };
 
-        const S = (key: string, fallback: string) => (settings[key] || fallback).trim();
-        const siteUrl = S("site_url", "https://first-word-platform.lovable.app");
-        const supportUrl = S("support_url", "https://wa.me/917699355860");
-        const youtubeUrl = S("youtube_url", "https://youtube.com/@mirza-p7x6s?si=er4Vs-kPWskxY_JW");
+        const storeName = S("store_name", "FoxGEN Store");
+        const storeTagline = S("store_tagline", "Premium digital products at affordable prices.");
+        const siteUrl = S("site_url", "https://foxgenofficial.lovable.app");
+        const supportUrl = S("support_url", "https://t.me/FoXGENSPORT");
+        const youtubeUrl = S("youtube_url", "https://youtube.com/@mirza-p7x6s");
         const whatsappUrl = S("whatsapp_url", "https://whatsapp.com/channel/0029VbDK6SHKLaHn5vxOQa0v");
         const whatsappOfficialUrl = S("whatsapp_official_url", "https://whatsapp.com/channel/0029VbDdgc9HVvTgM4YWFv0Q");
         const communityUrl = S("community_url", "https://chat.whatsapp.com/KvOy0Fw8IWL0NGwc5zVTxf");
-        const facebookUrl = S("facebook_url", "https://www.facebook.com/share/1DYdDK9qCq/");
+        const facebookUrl = S("facebook_url", "https://www.facebook.com/share/18PfyFqPJ3/");
         const channel1Url = S("telegram_channel_1", "https://t.me/foxgenofficial");
         const channel1Name = S("telegram_channel_1_name", "FoxGEN Official");
         const channel2Url = S("telegram_channel_2", "https://t.me/lovableunlimitedfoxgen");
-        const channel2Name = S("telegram_channel_2_name", "Lovable Unlimited");
+        const channel2Name = S("telegram_channel_2_name", "Lovable Unlimited FoxGEN");
+        const officialWebsite = S("official_website_url", S("pricing_url", "https://nextgen.lovableunlimitedc.workers.dev"));
+        const pricingUrl = S("pricing_url", officialWebsite);
+        const pricingMessage = S("pricing_message", "").replace(/\\n/g, "\n");
         const extensionName = S("extension_name", "Lovable Unlimited Extension");
         const extensionVersion = S("extension_version", "16.73");
         const extensionDate = S("extension_release_date", "");
-        const extensionDesc = S("extension_description", "Latest official FoxGEN PRO release for Lovable Unlimited.");
-        const extensionUrl = S(
-          "extension_download_url",
-          "https://first-word-platform.lovable.app/__l5e/assets-v1/1f749969-6e26-4877-b944-e0875747752b/FoxGEN-Pro-Extension-16.73.zip",
-        );
+        const extensionDesc = S("extension_description", "Latest official FoxGEN release for Lovable Unlimited.");
+        const extensionUrl = S("extension_download_url", "");
         const extensionFileUrl = S("extension_file_url", "");
         const extensionFileId = S("extension_telegram_file_id", "");
         const guideUrl = S("installation_guide_url", "");
         const tutorialUrl = S("tutorial_url", "");
 
+        const who = from.username ? `@${from.username}` : from.first_name || "there";
+
         // ---------- keyboard builders (always a brand new array) ----------
-        const backRow = (to = "menu"): Btn[] => [{ text: "⬅️ Back", callback_data: to }];
+        const backRow = (to = "menu"): Btn[] => [{ text: `${E("back", "⬅️")} Back`, callback_data: to }];
 
         const buildHomeKeyboard = (): Keyboard => [
-          [{ text: "🚀 Start Earning", callback_data: "tasks" }],
           [
-            { text: "📋 Tasks", callback_data: "tasks" },
-            { text: "👥 Invite", callback_data: "invite" },
+            { text: `${E("shop", "🛍️")} Shop`, callback_data: "shop" },
+            { text: `${E("rewards", "🎁")} Free Rewards`, callback_data: "rewards" },
           ],
           [
-            { text: "🎁 Rewards", callback_data: "rewards" },
-            { text: "🏆 Ranking", callback_data: "board" },
+            { text: `${E("profile", "👤")} My Profile`, callback_data: "me" },
+            { text: `${E("invite", "👥")} Invite & Earn`, callback_data: "invite" },
           ],
           [
-            { text: "👤 My Account", callback_data: "me" },
-            { text: "📦 Extension", callback_data: "extension" },
+            { text: `${E("tasks", "📋")} Tasks`, callback_data: "tasks" },
+            { text: `${E("extension", "📦")} Extension`, callback_data: "extension" },
           ],
-          [{ text: "📢 Community", callback_data: "community" }],
-          [{ text: "💬 Support", url: supportUrl }],
+          [
+            { text: `${E("community", "📢")} Community`, callback_data: "community" },
+            { text: `${E("help", "ℹ️")} Help`, callback_data: "help" },
+          ],
+          [{ text: `${E("support", "💬")} Support`, callback_data: "support" }],
         ];
 
         const buildCommunityKeyboard = (): Keyboard => [
-          [{ text: "▶️ Open YouTube", url: youtubeUrl }],
+          [{ text: "▶️ YouTube", url: youtubeUrl }],
           [{ text: "💬 Lovable Unlimited WhatsApp", url: whatsappUrl }],
           [{ text: "💬 FoxGEN Official WhatsApp", url: whatsappOfficialUrl }],
-          [{ text: "👥 FoxGEN PRO Community", url: communityUrl }],
+          [{ text: "👥 FoxGEN Community Group", url: communityUrl }],
           [{ text: "📘 Facebook", url: facebookUrl }],
           [{ text: `✈️ ${channel1Name}`, url: channel1Url }],
           [{ text: `✈️ ${channel2Name}`, url: channel2Url }],
-          [{ text: "🌐 Official Website", url: S("official_website_url", "https://nextgen.lovableunlimitedc.workers.dev") }],
-          [{ text: "💬 Support", url: supportUrl }],
+          [{ text: "🌐 Official Website", url: officialWebsite }],
+          [{ text: `${E("support", "💬")} Support`, url: supportUrl }],
           backRow(),
         ];
-
 
         const buildExtensionKeyboard = (): Keyboard => {
           const rows: Keyboard = [];
@@ -199,19 +217,23 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           if (guideUrl.startsWith("http")) rows.push([{ text: "📖 Installation Guide", url: guideUrl }]);
           if (tutorialUrl.startsWith("http")) rows.push([{ text: "▶️ Video Tutorial", url: tutorialUrl }]);
-          rows.push([{ text: "💬 Contact Support", url: supportUrl }]);
+          rows.push([{ text: `${E("support", "💬")} Contact Support`, url: supportUrl }]);
           rows.push(backRow());
           return rows;
         };
 
-        const homeText =
-          `🦊 <b>FOXGEN PRO</b>\n` +
-          `<i>Lovable Unlimited Extension Rewards</i>\n` +
+        const welcomeText =
+          `${E("brand", "🦊")} <b>Welcome to ${esc(storeName)}</b>\n` +
           `${LINE}\n` +
-          `🎁 Earn free license rewards\n` +
-          `👥 1 verified referral = 1 credit\n` +
+          `Hey ${esc(who)} 👋\n\n` +
+          `${esc(storeTagline)}\n\n` +
+          `${E("rewards", "🎁")} Free Lovable Unlimited rewards\n` +
+          `${E("shop", "🛍️")} Premium products\n` +
+          `${E("credits", "💰")} Earn credits\n` +
+          `${E("invite", "👥")} Invite friends\n` +
+          `${E("license", "🔑")} Redeem rewards\n` +
           `${LINE}\n` +
-          `🚀 Complete tasks and start earning!`;
+          `Choose an option below.`;
 
         /** Premium home screen with live stats. */
         const homeBody = async (p: { id: string; credits_available: number; credits_earned: number }) => {
@@ -222,92 +244,65 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               .eq("referrer_id", p.id)
               .eq("status", "verified"),
             db.from("license_redemptions").select("id", { count: "exact", head: true }).eq("user_id", p.id),
-            db
-              .from("profiles")
-              .select("id", { count: "exact", head: true })
-              .gt("credits_earned", p.credits_earned),
+            db.from("profiles").select("id", { count: "exact", head: true }).gt("credits_earned", p.credits_earned),
           ]);
           return (
-            `🦊 <b>FOXGEN PRO</b>\n` +
-            `<i>Lovable Unlimited Extension Rewards</i>\n` +
+            `${E("brand", "🦊")} <b>${esc(storeName.toUpperCase())}</b>\n` +
+            `<i>${esc(storeTagline)}</i>\n` +
             `${LINE}\n` +
-            `💰 Credits: <b>${p.credits_available}</b>\n` +
-            `👥 Verified Referrals: <b>${refs.count ?? 0}</b>\n` +
-            `🔑 Licenses Claimed: <b>${lic.count ?? 0}</b>\n` +
-            `🏆 Global Rank: <b>#${(ahead.count ?? 0) + 1}</b>\n` +
+            `${E("credits", "💰")} Credits: <b>${p.credits_available}</b>\n` +
+            `${E("invite", "👥")} Verified Referrals: <b>${refs.count ?? 0}</b>\n` +
+            `${E("license", "🔑")} Licenses Claimed: <b>${lic.count ?? 0}</b>\n` +
+            `${E("rank", "🏆")} Global Rank: <b>#${(ahead.count ?? 0) + 1}</b>\n` +
             `${LINE}\n` +
-            `Complete tasks and invite friends to earn free rewards.`
+            `Choose an option below.`
           );
         };
-
-        const buildWelcomeKeyboard = (): Keyboard => [
-          [{ text: "🚀 Start Earning", callback_data: "tasks" }],
-          [
-            { text: "🎁 Rewards", callback_data: "rewards" },
-            { text: "👥 Invite", callback_data: "invite" },
-          ],
-          [{ text: "📢 Official Community", callback_data: "community" }],
-          [{ text: "📥 Extension Download", callback_data: "extension" }],
-          [{ text: "💬 Support", url: supportUrl }],
-        ];
 
         // ---------- /start ----------
         if (text.startsWith("/start")) {
           const payload = text.split(/\s+/)[1] ?? "";
+          // Fast first response: show the store immediately, then do the slower work.
+          await send(welcomeText, buildHomeKeyboard());
           await ensureProfile(from, payload);
-          await send(
-            `🦊 <b>Welcome to FoxGEN PRO</b>\n${LINE}\n` +
-              `Get FREE Lovable Unlimited Extension licenses through our community rewards program.\n\n` +
-              `🎁 Complete tasks\n👥 Invite friends\n💰 Earn credits\n🔑 Redeem licenses\n${LINE}\n` +
-              `<b>How it works</b>\n` +
-              `1️⃣ Complete community tasks\n` +
-              `2️⃣ Get your referral link\n` +
-              `3️⃣ Invite real friends\n` +
-              `4️⃣ 1 verified referral = 1 credit\n` +
-              `5️⃣ Collect credits and unlock rewards`,
-            buildWelcomeKeyboard(),
-          );
-          await tg("setMyCommands", {
+          void tg("setMyCommands", {
             commands: [
-              { command: "start", description: "🏠 Open FoxGEN PRO" },
+              { command: "start", description: `${E("brand", "🦊")} Open ${storeName}` },
               { command: "menu", description: "🏠 Main menu" },
-              { command: "home", description: "🏠 Home screen" },
-              { command: "tasks", description: "📋 My tasks" },
-              { command: "invite", description: "👥 Invite friends" },
-              { command: "rewards", description: "🎁 View rewards" },
-              { command: "licenses", description: "🔑 My licenses" },
-              { command: "profile", description: "👤 My credits & account" },
-              { command: "leaderboard", description: "🏆 Leaderboard" },
-              { command: "download", description: "📥 Download extension" },
-              { command: "community", description: "📢 Official community" },
-              { command: "support", description: "💬 Support" },
-              { command: "rules", description: "📜 Program rules" },
+              { command: "shop", description: `${E("shop", "🛍️")} Shop products` },
+              { command: "rewards", description: `${E("rewards", "🎁")} Free rewards` },
+              { command: "profile", description: `${E("profile", "👤")} My profile` },
+              { command: "invite", description: `${E("invite", "👥")} Invite & earn` },
+              { command: "tasks", description: `${E("tasks", "📋")} My tasks` },
+              { command: "support", description: `${E("support", "💬")} Support` },
+              { command: "help", description: `${E("help", "ℹ️")} Help & rules` },
             ],
-          });
+          }).catch(() => undefined);
           return Response.json({ ok: true });
         }
 
-
         const profile = await profileByTelegramId(from.id);
         if (!profile) {
-          await send("Please send /start first.", [[{ text: "🦊 Start", callback_data: "menu" }]]);
+          await send("Please send /start first.", [[{ text: `${E("brand", "🦊")} Start`, callback_data: "menu" }]]);
           return Response.json({ ok: true });
         }
 
         const COMMAND_ALIASES: Record<string, string> = {
           home: "menu",
-          help: "menu",
-          rules: "menu",
+          start: "menu",
+          rules: "help",
           profile: "me",
           account: "me",
           credits: "me",
           licenses: "me",
           leaderboard: "board",
           ranking: "board",
-          support: "community",
           links: "community",
           task: "tasks",
           referral: "invite",
+          products: "shop",
+          store: "shop",
+          download: "extension",
         };
         const rawAction = cb || text.replace(/^\//, "").split(/[\s@]/)[0] || "menu";
         const action = cb ? rawAction : (COMMAND_ALIASES[rawAction.toLowerCase()] ?? rawAction.toLowerCase());
@@ -321,31 +316,126 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         };
 
         try {
-          if (action === "menu" || action === "help" || action === "home") {
+          if (action === "menu") {
             await render(await homeBody(profile), buildHomeKeyboard());
+            return Response.json({ ok: true });
+          }
+
+          if (action === "help") {
+            await render(
+              `${E("help", "ℹ️")} <b>HELP &amp; RULES</b>\n${LINE}\n` +
+                `1️⃣ Complete all community tasks\n` +
+                `2️⃣ Share your personal invite link\n` +
+                `3️⃣ 1 verified referral = 1 credit\n` +
+                `4️⃣ Redeem credits for free licenses\n\n` +
+                `⚠️ Fake or duplicate accounts are rejected and never earn credits.\n` +
+                `${LINE}\nNeed a hand? Tap Support.`,
+              [
+                [{ text: `${E("tasks", "📋")} Tasks`, callback_data: "tasks" }],
+                [{ text: `${E("support", "💬")} Support`, url: supportUrl }],
+                backRow(),
+              ],
+            );
+            return Response.json({ ok: true });
+          }
+
+          if (action === "support") {
+            await render(
+              `${E("support", "💬")} <b>SUPPORT</b>\n${LINE}\n` +
+                `Our team replies fast on Telegram and WhatsApp.\n\n` +
+                `🕐 24/7 customer support\n⚡ Fast license activation\n📖 Installation help included`,
+              [
+                [{ text: "💬 Telegram Support", url: supportUrl }],
+                [{ text: "📞 WhatsApp Support", url: S("whatsapp_support_url", "https://wa.me/917699355860") }],
+                [{ text: "🌐 Official Website", url: officialWebsite }],
+                backRow(),
+              ],
+            );
             return Response.json({ ok: true });
           }
 
           if (action === "community") {
             await render(
-              `🦊 <b>FOXGEN PRO COMMUNITY</b>\n${LINE}\n` +
+              `${E("community", "📢")} <b>${esc(storeName.toUpperCase())} COMMUNITY</b>\n${LINE}\n` +
                 `Stay connected with official updates, tutorials and offers.`,
               buildCommunityKeyboard(),
             );
             return Response.json({ ok: true });
           }
 
+          // ---------- shop ----------
+          if (action === "shop") {
+            const { data: products } = await db
+              .from("products")
+              .select("id, name, short_name, description, price, currency, is_free, status, display_order")
+              .eq("status", "active")
+              .order("display_order", { ascending: true })
+              .limit(20);
+            const rows: Keyboard = [];
+            let body = `${E("shop", "🛍️")} <b>SHOP</b>\n${LINE}\n`;
+            if (products && products.length > 0) {
+              for (const p of products) {
+                body += `${p.is_free ? "🎁" : "💎"} <b>${esc(p.short_name || p.name)}</b> — ${p.is_free ? "FREE" : `${esc(p.currency)} ${p.price}`}\n`;
+                rows.push([
+                  { text: `${p.is_free ? "🎁" : "💎"} ${(p.short_name || p.name).slice(0, 28)}`, callback_data: `prod:${p.id}` },
+                ]);
+              }
+              body += `${LINE}\nTap a product for details.`;
+            } else {
+              body +=
+                (pricingMessage ? `${pricingMessage}\n` : `💎 14 Days – $15\n⭐ 30 Days (Most Popular) – $29\n💎 60 Days – $49\n👑 90 Days – $69\n`) +
+                `${LINE}\n📩 Choose a plan and contact us for instant activation.`;
+            }
+            rows.push([{ text: "🌐 Pricing & Access", url: pricingUrl }]);
+            rows.push([{ text: `${E("support", "💬")} Buy / Contact`, url: supportUrl }]);
+            rows.push(backRow());
+            await render(body, rows);
+            return Response.json({ ok: true });
+          }
+
+          if (action.startsWith("prod:")) {
+            const productId = action.slice(5);
+            const [{ data: product }, { data: prices }] = await Promise.all([
+              db.from("products").select("*").eq("id", productId).maybeSingle(),
+              db
+                .from("product_prices")
+                .select("label, amount, currency, duration_days, enabled, display_order")
+                .eq("product_id", productId)
+                .eq("enabled", true)
+                .order("display_order", { ascending: true }),
+            ]);
+            if (!product) {
+              await render(`${E("error", "⚠️")} This product is no longer available.`, [backRow("shop")]);
+              return Response.json({ ok: true });
+            }
+            let body =
+              `${product.is_free ? "🎁" : "💎"} <b>${esc(product.name)}</b>\n${LINE}\n` +
+              (product.description ? `${esc(product.description)}\n\n` : "");
+            if (prices && prices.length > 0) {
+              for (const p of prices) body += `• ${esc(p.label)} — <b>${esc(p.currency)} ${p.amount}</b>\n`;
+            } else {
+              body += `💰 Price: <b>${product.is_free ? "FREE" : `${esc(product.currency)} ${product.price}`}</b>\n`;
+            }
+            body += `${LINE}\n✅ Genuine license · ✅ Fast activation · ✅ 24/7 support`;
+            const rows: Keyboard = [];
+            if (product.tutorial_url) rows.push([{ text: "▶️ Tutorial", url: product.tutorial_url }]);
+            rows.push([{ text: "🌐 Get This Plan", url: pricingUrl }]);
+            rows.push([{ text: `${E("support", "💬")} Contact to Buy`, url: supportUrl }]);
+            rows.push(backRow("shop"));
+            await render(body, rows);
+            return Response.json({ ok: true });
+          }
 
           // ---------- tasks ----------
           const activatedText =
-            `🎉 <b>ACCOUNT ACTIVATED</b>\n${LINE}\n` +
-            `All tasks completed.\n\n👥 Invite friends\n💰 Earn credits\n🎁 Redeem licenses\n\n` +
+            `${E("success", "🎉")} <b>ACCOUNT ACTIVATED</b>\n${LINE}\n` +
+            `All tasks completed.\n\n${E("invite", "👥")} Invite friends\n${E("credits", "💰")} Earn credits\n${E("rewards", "🎁")} Redeem licenses\n\n` +
             `1 verified referral = 1 credit.`;
 
           const buildActivatedKeyboard = (): Keyboard => [
-            [{ text: "👥 Invite Friends", callback_data: "invite" }],
-            [{ text: "🎁 Rewards", callback_data: "rewards" }],
-            [{ text: "📦 Extension", callback_data: "extension" }],
+            [{ text: `${E("invite", "👥")} Invite Friends`, callback_data: "invite" }],
+            [{ text: `${E("rewards", "🎁")} Free Rewards`, callback_data: "rewards" }],
+            [{ text: `${E("extension", "📦")} Extension`, callback_data: "extension" }],
             [{ text: "🏠 Home", callback_data: "menu" }],
           ];
 
@@ -356,23 +446,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const completed = tasks.filter((t) => doneIds.has(t.id)).length;
 
             let body =
-              `📋 <b>TASK CENTER</b>\n${LINE}\n` +
+              `${E("tasks", "📋")} <b>TASK CENTER</b>\n${LINE}\n` +
               `Progress: ${bar(completed, tasks.length)}\n<b>${completed} / ${tasks.length} Completed</b>\n${LINE}\n`;
             const rows: Keyboard = [];
             for (const t of tasks) {
               const label = shortLabel(t.platform, t.name);
               const isTg = t.verification_type === "telegram_auto_verification";
               const ok = doneIds.has(t.id);
-              body += `${esc(label)}\nStatus: <b>${ok ? "Completed ✅" : "Pending ❌"}</b>\n\n`;
+              body += `${esc(label)} — <b>${ok ? "Completed ✅" : "Pending ❌"}</b>\n`;
               const platform = t.platform.toLowerCase();
-              const actionWord = isTg || platform.includes("whatsapp") || platform.includes("facebook")
-                ? "FOLLOW"
-                : platform.includes("youtube")
-                  ? "SUBSCRIBE"
-                  : "OPEN";
-              if (t.url) rows.push([{ text: `${actionWord} — ${label}`.slice(0, 40), url: t.url }]);
-              if (!isTg && !ok)
-                rows.push([{ text: `✅ I Completed This — ${label}`.slice(0, 40), callback_data: `done:${t.id}` }]);
+              const actionWord = platform.includes("youtube") ? "SUBSCRIBE" : "FOLLOW";
+              if (t.url) rows.push([{ text: `${actionWord} · ${label}`.slice(0, 40), url: t.url }]);
+              if (!isTg && !ok) rows.push([{ text: `✅ Done · ${label}`.slice(0, 40), callback_data: `done:${t.id}` }]);
             }
 
             body += `${LINE}\nComplete all tasks to activate referrals.`;
@@ -407,21 +492,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
 
           if (action === "verify") {
-            await render(`⏳ <b>Checking your Telegram memberships...</b>\n${LINE}\nThis takes a moment.`, [
+            await render(`${E("loading", "⏳")} <b>Checking your Telegram memberships...</b>\n${LINE}\nThis takes a moment.`, [
               backRow("tasks"),
             ]);
             let state: Awaited<ReturnType<typeof refreshVerification>> | null = null;
             try {
               state = await refreshVerification(profile);
-
             } catch (err) {
               await logBotError("verification", err instanceof Error ? err.message : "verify failed", from.id);
             }
             if (!state) {
-              await render(
-                `⚠️ <b>Verification unavailable</b>\n${LINE}\nPlease try again shortly.`,
-                [[{ text: "🔄 Verify Again", callback_data: "verify" }], backRow("tasks")],
-              );
+              await render(`${E("error", "⚠️")} <b>Verification unavailable</b>\n${LINE}\nPlease try again shortly.`, [
+                [{ text: "🔄 Verify Again", callback_data: "verify" }],
+                backRow("tasks"),
+              ]);
               return Response.json({ ok: true });
             }
             if (state.allDone) {
@@ -439,7 +523,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const rows: Keyboard = [];
             let body: string;
             if (apiIssue) {
-              body = `⚠️ <b>Verification temporarily unavailable</b>\n${LINE}\nPlease try again shortly.`;
+              body = `${E("error", "⚠️")} <b>Verification temporarily unavailable</b>\n${LINE}\nPlease try again shortly.`;
             } else {
               const tgMissing = pending.map((c) => c.name.replace(/^follow\s+/i, "").trim());
               if (tgMissing.length === 1) {
@@ -453,7 +537,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               body += `${LINE}\nAfter following, tap Verify Again.`;
             }
 
-            for (const c of pending) if (c.url) rows.push([{ text: shortLabel("", c.name), url: c.url }]);
+            for (const c of pending) if (c.url) rows.push([{ text: shortLabel("telegram", c.name), url: c.url }]);
             rows.push([{ text: "🔄 Verify Again", callback_data: "verify" }]);
             rows.push(backRow("tasks"));
             await render(body, rows);
@@ -461,22 +545,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
 
           // ---------- extension ----------
-          if (action === "extension" || action === "download") {
+          if (action === "extension") {
             const fresh = (await profileByTelegramId(from.id)) ?? profile;
             if (fresh.status !== "active") {
-              await render(
-                `🔒 <b>Locked</b>\n${LINE}\nComplete all tasks to unlock the official download.`,
-                [[{ text: "📋 Tasks", callback_data: "tasks" }], backRow()],
-              );
+              await render(`🔒 <b>Locked</b>\n${LINE}\nComplete all tasks to unlock the official download.`, [
+                [{ text: `${E("tasks", "📋")} Tasks`, callback_data: "tasks" }],
+                backRow(),
+              ]);
               return Response.json({ ok: true });
             }
             await render(
-              `🦊 <b>FOXGEN PRO EXTENSION</b>\n<i>${esc(extensionName)}</i>\n${LINE}\n` +
-                `Get the latest version of FoxGEN PRO.\n\n` +
+              `${E("extension", "📦")} <b>${esc(extensionName.toUpperCase())}</b>\n${LINE}\n` +
                 `📦 Version: <b>${esc(extensionVersion)}</b>\n` +
                 (extensionDate ? `📅 Released: ${esc(extensionDate)}\n` : "") +
                 (S("extension_file_size", "") ? `💾 Size: ${esc(S("extension_file_size", ""))}\n` : "") +
-                `📝 ${esc(extensionDesc)}`,
+                `${LINE}\n${esc(extensionDesc)}`,
               buildExtensionKeyboard(),
             );
             return Response.json({ ok: true });
@@ -486,7 +569,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const fresh = (await profileByTelegramId(from.id)) ?? profile;
             if (fresh.status !== "active") {
               await render(`🔒 <b>Locked</b>\n${LINE}\nComplete all tasks first.`, [
-                [{ text: "📋 Tasks", callback_data: "tasks" }],
+                [{ text: `${E("tasks", "📋")} Tasks`, callback_data: "tasks" }],
                 backRow(),
               ]);
               return Response.json({ ok: true });
@@ -494,7 +577,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const document = extensionFileId || extensionFileUrl;
             if (!document) {
               await render(
-                `⚠️ <b>Extension file delivery is currently unavailable.</b>\n${LINE}\nPlease use the official download link.`,
+                `${E("error", "⚠️")} <b>Extension file delivery is currently unavailable.</b>\n${LINE}\nPlease use the official download link.`,
                 buildExtensionKeyboard(),
               );
               return Response.json({ ok: true });
@@ -503,20 +586,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               chat_id: chatId,
               document,
               parse_mode: "HTML",
-              caption: `🦊 <b>FoxGEN PRO Extension</b>\n📦 Version ${esc(extensionVersion)}`,
+              caption: `${E("brand", "🦊")} <b>${esc(extensionName)}</b>\n📦 Version ${esc(extensionVersion)}`,
             });
             if (!sent.ok) {
               await logBotError("telegram_api", sent.description ?? "sendDocument failed", from.id, "extfile");
               await render(
-                `⚠️ <b>Extension file delivery is currently unavailable.</b>\n${LINE}\nPlease use the official download link.`,
+                `${E("error", "⚠️")} <b>Extension file delivery is currently unavailable.</b>\n${LINE}\nPlease use the official download link.`,
                 buildExtensionKeyboard(),
               );
               return Response.json({ ok: true });
             }
-            await render(
-              `📦 <b>File sent</b>\n${LINE}\nThe extension file was delivered above.`,
-              buildExtensionKeyboard(),
-            );
+            await render(`📦 <b>File sent</b>\n${LINE}\nThe extension file was delivered above.`, buildExtensionKeyboard());
             return Response.json({ ok: true });
           }
 
@@ -531,9 +611,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           };
 
           const botUser = settings["bot_username"] || "";
-          const inviteLink = botUser
-            ? `https://t.me/${botUser}?start=${profile.referral_code}`
-            : profile.referral_code;
+          const inviteLink = botUser ? `https://t.me/${botUser}?start=${profile.referral_code}` : profile.referral_code;
 
           if (action === "me") {
             const { profile: fresh } = await ensureProfile(from);
@@ -544,16 +622,20 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             ]);
             const rank = (ranked.data ?? []).findIndex((p) => p.id === profile.id) + 1;
             await render(
-              `👤 <b>MY ACCOUNT</b>\n${LINE}\n` +
-                `💰 Credits: <b>${fresh.credits_available}</b>\n` +
-                `👥 Referrals: <b>${refs}</b>\n` +
-                `🏆 Global Rank: <b>${rank > 0 ? `#${rank}` : "—"}</b>\n` +
-                `🔑 Licenses: <b>${licenses.count ?? 0}</b>\n` +
+              `${E("profile", "👤")} <b>MY PROFILE</b>\n${LINE}\n` +
+                `Name: <b>${esc(who)}</b>\n` +
+                `Status: <b>${fresh.status === "active" ? "Active ✅" : "Pending ⏳"}</b>\n` +
+                `${E("credits", "💰")} Credits: <b>${fresh.credits_available}</b>\n` +
+                `${E("invite", "👥")} Referrals: <b>${refs}</b>\n` +
+                `${E("rank", "🏆")} Global Rank: <b>${rank > 0 ? `#${rank}` : "—"}</b>\n` +
+                `${E("license", "🔑")} Licenses: <b>${licenses.count ?? 0}</b>\n` +
                 `${LINE}`,
               [
-                [{ text: "🔑 My Licenses", url: `${siteUrl}/hub?t=${profile.web_token}` }],
-                [{ text: "👥 Invite Friends", callback_data: "invite" }],
-                [{ text: "📦 Extension", callback_data: "extension" }],
+                [{ text: `${E("license", "🔑")} My Licenses`, url: `${siteUrl}/hub?t=${profile.web_token}` }],
+                [
+                  { text: `${E("invite", "👥")} Invite`, callback_data: "invite" },
+                  { text: `${E("rank", "🏆")} Ranking`, callback_data: "board" },
+                ],
                 backRow(),
               ],
             );
@@ -568,15 +650,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               .limit(500);
             const list = top ?? [];
             const medals = ["🥇", "🥈", "🥉"];
-            let body = `🏆 <b>LEADERBOARD</b>\n${LINE}\n`;
+            let body = `${E("rank", "🏆")} <b>LEADERBOARD</b>\n${LINE}\n`;
             for (let i = 0; i < Math.min(10, list.length); i++) {
-              const p = list[i];
+              const p = list[i]!;
               const label = p.telegram_username ? `@${p.telegram_username}` : p.first_name || "FoxGEN Member";
-              body += `${medals[i] ?? `#${i + 1}`} ${esc(label)} — 💰 ${p.credits_earned}\n`;
+              body += `${medals[i] ?? `#${i + 1}`} ${esc(label)} — ${E("credits", "💰")} ${p.credits_earned}\n`;
             }
             const myRank = list.findIndex((p) => p.id === profile.id) + 1;
             body += `${LINE}\nYour rank: <b>${myRank > 0 ? `#${myRank}` : "—"}</b>`;
-            await render(body, [[{ text: "👥 Invite Friends", callback_data: "invite" }], backRow()]);
+            await render(body, [[{ text: `${E("invite", "👥")} Invite Friends`, callback_data: "invite" }], backRow()]);
             return Response.json({ ok: true });
           }
 
@@ -593,22 +675,25 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               .limit(1)
               .maybeSingle();
             const target = nextReward?.credit_cost ?? 0;
-            const message = `🦊 Join FoxGEN PRO and earn a FREE Lovable Unlimited license!\n\n${inviteLink}`;
+            const shareText = S("referral_message", `Join ${storeName} and earn a FREE Lovable Unlimited license!`);
+            const message = `${shareText}\n\n${inviteLink}`;
             await render(
-              `👥 <b>INVITE & EARN</b>\n${LINE}\n` +
+              `${E("invite", "👥")} <b>INVITE &amp; EARN</b>\n${LINE}\n` +
                 `👤 Valid Referrals: <b>${refs}</b>\n` +
-                `💰 Available Credits: <b>${credits}</b>\n` +
-                (nextReward ? `🎯 Next Reward: <b>${esc(nextReward.name)}</b>\n\n${bar(credits, target)}\n${credits} / ${target} Credits\n` : `🎉 Ready to redeem a reward!\n`) +
+                `${E("credits", "💰")} Available Credits: <b>${credits}</b>\n` +
+                (nextReward
+                  ? `🎯 Next Reward: <b>${esc(nextReward.name)}</b>\n${bar(credits, target)}\n${credits} / ${target} Credits\n`
+                  : `${E("success", "🎉")} Ready to redeem a reward!\n`) +
                 `${LINE}\nYour referral link:\n<code>${esc(inviteLink)}</code>`,
               [
                 [
                   {
                     text: "📤 Share on Telegram",
-                    url: `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent("Join FoxGEN PRO and earn a free license!")}`,
+                    url: `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`,
                   },
                 ],
                 [{ text: "💬 Share on WhatsApp", url: `https://wa.me/?text=${encodeURIComponent(message)}` }],
-                [{ text: "🎁 Rewards", callback_data: "rewards" }],
+                [{ text: `${E("rewards", "🎁")} Free Rewards`, callback_data: "rewards" }],
                 backRow(),
               ],
             );
@@ -623,14 +708,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               .eq("enabled", true)
               .order("display_order", { ascending: true });
             const dots = ["🟢", "🔵", "🟣", "🟡"];
-            let body = `🎁 <b>LICENSE REWARDS</b>\n${LINE}\n`;
+            let body = `${E("rewards", "🎁")} <b>FREE LICENSE REWARDS</b>\n${LINE}\n`;
             const rows: Keyboard = [];
             (rewards ?? []).forEach((r, i) => {
               const dot = dots[i] ?? "🎁";
-              body += `${dot} ${esc(r.name)}\n💰 ${r.credit_cost} Credits\n\n`;
-              rows.push([{ text: `${dot} ${r.duration_days} Days`, callback_data: `redeem:${r.id}` }]);
+              body += `${dot} ${esc(r.name)} — ${E("credits", "💰")} ${r.credit_cost} Credits\n`;
+              rows.push([{ text: `${dot} ${r.duration_days} Days · ${r.credit_cost} Credits`, callback_data: `redeem:${r.id}` }]);
             });
             body += `${LINE}\nYour Credits: <b>${fresh?.credits_available ?? 0}</b>`;
+            rows.push([{ text: `${E("invite", "👥")} Earn More Credits`, callback_data: "invite" }]);
             rows.push(backRow());
             await render(body, rows);
             return Response.json({ ok: true });
@@ -640,34 +726,43 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             try {
               const row = await redeem(profile.id, action.slice(7));
               await send(
-                `🎉 <b>License Redeemed</b>\n${LINE}\n🔑 <code>${esc(row.license_key)}</code>\n\n` +
-                  `📅 ${row.duration_days} Days\n💰 ${row.credits_used} Credits used`,
-                [[{ text: "📦 Extension", callback_data: "extension" }], [{ text: "⬅️ Back", callback_data: "rewards" }]],
+                `${E("success", "🎉")} <b>License Redeemed</b>\n${LINE}\n${E("license", "🔑")} <code>${esc(row.license_key)}</code>\n\n` +
+                  `📅 ${row.duration_days} Days\n${E("credits", "💰")} ${row.credits_used} Credits used`,
+                [[{ text: `${E("extension", "📦")} Extension`, callback_data: "extension" }], backRow("rewards")],
               );
-              await render(`🎁 <b>LICENSE REWARDS</b>\n${LINE}\nYour license key was sent above.`, [
-                [{ text: "🎁 Rewards", callback_data: "rewards" }],
+              await render(`${E("rewards", "🎁")} <b>FREE LICENSE REWARDS</b>\n${LINE}\nYour license key was sent above.`, [
+                [{ text: `${E("rewards", "🎁")} Rewards`, callback_data: "rewards" }],
                 backRow(),
               ]);
             } catch (err) {
               const msg = err instanceof Error ? err.message : "error";
-              await logBotError("redemption", msg, from.id, action);
+              const known =
+                msg.includes("insufficient_credits") || msg.includes("account_not_active") || msg.includes("inventory_empty");
+              // Expected user-side situations are not critical errors.
+              if (!known) await logBotError("redemption", msg, from.id, action);
               const human = msg.includes("insufficient_credits")
-                ? "You don't have enough credits yet."
+                ? `${E("error", "⚠️")} <b>Not Enough Credits</b>\n${LINE}\nInvite friends to earn more credits.`
                 : msg.includes("account_not_active")
-                  ? "Complete all tasks first, then try again."
+                  ? `${E("error", "⚠️")} Complete all tasks first, then try again.`
                   : msg.includes("inventory_empty")
-                    ? "This license is out of stock right now."
-                    : "Reward unavailable right now.";
-              await render(`❌ ${human}`, [[{ text: "🎁 Rewards", callback_data: "rewards" }], backRow()]);
+                    ? `${E("error", "⚠️")} This license is out of stock right now.`
+                    : `${E("error", "⚠️")} Reward unavailable right now.`;
+              await render(human, [
+                [{ text: `${E("invite", "👥")} Invite Friends`, callback_data: "invite" }],
+                [{ text: `${E("rewards", "🎁")} Rewards`, callback_data: "rewards" }],
+                backRow(),
+              ]);
             }
             return Response.json({ ok: true });
           }
 
-          await render(homeText, buildHomeKeyboard());
+          await render(await homeBody(profile), buildHomeKeyboard());
           return Response.json({ ok: true });
         } catch (err) {
           await logBotError("callback", err instanceof Error ? err.message : "unhandled error", from.id, action);
-          await render(`⚠️ Something went wrong. Please try again shortly.`, [[{ text: "🏠 Home", callback_data: "menu" }]]);
+          await render(`${E("error", "⚠️")} Something went wrong. Please try again shortly.`, [
+            [{ text: "🏠 Home", callback_data: "menu" }],
+          ]);
           return Response.json({ ok: true });
         } finally {
           await unlock();
