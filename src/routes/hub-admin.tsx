@@ -257,7 +257,7 @@ function HubAdmin() {
         setFlash(err instanceof Error ? err.message : "Could not load data.");
       }
     },
-    [fOverview, fUsers, fReferrals, fInventory, fRedemptions, fRewards, fDurations, fTasks, fSettings, fBot, fLogs, logCategory, search, referralSearch, referralStatus, inventorySearch, inventoryStatus, inventoryDays],
+    [fOverview, fUsers, fReferrals, fInventory, fRedemptions, fRewards, fDurations, fTasks, fSettings, fBot, fLogs, fGuidePages, logCategory, search, referralSearch, referralStatus, inventorySearch, inventoryStatus, inventoryDays],
   );
 
 
