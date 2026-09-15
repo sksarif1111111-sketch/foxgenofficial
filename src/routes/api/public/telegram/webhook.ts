@@ -217,6 +217,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           }
           if (guideUrl.startsWith("http")) rows.push([{ text: "📖 Installation Guide", url: guideUrl }]);
           if (tutorialUrl.startsWith("http")) rows.push([{ text: "▶️ Video Tutorial", url: tutorialUrl }]);
+          rows.push([{ text: "📘 How to Use", callback_data: "guide:1" }]);
+          rows.push([{ text: `${E("license", "🔑")} My Licenses`, callback_data: "mylic" }]);
           rows.push([{ text: `${E("support", "💬")} Contact Support`, url: supportUrl }]);
           rows.push(backRow());
           return rows;
@@ -294,7 +296,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           profile: "me",
           account: "me",
           credits: "me",
-          licenses: "me",
+          licenses: "mylic",
+          license: "mylic",
+          guide: "guide:1",
+          howto: "guide:1",
           leaderboard: "board",
           ranking: "board",
           links: "community",
@@ -722,22 +727,158 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true });
           }
 
+          // ---------- license detail + setup guide ----------
+          /** Buttons shown under a license: copy, download, tutorial, guide, my licenses. */
+          const licenseKeyboard = (redemptionId: string): Keyboard => {
+            const rows: Keyboard = [];
+            if (extensionUrl.startsWith("http")) rows.push([{ text: "📥 Download Extension", url: extensionUrl }]);
+            if (tutorialUrl.startsWith("http")) rows.push([{ text: "▶️ Watch Tutorial", url: tutorialUrl }]);
+            rows.push([{ text: "📘 How to Use", callback_data: `guide:1:${redemptionId}` }]);
+            rows.push([{ text: `${E("license", "🔑")} My Licenses`, callback_data: "mylic" }]);
+            rows.push(backRow());
+            return rows;
+          };
+
+          const licenseBody = async (r: {
+            id: string;
+            license_key: string;
+            duration_days: number;
+            credits_used: number;
+            reward_name: string;
+          }) => {
+            const [{ data: lic }, fresh] = await Promise.all([
+              db.from("licenses").select("status, expires_at, activated_at").eq("license_key", r.license_key).maybeSingle(),
+              profileByTelegramId(from.id),
+            ]);
+            const status = lic?.status ? lic.status : "active";
+            const expiry = lic?.expires_at
+              ? new Date(lic.expires_at).toISOString().slice(0, 10)
+              : "Pending activation";
+            return (
+              `${E("success", "✅")} <b>License details</b>\n${LINE}\n` +
+              `Product: <b>Lovable Extension</b>\n` +
+              `Plan: <b>${esc(r.reward_name)}</b>\n` +
+              `Duration: <b>${r.duration_days} days</b>\n` +
+              `License: <code>${esc(r.license_key)}</code>\n` +
+              `Credits used: <b>${r.credits_used}</b>\n` +
+              `Remaining credits: <b>${fresh?.credits_available ?? 0}</b>\n` +
+              `Status: <b>${esc(status)}</b>\n` +
+              `Expires: <b>${esc(expiry)}</b>\n${LINE}\n` +
+              `Tap the license above to copy it. Read the setup guide before using your extension.` +
+              (tutorialUrl.startsWith("http") ? "" : "\n\n<i>A video tutorial has not been configured yet — the written guide is available.</i>")
+            );
+          };
+
+          if (action === "mylic") {
+            const { data: rows } = await db
+              .from("license_redemptions")
+              .select("id, license_key, duration_days, credits_used, reward_name, redeemed_at")
+              .eq("user_id", profile.id)
+              .order("redeemed_at", { ascending: false })
+              .limit(20);
+            const list = rows ?? [];
+            if (list.length === 0) {
+              await render(
+                `${E("license", "🔑")} <b>MY LICENSES</b>\n${LINE}\nYou have not redeemed a license yet.\n\nInvite friends to earn credits, then redeem a free license.`,
+                [
+                  [{ text: `${E("rewards", "🎁")} Free Rewards`, callback_data: "rewards" }],
+                  [{ text: `${E("invite", "👥")} Invite Friends`, callback_data: "invite" }],
+                  backRow(),
+                ],
+              );
+              return Response.json({ ok: true });
+            }
+            let body = `${E("license", "🔑")} <b>MY LICENSES</b>\n${LINE}\n`;
+            const keys: Keyboard = [];
+            for (const r of list) {
+              body += `• ${esc(r.reward_name)} — ${r.duration_days} days\n`;
+              keys.push([{ text: `🔑 ${r.reward_name} · ${r.duration_days}d`.slice(0, 40), callback_data: `lic:${r.id}` }]);
+            }
+            body += `${LINE}\nSelect a license to view its key and setup guide.`;
+            keys.push([{ text: "📘 Setup Guide", callback_data: "guide:1" }]);
+            keys.push(backRow());
+            await render(body, keys);
+            return Response.json({ ok: true });
+          }
+
+          if (action.startsWith("lic:")) {
+            const { data: r } = await db
+              .from("license_redemptions")
+              .select("id, license_key, duration_days, credits_used, reward_name")
+              .eq("id", action.slice(4))
+              .eq("user_id", profile.id) // customers only ever see their own keys
+              .maybeSingle();
+            if (!r) {
+              await render(`${E("error", "⚠️")} License not found.`, [backRow("mylic")]);
+              return Response.json({ ok: true });
+            }
+            await render(await licenseBody(r), licenseKeyboard(r.id));
+            return Response.json({ ok: true });
+          }
+
+          if (action.startsWith("guide:")) {
+            const [, pageRaw, licId] = action.split(":");
+            const { data: pages } = await db
+              .from("extension_guide_pages")
+              .select("heading, body, updated_at")
+              .eq("published", true)
+              .order("display_order", { ascending: true });
+            const list = pages ?? [];
+            const title = S("guide_title", "Lovable Extension — Setup & Usage Guide");
+            if (list.length === 0) {
+              await render(
+                `📘 <b>${esc(title)}</b>\n${LINE}\nThe setup guide has not been published yet. Please contact support.`,
+                [[{ text: `${E("support", "💬")} Support`, url: supportUrl }], backRow()],
+              );
+              return Response.json({ ok: true });
+            }
+            const page = Math.min(Math.max(1, Number(pageRaw) || 1), list.length);
+            const p = list[page - 1]!;
+            const body =
+              `📘 <b>${esc(title)}</b>\n${LINE}\n<b>${esc(p.heading)}</b>\n\n${esc(p.body)}\n${LINE}\n` +
+              `Page ${page} of ${list.length}` +
+              (tutorialUrl.startsWith("http") ? "" : "\n<i>Video tutorial not configured yet.</i>");
+            const nav: Btn[] = [];
+            const suffix = licId ? `:${licId}` : "";
+            if (page > 1) nav.push({ text: "⬅️ Previous", callback_data: `guide:${page - 1}${suffix}` });
+            if (page < list.length) nav.push({ text: "Next ➡️", callback_data: `guide:${page + 1}${suffix}` });
+            const rows: Keyboard = [];
+            if (nav.length > 0) rows.push(nav);
+            if (extensionUrl.startsWith("http")) rows.push([{ text: "📥 Download Extension", url: extensionUrl }]);
+            if (tutorialUrl.startsWith("http")) rows.push([{ text: "▶️ Watch Tutorial", url: tutorialUrl }]);
+            if (licId) rows.push([{ text: `${E("license", "🔑")} Back to License`, callback_data: `lic:${licId}` }]);
+            rows.push([{ text: `${E("support", "💬")} Support`, url: supportUrl }]);
+            rows.push(backRow());
+            await render(body, rows);
+            return Response.json({ ok: true });
+          }
+
           if (action.startsWith("redeem:")) {
             try {
               const row = await redeem(profile.id, action.slice(7));
+              const { data: saved } = await db
+                .from("license_redemptions")
+                .select("id, license_key, duration_days, credits_used, reward_name")
+                .eq("user_id", profile.id)
+                .eq("license_key", row.license_key)
+                .maybeSingle();
+              const detail = saved ?? { id: "", ...row };
               await send(
-                `${E("success", "🎉")} <b>License Redeemed</b>\n${LINE}\n${E("license", "🔑")} <code>${esc(row.license_key)}</code>\n\n` +
-                  `📅 ${row.duration_days} Days\n${E("credits", "💰")} ${row.credits_used} Credits used`,
-                [[{ text: `${E("extension", "📦")} Extension`, callback_data: "extension" }], backRow("rewards")],
+                `${E("success", "✅")} <b>License redeemed successfully!</b>\n${LINE}\n` + (await licenseBody(detail)),
+                detail.id ? licenseKeyboard(detail.id) : [[{ text: "📘 How to Use", callback_data: "guide:1" }], backRow("rewards")],
               );
-              await render(`${E("rewards", "🎁")} <b>FREE LICENSE REWARDS</b>\n${LINE}\nYour license key was sent above.`, [
+              await render(`${E("rewards", "🎁")} <b>FREE LICENSE REWARDS</b>\n${LINE}\nYour license details were sent above.`, [
+                [{ text: `${E("license", "🔑")} My Licenses`, callback_data: "mylic" }],
                 [{ text: `${E("rewards", "🎁")} Rewards`, callback_data: "rewards" }],
                 backRow(),
               ]);
             } catch (err) {
               const msg = err instanceof Error ? err.message : "error";
               const known =
-                msg.includes("insufficient_credits") || msg.includes("account_not_active") || msg.includes("inventory_empty");
+                msg.includes("insufficient_credits") ||
+                msg.includes("account_not_active") ||
+                msg.includes("inventory_empty") ||
+                msg.includes("reward_unavailable");
               // Expected user-side situations are not critical errors.
               if (!known) await logBotError("redemption", msg, from.id, action);
               const human = msg.includes("insufficient_credits")
@@ -745,8 +886,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 : msg.includes("account_not_active")
                   ? `${E("error", "⚠️")} Complete all tasks first, then try again.`
                   : msg.includes("inventory_empty")
-                    ? `${E("error", "⚠️")} This license is out of stock right now.`
-                    : `${E("error", "⚠️")} Reward unavailable right now.`;
+                    ? `${E("error", "⚠️")} This license is out of stock right now. No credits were used.`
+                    : `${E("error", "⚠️")} This reward is not available yet. No credits were used.`;
               await render(human, [
                 [{ text: `${E("invite", "👥")} Invite Friends`, callback_data: "invite" }],
                 [{ text: `${E("rewards", "🎁")} Rewards`, callback_data: "rewards" }],

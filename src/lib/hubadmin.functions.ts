@@ -513,3 +513,43 @@ export const adminLicenseDurations = createServerFn({ method: "POST" }).handler(
   for (const r of rewards.data ?? []) set.add(r.duration_days);
   return [...set].sort((a, b) => a - b);
 });
+
+// ---------- Extension Instructions (setup & usage guide shown in the bot) ----------
+export const adminGuidePages = createServerFn({ method: "POST" }).handler(async () => {
+  const { db } = await import("@/lib/hub.server");
+  const { data } = await db.from("extension_guide_pages").select("*").order("display_order");
+  return data ?? [];
+});
+
+export const adminSaveGuidePage = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        heading: z.string().trim().min(1).max(160),
+        body: z.string().trim().min(1).max(4000),
+        display_order: z.number().int().min(0).max(999).optional(),
+        published: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    const row = {
+      heading: data.heading,
+      body: data.body,
+      display_order: data.display_order ?? 0,
+      published: data.published ?? true,
+    };
+    if (data.id) await db.from("extension_guide_pages").update(row).eq("id", data.id);
+    else await db.from("extension_guide_pages").insert(row);
+    return { ok: true };
+  });
+
+export const adminDeleteGuidePage = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    await db.from("extension_guide_pages").delete().eq("id", data.id);
+    return { ok: true };
+  });
