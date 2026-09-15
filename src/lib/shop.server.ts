@@ -397,8 +397,11 @@ export async function sendFulfillmentEmail(orderId: string): Promise<EmailResult
   const targets = recipients.length > 0 ? recipients : fallback;
   if (targets.length === 0) return { ok: false, reason: "no_email" };
 
-  const subject = `Your FOXGEN STORE order ${order.order_number} — access details`;
-  const body = `Hi ${order.customer_name ?? "there"},
+  const subject =
+    (order.email_subject ?? "").trim() || `Your FOXGEN STORE order ${order.order_number} — access details`;
+  const body =
+    (order.email_body ?? "").trim() ||
+    `Hi ${order.customer_name ?? "there"},
 
 Your payment for ${productName} has been confirmed.
 Use the activation link or instructions below to access your purchase.
