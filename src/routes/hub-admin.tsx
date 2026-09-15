@@ -244,7 +244,10 @@ function HubAdmin() {
           setDurations(await fDurations({ data: undefined }));
         }
         if (s === "Tasks") setTasks(await fTasks({ data: undefined }));
-        if (s === "Links" || s === "Extension" || s === "Branding") setSettings(await fSettings({ data: undefined }));
+        if (s === "Links" || s === "Extension" || s === "Branding" || s === "Instructions") {
+          setSettings(await fSettings({ data: undefined }));
+        }
+        if (s === "Instructions") setGuidePages(await fGuidePages({ data: undefined }));
         if (s === "Logs") setLogs(await fLogs({ data: { category: logCategory } }));
         if (s === "Bot") {
           setSettings(await fSettings({ data: undefined }));
