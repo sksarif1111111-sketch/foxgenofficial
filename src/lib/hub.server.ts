@@ -332,14 +332,18 @@ export async function refreshVerification(profile: Profile) {
   }
 
   const allDone = missing.length === 0;
-  if (allDone && profile.status !== "active") {
-    await db.from("profiles").update({ status: "active", updated_at: new Date().toISOString() }).eq("id", profile.id);
-    await db.from("notifications").insert({
-      user_id: profile.id,
-      title: "Account activated",
-      body: "All tasks completed. You can now earn credits and redeem licenses.",
-      kind: "account",
-    });
+  if (allDone) {
+    if (profile.status !== "active") {
+      await db.from("profiles").update({ status: "active", updated_at: new Date().toISOString() }).eq("id", profile.id);
+      await db.from("notifications").insert({
+        user_id: profile.id,
+        title: "Account activated",
+        body: "All tasks completed. You can now earn credits and redeem licenses.",
+        kind: "account",
+      });
+    }
+    // Safe to retry on every successful verification: award_referral is row-locked
+    // and permanently records credit_awarded before issuing exactly one credit.
     const { data: awarded } = await db.rpc("award_referral", { _referred_user_id: profile.id });
     if (awarded) await notifyReferralReward(profile.id);
   }
