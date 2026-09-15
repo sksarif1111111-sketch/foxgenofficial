@@ -61,7 +61,9 @@ const SECTIONS = [
   "Rewards",
   "Tasks",
   "Extension",
+  "Branding",
   "Links",
+
   "Bot",
   "Activity",
   "Logs",
