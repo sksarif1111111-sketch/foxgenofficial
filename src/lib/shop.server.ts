@@ -469,3 +469,153 @@ Thank you for choosing FOXGEN STORE.`;
 }
 
 export { db };
+
+/* ------------------------- AI fulfillment email draft ---------------------- */
+
+export type EmailDraft = { subject: string; body: string };
+
+export async function draftFulfillmentEmail(orderId: string): Promise<EmailDraft> {
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  if (!apiKey) throw new Error("AI drafting is not configured yet.");
+
+  const settings = await getSettings();
+  const { data: order } = await db.from("shop_orders").select("*").eq("id", orderId).maybeSingle();
+  if (!order) throw new Error("Order not found.");
+  const { data: items } = await db.from("shop_order_items").select("*").eq("order_id", orderId);
+  const { data: fulfillments } = await db
+    .from("shop_fulfillments")
+    .select("*")
+    .eq("order_id", orderId)
+    .order("created_at");
+
+  const storeName = (settings["shop_email_from_name"] ?? "FOXGEN STORE").trim() || "FOXGEN STORE";
+  const support = settings["support_url"] ?? settings["whatsapp_support_url"] ?? "our support channel";
+  const emails =
+    [...new Set((items ?? []).map((i) => i.delivery_email).filter(Boolean))].join(", ") ||
+    (order.delivery_emails ?? "");
+
+  const lines = (items ?? []).map((item) => {
+    const snapshot = (item.snapshot ?? {}) as Record<string, unknown>;
+    return [
+      `Product: ${item.product_name} x${item.quantity}`,
+      snapshot["duration_label"] ? `Duration: ${String(snapshot["duration_label"])}` : "",
+      snapshot["features"] && Array.isArray(snapshot["features"]) && snapshot["features"].length > 0
+        ? `Features: ${(snapshot["features"] as string[]).join("; ")}`
+        : "",
+      snapshot["terms"] ? `Terms: ${String(snapshot["terms"])}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  });
+
+  const context = [
+    `Store name: ${storeName}`,
+    `Order ID: ${order.order_number}`,
+    `Customer name: ${order.customer_name ?? "Customer"}`,
+    `Delivery email(s): ${emails || "not provided"}`,
+    `Channel: ${order.channel}`,
+    order.currency === "XTR"
+      ? `Paid: ${order.stars_total ?? 0} Telegram Stars`
+      : `Paid: ${order.total ?? 0} ${order.currency}`,
+    order.payment_method_name ? `Payment method: ${order.payment_method_name}` : "",
+    order.payment_reference ? `Transaction reference: ${order.payment_reference}` : "",
+    "",
+    lines.join("\n\n"),
+    "",
+    "Delivery material to include verbatim:",
+    (fulfillments ?? []).map((f) => `[${f.kind}] ${f.content}`).join("\n") || "(none added yet)",
+    "",
+    `Support contact: ${support}`,
+  ]
+    .filter((part) => part !== undefined)
+    .join("\n");
+
+  const prompt = `You write fulfillment emails for a digital goods store.
+Write ONE plain-text email confirming payment and delivering access for this order.
+Rules:
+- First line must be exactly: Subject: <subject line, max 80 characters, include the order ID>
+- Then a blank line, then the email body only (plain text, no markdown, no placeholders like [name]).
+- Use the real values given below; never invent prices, links, codes, durations or dates.
+- Include the delivery material verbatim, the order ID, activation/usage steps, credits or duration if present, and the support contact.
+- Warm, professional, concise (max 200 words).
+
+ORDER DATA:
+${context}`;
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Lovable-API-Key": apiKey,
+      "X-Lovable-AIG-SDK": "fetch",
+    },
+    body: JSON.stringify({
+      model: "openai/gpt-6-astra",
+      input: prompt,
+      stream: true,
+      reasoning: { effort: "low", summary: "auto" },
+    }),
+  });
+
+  if (!response.ok || !response.body) {
+    const detail = await response.text().catch(() => "");
+    if (response.status === 429) throw new Error("The AI service is busy right now. Try again in a moment.");
+    if (response.status === 402) throw new Error("AI credits are exhausted. Add credits to keep drafting emails.");
+    if (response.status === 403) throw new Error("AI drafting is blocked by the workspace AI settings.");
+    throw new Error(`AI drafting failed (${response.status}). ${detail.slice(0, 200)}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let text = "";
+  while (true) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    buffer += decoder.decode(chunk.value, { stream: true });
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop() ?? "";
+    for (const part of parts) {
+      for (const line of part.split("\n")) {
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          const event = JSON.parse(payload) as { type?: string; delta?: string; response?: { output_text?: string } };
+          if (event.type === "response.output_text.delta" && typeof event.delta === "string") text += event.delta;
+          else if (event.type === "response.completed" && !text && event.response?.output_text)
+            text = event.response.output_text;
+        } catch {
+          /* ignore keep-alive fragments */
+        }
+      }
+    }
+  }
+
+  const clean = text.trim();
+  if (!clean) throw new Error("The AI returned an empty draft. Try again.");
+  const match = clean.match(/^subject:\s*(.+)$/im);
+  const subject = (match?.[1] ?? `Your ${storeName} order ${order.order_number} — access details`).trim().slice(0, 200);
+  const body = (match ? clean.slice(clean.indexOf(match[0]) + match[0].length) : clean).trim();
+
+  await db
+    .from("shop_orders")
+    .update({
+      email_subject: subject,
+      email_body: body,
+      email_draft_generated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", orderId);
+  await orderEvent(orderId, "email_draft_generated", "ai", subject);
+  return { subject, body };
+}
+
+export async function saveFulfillmentEmailDraft(orderId: string, subject: string, body: string) {
+  await db
+    .from("shop_orders")
+    .update({ email_subject: subject, email_body: body, updated_at: new Date().toISOString() })
+    .eq("id", orderId);
+  await orderEvent(orderId, "email_draft_saved", "admin", subject);
+  return { ok: true };
+}
