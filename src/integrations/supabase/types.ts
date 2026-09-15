@@ -1253,7 +1253,10 @@ export type Database = {
           customer_name: string | null
           delivered_at: string | null
           delivery_emails: string | null
+          email_body: string | null
           email_confirmed_at: string | null
+          email_draft_generated_at: string | null
+          email_subject: string | null
           expires_at: string | null
           id: string
           info_request: string | null
@@ -1288,7 +1291,10 @@ export type Database = {
           customer_name?: string | null
           delivered_at?: string | null
           delivery_emails?: string | null
+          email_body?: string | null
           email_confirmed_at?: string | null
+          email_draft_generated_at?: string | null
+          email_subject?: string | null
           expires_at?: string | null
           id?: string
           info_request?: string | null
@@ -1323,7 +1329,10 @@ export type Database = {
           customer_name?: string | null
           delivered_at?: string | null
           delivery_emails?: string | null
+          email_body?: string | null
           email_confirmed_at?: string | null
+          email_draft_generated_at?: string | null
+          email_subject?: string | null
           expires_at?: string | null
           id?: string
           info_request?: string | null

@@ -36,6 +36,13 @@
       "when": 1789491763582,
       "tag": "0004_foxgen_store_shop_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789500215969,
+      "tag": "0005_shop_order_email_draft",
+      "breakpoints": true
     }
   ]
 }
