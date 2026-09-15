@@ -136,6 +136,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const supportUrl = S("support_url", "https://wa.me/917699355860");
         const youtubeUrl = S("youtube_url", "https://youtube.com/@mirza-p7x6s?si=er4Vs-kPWskxY_JW");
         const whatsappUrl = S("whatsapp_url", "https://whatsapp.com/channel/0029VbDK6SHKLaHn5vxOQa0v");
+        const whatsappOfficialUrl = S("whatsapp_official_url", "https://whatsapp.com/channel/0029VbDdgc9HVvTgM4YWFv0Q");
+        const communityUrl = S("community_url", "https://chat.whatsapp.com/KvOy0Fw8IWL0NGwc5zVTxf");
         const facebookUrl = S("facebook_url", "https://www.facebook.com/share/1DYdDK9qCq/");
         const channel1Url = S("telegram_channel_1", "https://t.me/foxgenofficial");
         const channel1Name = S("telegram_channel_1_name", "FoxGEN Official");
@@ -176,8 +178,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         ];
 
         const buildCommunityKeyboard = (): Keyboard => [
-          [{ text: "▶️ YouTube", url: youtubeUrl }],
-          [{ text: "💬 WhatsApp", url: whatsappUrl }],
+          [{ text: "▶️ Open YouTube", url: youtubeUrl }],
+          [{ text: "💬 Lovable Unlimited WhatsApp", url: whatsappUrl }],
+          [{ text: "💬 FoxGEN Official WhatsApp", url: whatsappOfficialUrl }],
+          [{ text: "👥 FoxGEN PRO Community", url: communityUrl }],
           [{ text: "📘 Facebook", url: facebookUrl }],
           [{ text: `✈️ ${channel1Name}`, url: channel1Url }],
           [{ text: `✈️ ${channel2Name}`, url: channel2Url }],
@@ -360,7 +364,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const isTg = t.verification_type === "telegram_auto_verification";
               const ok = doneIds.has(t.id);
               body += `${esc(label)}\nStatus: <b>${ok ? "Completed ✅" : "Pending ❌"}</b>\n\n`;
-              if (t.url) rows.push([{ text: `${isTg ? "FOLLOW" : "OPEN"} — ${label}`.slice(0, 40), url: t.url }]);
+              const platform = t.platform.toLowerCase();
+              const actionWord = isTg || platform.includes("whatsapp") || platform.includes("facebook")
+                ? "FOLLOW"
+                : platform.includes("youtube")
+                  ? "SUBSCRIBE"
+                  : "OPEN";
+              if (t.url) rows.push([{ text: `${actionWord} — ${label}`.slice(0, 40), url: t.url }]);
               if (!isTg && !ok)
                 rows.push([{ text: `✅ I Completed This — ${label}`.slice(0, 40), callback_data: `done:${t.id}` }]);
             }
@@ -384,7 +394,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 user_id: profile.id,
                 task_id: taskId,
                 completed: true,
-                verification_status: "confirmed",
+                verification_status: "completed",
+                verification_method: "manual",
                 completed_at: new Date().toISOString(),
               },
               { onConflict: "user_id,task_id" },
