@@ -382,13 +382,21 @@ export async function notifyReferralReward(referredUserId: string) {
 
 
 export async function redeem(profileId: string, rewardId: string) {
-  const { data, error } = await db.rpc("redeem_reward", {
-    _user_id: profileId,
-    _reward_id: rewardId,
-    _generated_key: makeLicenseKey(),
-  });
-  if (error) throw new Error(error.message);
-  const row = Array.isArray(data) ? data[0] : data;
-  if (!row) throw new Error("redemption_failed");
-  return row as { license_key: string; duration_days: number; credits_used: number; reward_name: string };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data, error } = await db.rpc("redeem_reward", {
+      _user_id: profileId,
+      _reward_id: rewardId,
+      _generated_key: makeLicenseKey(),
+    });
+    if (error) {
+      // A generated-key collision rolls back the whole database transaction,
+      // so retrying cannot double-charge credits or create a partial redemption.
+      if (error.code === "23505" && attempt < 2) continue;
+      throw new Error(error.message);
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) throw new Error("redemption_failed");
+    return row as { license_key: string; duration_days: number; credits_used: number; reward_name: string };
+  }
+  throw new Error("license_key_generation_failed");
 }

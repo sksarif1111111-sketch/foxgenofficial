@@ -15,6 +15,20 @@
       "when": 1789485883695,
       "tag": "0001_extension_guide_and_50day_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789490843019,
+      "tag": "0002_direct_reward_license_generation",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789490923259,
+      "tag": "0003_track_direct_reward_license_owner",
+      "breakpoints": true
     }
   ]
 }

@@ -314,10 +314,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---------- double-click protection for slow actions ----------
         const guarded = ["verify", "extfile"].includes(action) || action.startsWith("redeem:") || action.startsWith("done:");
+        const redemptionAction = action.startsWith("redeem:");
         const lockKey = `${profile.id}:${action}`;
         if (guarded && !(await acquireLock(lockKey))) return Response.json({ ok: true, locked: true });
         const unlock = async () => {
-          if (guarded) await releaseLock(lockKey);
+          // Keep successful/failed redemption locks until their short TTL expires.
+          // This prevents a second Telegram callback from spending credits twice.
+          if (guarded && !redemptionAction) await releaseLock(lockKey);
         };
 
         try {
@@ -877,7 +880,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               const known =
                 msg.includes("insufficient_credits") ||
                 msg.includes("account_not_active") ||
-                msg.includes("inventory_empty") ||
                 msg.includes("reward_unavailable");
               // Expected user-side situations are not critical errors.
               if (!known) await logBotError("redemption", msg, from.id, action);
@@ -885,9 +887,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 ? `${E("error", "⚠️")} <b>Not Enough Credits</b>\n${LINE}\nInvite friends to earn more credits.`
                 : msg.includes("account_not_active")
                   ? `${E("error", "⚠️")} Complete all tasks first, then try again.`
-                  : msg.includes("inventory_empty")
-                    ? `${E("error", "⚠️")} This license is out of stock right now. No credits were used.`
-                    : `${E("error", "⚠️")} This reward is not available yet. No credits were used.`;
+                  : `${E("error", "⚠️")} This reward is not available yet. No credits were used.`;
               await render(human, [
                 [{ text: `${E("invite", "👥")} Invite Friends`, callback_data: "invite" }],
                 [{ text: `${E("rewards", "🎁")} Rewards`, callback_data: "rewards" }],
