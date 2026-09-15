@@ -357,6 +357,66 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <p className="text-sm font-bold">Fulfillment email</p>
+            <p className="text-xs text-muted-foreground">
+              Draft the email automatically from this order (order ID, email, duration, credits, delivery material and
+              payment details), review it, then save. A saved draft is what gets sent.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={busy || drafting}
+                className={primaryBtn}
+                onClick={() => {
+                  setDrafting(true);
+                  void (async () => {
+                    try {
+                      const draftEmail = await fDraftEmail({ data: { id: String(open.order["id"]) } });
+                      setEmailSubject(draftEmail.subject);
+                      setEmailBody(draftEmail.body);
+                      notify("Draft ready. Review it and save before sending.");
+                    } catch (error) {
+                      notify(error instanceof Error ? error.message : "Could not write the draft.");
+                    } finally {
+                      setDrafting(false);
+                    }
+                  })();
+                }}
+              >
+                {drafting ? "Writing draft…" : "Draft with AI"}
+              </button>
+              <button
+                type="button"
+                disabled={busy || emailSubject.trim().length < 3 || emailBody.trim().length < 10}
+                className={ghostBtn}
+                onClick={() =>
+                  void act(async () => {
+                    await fSaveEmail({
+                      data: { id: String(open.order["id"]), subject: emailSubject, body: emailBody },
+                    });
+                    notify("Email draft saved.");
+                    await openOrder(String(open.order["id"]));
+                  })
+                }
+              >
+                Save draft
+              </button>
+            </div>
+            <Field label="Subject">
+              <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={input} />
+            </Field>
+            <Field label="Body">
+              <textarea
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                rows={12}
+                className={`${input} font-mono text-xs`}
+              />
+            </Field>
+          </div>
+
+
           <div className="space-y-1">
             <p className="text-sm font-bold">Audit timeline</p>
             {open.events.map((e: Row) => (
