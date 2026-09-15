@@ -9,3 +9,4 @@
 - [ ] Fix Telegram follow verification while preserving separate channel records and verified progress. Blocked until @FoxicGEN_BOT is made an administrator in both channels.
 - [x] Recheck the stale `use-mobile.tsx` diagnostic and current preview health.
 - [x] Referral license redemption: permanent license record, 50-day plan support, editable Extension Instructions guide in bot + admin.
+- [x] Direct reward redemption: generate a valid license immediately from credits without bulk inventory.
