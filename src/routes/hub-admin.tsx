@@ -61,7 +61,9 @@ const SECTIONS = [
   "Rewards",
   "Tasks",
   "Extension",
+  "Branding",
   "Links",
+
   "Bot",
   "Activity",
   "Logs",
@@ -99,6 +101,8 @@ const LINK_FIELDS = [
   "telegram_channel_2_id",
   "support_url",
   "pricing_url",
+  "official_website_url",
+  "whatsapp_support_url",
   "pricing_message",
   "extension_download_url",
   "installation_guide_url",
@@ -106,6 +110,30 @@ const LINK_FIELDS = [
   "referral_message",
   "min_inventory_alert",
 ];
+
+const BRAND_FIELDS = ["store_name", "store_tagline", "brand_name", "brand_description", "logo_url"];
+
+const EMOJI_FIELDS = [
+  "emoji_brand",
+  "emoji_shop",
+  "emoji_rewards",
+  "emoji_profile",
+  "emoji_invite",
+  "emoji_support",
+  "emoji_community",
+  "emoji_tasks",
+  "emoji_extension",
+  "emoji_credits",
+  "emoji_license",
+  "emoji_rank",
+  "emoji_help",
+  "emoji_back",
+  "emoji_success",
+  "emoji_error",
+  "emoji_loading",
+];
+
+
 
 
 type UserRow = Awaited<ReturnType<typeof adminUsers>>[number];
@@ -204,7 +232,7 @@ function HubAdmin() {
           setDurations(await fDurations({ data: undefined }));
         }
         if (s === "Tasks") setTasks(await fTasks({ data: undefined }));
-        if (s === "Links" || s === "Extension") setSettings(await fSettings({ data: undefined }));
+        if (s === "Links" || s === "Extension" || s === "Branding") setSettings(await fSettings({ data: undefined }));
         if (s === "Logs") setLogs(await fLogs({ data: { category: logCategory } }));
         if (s === "Bot") {
           setSettings(await fSettings({ data: undefined }));
@@ -682,7 +710,50 @@ function HubAdmin() {
         </section>
       )}
 
+      {section === "Branding" && (
+        <section className="space-y-5">
+          <div className="rounded-2xl border border-border bg-card/60 p-5">
+            <p className="font-bold">🦊 Store branding</p>
+            <p className="text-xs text-muted-foreground">
+              Store name, tagline and every bot icon. Changes apply to the Telegram bot instantly.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {BRAND_FIELDS.map((key) => (
+              <label key={key} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {key.replace(/_/g, " ")}
+                <input
+                  defaultValue={settings[key] ?? ""}
+                  onBlur={async (e) => {
+                    await fSaveSettings({ data: { values: { [key]: e.target.value } } });
+                    setFlash("💾 Saved");
+                  }}
+                  className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-normal normal-case text-foreground"
+                />
+              </label>
+            ))}
+          </div>
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Emoji manager</p>
+          <div className="grid gap-3 sm:grid-cols-4">
+            {EMOJI_FIELDS.map((key) => (
+              <label key={key} className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {key.replace(/^emoji_/, "")}
+                <input
+                  defaultValue={settings[key] ?? ""}
+                  onBlur={async (e) => {
+                    await fSaveSettings({ data: { values: { [key]: e.target.value } } });
+                    setFlash("💾 Saved");
+                  }}
+                  className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-lg font-normal normal-case text-foreground"
+                />
+              </label>
+            ))}
+          </div>
+        </section>
+      )}
+
       {section === "Links" && (
+
 
         <section className="grid gap-3 sm:grid-cols-2">
           {LINK_FIELDS.map((key) => (
