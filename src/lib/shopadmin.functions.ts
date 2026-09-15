@@ -405,3 +405,27 @@ export const shopSavePaymentMethod = createServerFn({ method: "POST" })
     await logActivity("payments", id ? "Payment method updated" : "Payment method added", "success", row.name);
     return { ok: true };
   });
+
+/* --------------------- AI fulfillment email draft (admin) ------------------ */
+
+export const shopDraftEmail = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => idInput.parse(input))
+  .handler(async ({ data }) => {
+    const { draftFulfillmentEmail } = await import("@/lib/shop.server");
+    return await draftFulfillmentEmail(data.id);
+  });
+
+export const shopSaveEmailDraft = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        subject: z.string().trim().min(3).max(200),
+        body: z.string().trim().min(10).max(8000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { saveFulfillmentEmailDraft } = await import("@/lib/shop.server");
+    return await saveFulfillmentEmailDraft(data.id, data.subject, data.body);
+  });
