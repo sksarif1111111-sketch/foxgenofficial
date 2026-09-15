@@ -586,6 +586,7 @@ export type Database = {
       }
       payment_methods: {
         Row: {
+          channel: string
           config: Json
           created_at: string
           currency: string
@@ -594,10 +595,16 @@ export type Database = {
           id: string
           instructions: string | null
           name: string
+          network: string | null
           provider: string
+          recipient: string | null
+          recipient_label: string | null
+          reference_label: string | null
+          settlement_asset: string | null
           updated_at: string
         }
         Insert: {
+          channel?: string
           config?: Json
           created_at?: string
           currency?: string
@@ -606,10 +613,16 @@ export type Database = {
           id?: string
           instructions?: string | null
           name: string
+          network?: string | null
           provider?: string
+          recipient?: string | null
+          recipient_label?: string | null
+          reference_label?: string | null
+          settlement_asset?: string | null
           updated_at?: string
         }
         Update: {
+          channel?: string
           config?: Json
           created_at?: string
           currency?: string
@@ -618,7 +631,12 @@ export type Database = {
           id?: string
           instructions?: string | null
           name?: string
+          network?: string | null
           provider?: string
+          recipient?: string | null
+          recipient_label?: string | null
+          reference_label?: string | null
+          settlement_asset?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -752,83 +770,149 @@ export type Database = {
       }
       products: {
         Row: {
+          availability: string
           banner_url: string | null
           category_id: string | null
           created_at: string
           credit_cost: number
+          credits_per_interval: number | null
           currency: string
+          delivery_method: string
           description: string | null
           display_order: number
           download_file_path: string | null
           download_url: string | null
+          duration_label: string | null
+          emoji: string | null
           featured: boolean
+          features: Json
           giveaway_enabled: boolean
           icon_url: string | null
           id: string
+          image_url: string | null
           installation_guide_url: string | null
+          installation_instructions: string | null
           is_free: boolean
           license_required: boolean
           logo_url: string | null
+          max_per_order: number
           name: string
           price: number
+          price_inr: number | null
+          price_stars: number | null
+          price_usdt: number | null
+          private_delivery_notes: string | null
           product_type: string
           referral_required: boolean
+          renewal_interval: string | null
+          requires_buyer_email: boolean
+          shop_order: number
+          shop_published: boolean
+          short_description: string | null
           short_name: string | null
+          slug: string | null
           status: string
+          stock_mode: string
+          stock_quantity: number | null
+          terms: string | null
           tutorial_url: string | null
           updated_at: string
         }
         Insert: {
+          availability?: string
           banner_url?: string | null
           category_id?: string | null
           created_at?: string
           credit_cost?: number
+          credits_per_interval?: number | null
           currency?: string
+          delivery_method?: string
           description?: string | null
           display_order?: number
           download_file_path?: string | null
           download_url?: string | null
+          duration_label?: string | null
+          emoji?: string | null
           featured?: boolean
+          features?: Json
           giveaway_enabled?: boolean
           icon_url?: string | null
           id?: string
+          image_url?: string | null
           installation_guide_url?: string | null
+          installation_instructions?: string | null
           is_free?: boolean
           license_required?: boolean
           logo_url?: string | null
+          max_per_order?: number
           name: string
           price?: number
+          price_inr?: number | null
+          price_stars?: number | null
+          price_usdt?: number | null
+          private_delivery_notes?: string | null
           product_type?: string
           referral_required?: boolean
+          renewal_interval?: string | null
+          requires_buyer_email?: boolean
+          shop_order?: number
+          shop_published?: boolean
+          short_description?: string | null
           short_name?: string | null
+          slug?: string | null
           status?: string
+          stock_mode?: string
+          stock_quantity?: number | null
+          terms?: string | null
           tutorial_url?: string | null
           updated_at?: string
         }
         Update: {
+          availability?: string
           banner_url?: string | null
           category_id?: string | null
           created_at?: string
           credit_cost?: number
+          credits_per_interval?: number | null
           currency?: string
+          delivery_method?: string
           description?: string | null
           display_order?: number
           download_file_path?: string | null
           download_url?: string | null
+          duration_label?: string | null
+          emoji?: string | null
           featured?: boolean
+          features?: Json
           giveaway_enabled?: boolean
           icon_url?: string | null
           id?: string
+          image_url?: string | null
           installation_guide_url?: string | null
+          installation_instructions?: string | null
           is_free?: boolean
           license_required?: boolean
           logo_url?: string | null
+          max_per_order?: number
           name?: string
           price?: number
+          price_inr?: number | null
+          price_stars?: number | null
+          price_usdt?: number | null
+          private_delivery_notes?: string | null
           product_type?: string
           referral_required?: boolean
+          renewal_interval?: string | null
+          requires_buyer_email?: boolean
+          shop_order?: number
+          shop_published?: boolean
+          short_description?: string | null
           short_name?: string | null
+          slug?: string | null
           status?: string
+          stock_mode?: string
+          stock_quantity?: number | null
+          terms?: string | null
           tutorial_url?: string | null
           updated_at?: string
         }
@@ -979,6 +1063,309 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_delivery_jobs: {
+        Row: {
+          attempts: number
+          channel: string
+          created_at: string
+          id: string
+          last_error: string | null
+          order_id: string
+          payload: Json
+          sent_at: string | null
+          status: string
+          target: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          channel?: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          order_id: string
+          payload?: Json
+          sent_at?: string | null
+          status?: string
+          target?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          order_id?: string
+          payload?: Json
+          sent_at?: string | null
+          status?: string
+          target?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_delivery_jobs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_fulfillments: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          order_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          order_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_fulfillments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_order_events: {
+        Row: {
+          actor: string | null
+          created_at: string
+          details: string | null
+          event: string
+          id: string
+          order_id: string
+        }
+        Insert: {
+          actor?: string | null
+          created_at?: string
+          details?: string | null
+          event: string
+          id?: string
+          order_id: string
+        }
+        Update: {
+          actor?: string | null
+          created_at?: string
+          details?: string | null
+          event?: string
+          id?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_order_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_order_items: {
+        Row: {
+          created_at: string
+          currency: string
+          delivery_email: string | null
+          id: string
+          line_total: number | null
+          order_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          snapshot: Json
+          unit_price: number | null
+          unit_stars: number | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          delivery_email?: string | null
+          id?: string
+          line_total?: number | null
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          snapshot?: Json
+          unit_price?: number | null
+          unit_stars?: number | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          delivery_email?: string | null
+          id?: string
+          line_total?: number | null
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          snapshot?: Json
+          unit_price?: number | null
+          unit_stars?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_orders: {
+        Row: {
+          approved_by: string | null
+          channel: string
+          confirmed_at: string | null
+          created_at: string
+          currency: string
+          customer_name: string | null
+          delivered_at: string | null
+          delivery_emails: string | null
+          email_confirmed_at: string | null
+          expires_at: string | null
+          id: string
+          info_request: string | null
+          order_number: string
+          payment_evidence_url: string | null
+          payment_method_id: string | null
+          payment_method_name: string | null
+          payment_network: string | null
+          payment_recipient: string | null
+          payment_reference: string | null
+          profile_id: string | null
+          reject_reason: string | null
+          rejected_at: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          stars_total: number | null
+          status: string
+          stock_consumed: boolean
+          stock_reserved: boolean
+          submitted_at: string | null
+          telegram_charge_id: string | null
+          telegram_user_id: number | null
+          total: number | null
+          updated_at: string
+        }
+        Insert: {
+          approved_by?: string | null
+          channel?: string
+          confirmed_at?: string | null
+          created_at?: string
+          currency?: string
+          customer_name?: string | null
+          delivered_at?: string | null
+          delivery_emails?: string | null
+          email_confirmed_at?: string | null
+          expires_at?: string | null
+          id?: string
+          info_request?: string | null
+          order_number?: string
+          payment_evidence_url?: string | null
+          payment_method_id?: string | null
+          payment_method_name?: string | null
+          payment_network?: string | null
+          payment_recipient?: string | null
+          payment_reference?: string | null
+          profile_id?: string | null
+          reject_reason?: string | null
+          rejected_at?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          stars_total?: number | null
+          status?: string
+          stock_consumed?: boolean
+          stock_reserved?: boolean
+          submitted_at?: string | null
+          telegram_charge_id?: string | null
+          telegram_user_id?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          approved_by?: string | null
+          channel?: string
+          confirmed_at?: string | null
+          created_at?: string
+          currency?: string
+          customer_name?: string | null
+          delivered_at?: string | null
+          delivery_emails?: string | null
+          email_confirmed_at?: string | null
+          expires_at?: string | null
+          id?: string
+          info_request?: string | null
+          order_number?: string
+          payment_evidence_url?: string | null
+          payment_method_id?: string | null
+          payment_method_name?: string | null
+          payment_network?: string | null
+          payment_recipient?: string | null
+          payment_reference?: string | null
+          profile_id?: string | null
+          reject_reason?: string | null
+          rejected_at?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          stars_total?: number | null
+          status?: string
+          stock_consumed?: boolean
+          stock_reserved?: boolean
+          submitted_at?: string | null
+          telegram_charge_id?: string | null
+          telegram_user_id?: number | null
+          total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_orders_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_orders_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_tasks: {
         Row: {
           created_at: string
@@ -1102,6 +1489,11 @@ export type Database = {
       }
       reject_referral: { Args: { _referral_id: string }; Returns: boolean }
       require_admin: { Args: { _user_id: string }; Returns: boolean }
+      shop_release_stock: { Args: { _order_id: string }; Returns: boolean }
+      shop_reserve_stock: {
+        Args: { _product_id: string; _qty: number }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

@@ -10,3 +10,4 @@
 - [x] Recheck the stale `use-mobile.tsx` diagnostic and current preview health.
 - [x] Referral license redemption: permanent license record, 50-day plan support, editable Extension Instructions guide in bot + admin.
 - [x] Direct reward redemption: generate a valid license immediately from credits without bulk inventory.
+- [x] FOXGEN STORE shop catalogue, website checkout, Telegram Stars checkout, Buying dashboard and email delivery.
