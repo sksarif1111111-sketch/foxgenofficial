@@ -408,6 +408,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           task: "tasks",
           referral: "invite",
           products: "shop",
+          orders: "myorders",
+          myorders: "myorders",
           store: "shop",
           download: "extension",
         };
