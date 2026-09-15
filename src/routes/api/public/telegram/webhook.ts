@@ -314,10 +314,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         // ---------- double-click protection for slow actions ----------
         const guarded = ["verify", "extfile"].includes(action) || action.startsWith("redeem:") || action.startsWith("done:");
+        const redemptionAction = action.startsWith("redeem:");
         const lockKey = `${profile.id}:${action}`;
         if (guarded && !(await acquireLock(lockKey))) return Response.json({ ok: true, locked: true });
         const unlock = async () => {
-          if (guarded) await releaseLock(lockKey);
+          // Keep successful/failed redemption locks until their short TTL expires.
+          // This prevents a second Telegram callback from spending credits twice.
+          if (guarded && !redemptionAction) await releaseLock(lockKey);
         };
 
         try {
