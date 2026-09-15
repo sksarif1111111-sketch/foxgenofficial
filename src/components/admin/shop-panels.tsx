@@ -101,10 +101,13 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
   }, [load]);
 
   const openOrder = async (id: string) => {
-    setOpen(await fDetail({ data: { id } }));
+    const detail = await fDetail({ data: { id } });
+    setOpen(detail);
     setNotes("");
     setReason("");
     setMaterial("");
+    setEmailSubject(String((detail.order as Row)["email_subject"] ?? ""));
+    setEmailBody(String((detail.order as Row)["email_body"] ?? ""));
   };
 
   const act = async (fn: () => Promise<void>) => {
