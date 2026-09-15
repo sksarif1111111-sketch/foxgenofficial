@@ -11,6 +11,7 @@ import {
   adminInventory,
   adminDeleteInventoryLicense,
   adminDeleteReward,
+  adminDeleteTask,
   adminLicenseDurations,
   adminLogs,
   adminRedemptions,
@@ -27,6 +28,7 @@ import {
   adminSetWebhook,
   adminSettings,
   adminTasks,
+  adminTestTelegramChannels,
   adminUsers,
   type AdminOverview,
 } from "@/lib/hubadmin.functions";
@@ -132,6 +134,8 @@ function HubAdmin() {
   const fDurations = useServerFn(adminLicenseDurations);
   const fTasks = useServerFn(adminTasks);
   const fSaveTask = useServerFn(adminSaveTask);
+  const fDeleteTask = useServerFn(adminDeleteTask);
+  const fTestChannels = useServerFn(adminTestTelegramChannels);
   const fResetTasks = useServerFn(adminResetUserTasks);
   const fImport = useServerFn(adminImportLicenses);
   const fInventory = useServerFn(adminInventory);
@@ -156,6 +160,8 @@ function HubAdmin() {
   const [search, setSearch] = useState("");
   const [rewards, setRewards] = useState<RewardRow[]>([]);
   const [tasks, setTasks] = useState<TaskRow[]>([]);
+  const [newTask, setNewTask] = useState({ name: "", platform: "youtube", url: "", description: "", telegram_chat_id: "", verification_type: "manual_confirmation" as "manual_confirmation" | "telegram_auto_verification", required: true, enabled: true, display_order: 10 });
+  const [channelTests, setChannelTests] = useState<Awaited<ReturnType<typeof adminTestTelegramChannels>> | null>(null);
   const [inventory, setInventory] = useState<InvRow[]>([]);
   const [redemptions, setRedemptions] = useState<RedemptionRow[]>([]);
   const [inventorySearch, setInventorySearch] = useState("");
@@ -487,6 +493,23 @@ function HubAdmin() {
 
       {section === "Tasks" && (
         <section className="space-y-3">
+          <div className="space-y-3 rounded-2xl border border-primary/40 bg-card/60 p-4">
+            <p className="font-bold">Add Task</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <input value={newTask.name} onChange={(e) => setNewTask({ ...newTask, name: e.target.value })} placeholder="Task name" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+              <input value={newTask.platform} onChange={(e) => setNewTask({ ...newTask, platform: e.target.value })} placeholder="Platform" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+              <input value={newTask.url} onChange={(e) => setNewTask({ ...newTask, url: e.target.value })} placeholder="https://…" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+              <input value={newTask.telegram_chat_id} onChange={(e) => setNewTask({ ...newTask, telegram_chat_id: e.target.value })} placeholder="Telegram @username or -100…" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+            </div>
+            <textarea value={newTask.description} onChange={(e) => setNewTask({ ...newTask, description: e.target.value })} placeholder="Description" className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+            <div className="flex flex-wrap gap-2">
+              <select value={newTask.verification_type} onChange={(e) => setNewTask({ ...newTask, verification_type: e.target.value as typeof newTask.verification_type })} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                <option value="manual_confirmation">Manual confirmation</option>
+                <option value="telegram_auto_verification">Telegram auto-check</option>
+              </select>
+              <button onClick={async () => { await fSaveTask({ data: newTask }); setNewTask({ ...newTask, name: "", url: "", description: "", telegram_chat_id: "", display_order: newTask.display_order + 1 }); setFlash("Task added"); void loadSection("Tasks"); }} className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Add Task</button>
+            </div>
+          </div>
           {tasks.map((t) => (
             <div key={t.id} className="space-y-2 rounded-2xl border border-border bg-card/60 p-4">
               <input
@@ -494,6 +517,12 @@ function HubAdmin() {
                 placeholder="▶️ Task name (icon + text)"
                 onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), name: e.target.value } })}
                 className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-bold"
+              />
+              <input
+                defaultValue={t.platform}
+                placeholder="Platform"
+                onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), platform: e.target.value } })}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
               />
               <textarea
                 defaultValue={t.description ?? ""}
@@ -566,6 +595,7 @@ function HubAdmin() {
                 >
                   {t.verification_type === "manual_confirmation" ? "Manual check" : "Telegram auto-check"}
                 </button>
+                <button onClick={async () => { await fDeleteTask({ data: { id: t.id } }); setFlash("Task removed"); void loadSection("Tasks"); }} className="rounded-lg border border-destructive px-3 py-1 font-semibold text-destructive">Delete</button>
               </div>
             </div>
           ))}
@@ -696,7 +726,26 @@ function HubAdmin() {
             >
               Connect / refresh webhook
             </button>
+            <button
+              onClick={async () => setChannelTests(await fTestChannels({ data: undefined }))}
+              className="ml-2 mt-3 rounded-xl border border-border px-4 py-2 text-xs font-bold"
+            >
+              Test channel connection
+            </button>
           </div>
+          {channelTests && (
+            <div className="space-y-3">
+              <p className="font-bold">{channelTests.botOk ? "🟢 Bot Token Valid" : "🔴 Bot Token Invalid"}</p>
+              {channelTests.channels.map((channel) => (
+                <div key={channel.id} className="rounded-2xl border border-border bg-card/60 p-4 text-sm">
+                  <p className="font-bold">{channel.ready ? "🟢" : "🔴"} {channel.name}</p>
+                  <p>Channel ID: {channel.chatId || "not configured"}</p>
+                  <p>Channel Found: {channel.channelFound ? "Yes" : "No"} · Bot Access: {channel.botHasAccess ? "Yes" : "No"} · Bot Role: {channel.botStatus}</p>
+                  {!channel.ready && <p className="mt-2 text-destructive">⚠️ Add @FoxicGEN_BOT as an administrator in this channel, save, then test again. {channel.reason}</p>}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="rounded-2xl border border-border bg-card/60 p-5">
             <p className="font-bold">Broadcast to all members</p>
             <textarea
@@ -726,6 +775,7 @@ function toTaskInput(t: TaskRow) {
   return {
     id: t.id,
     name: t.name,
+    platform: t.platform,
     description: t.description ?? "",
     url: t.url ?? "",
     telegram_chat_id: t.telegram_chat_id ?? "",

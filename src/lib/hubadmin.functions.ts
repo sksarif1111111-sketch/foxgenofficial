@@ -190,8 +190,9 @@ export const adminSaveTask = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        id: z.string().uuid(),
+        id: z.string().uuid().optional(),
         name: z.string().trim().min(1).max(120),
+        platform: z.string().trim().min(1).max(40),
         description: z.string().trim().max(500).optional(),
         url: z.string().trim().max(500),
         telegram_chat_id: z.string().trim().max(120).optional(),
@@ -203,18 +204,59 @@ export const adminSaveTask = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { db } = await import("@/lib/hub.server");
+    const { db, normalizeTelegramChat } = await import("@/lib/hub.server");
     const { id, ...rest } = data;
-    await db
-      .from("social_tasks")
-      .update({
-        ...rest,
-        description: rest.description ?? null,
-        telegram_chat_id: rest.telegram_chat_id ?? null,
-      })
-      .eq("id", id);
+    const values = {
+      ...rest,
+      description: rest.description ?? null,
+      telegram_chat_id: rest.verification_type === "telegram_auto_verification"
+        ? normalizeTelegramChat(rest.telegram_chat_id || rest.url)
+        : null,
+    };
+    const result = id
+      ? await db.from("social_tasks").update(values).eq("id", id)
+      : await db.from("social_tasks").insert(values);
+    if (result.error) throw new Error(result.error.message);
     return { ok: true };
   });
+
+export const adminDeleteTask = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    const { error } = await db.from("social_tasks").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminTestTelegramChannels = createServerFn({ method: "POST" }).handler(async () => {
+  const { activeTasks, normalizeTelegramChat, tg } = await import("@/lib/hub.server");
+  const me = await tg<{ id: number; username?: string }>("getMe");
+  if (!me.ok || !me.result) {
+    return { botOk: false, botUsername: null, channels: [], error: me.description ?? "Bot token is invalid." };
+  }
+  const tasks = (await activeTasks()).filter((task) => task.verification_type === "telegram_auto_verification");
+  const channels = [];
+  for (const task of tasks) {
+    const chatId = normalizeTelegramChat(task.telegram_chat_id || task.url || "");
+    const chat = chatId ? await tg<{ title?: string; username?: string }>("getChat", { chat_id: chatId }) : { ok: false, description: "Channel ID is missing." };
+    const access = chat.ok ? await tg<{ status: string }>("getChatMember", { chat_id: chatId, user_id: me.result.id }) : { ok: false, description: chat.description };
+    const status = access.ok ? access.result?.status ?? "unknown" : "unavailable";
+    const ready = chat.ok && access.ok && ["creator", "owner", "administrator"].includes(status);
+    channels.push({
+      id: task.id,
+      name: task.name,
+      url: task.url,
+      chatId,
+      channelFound: Boolean(chat.ok),
+      botHasAccess: Boolean(access.ok),
+      botStatus: status,
+      ready,
+      reason: ready ? null : access.description ?? chat.description ?? "Add @FoxicGEN_BOT as a channel administrator.",
+    });
+  }
+  return { botOk: true, botUsername: me.result.username ?? null, channels, error: null };
+});
 
 export const adminResetUserTasks = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))

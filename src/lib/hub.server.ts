@@ -44,6 +44,12 @@ export async function tg<T = unknown>(method: string, payload: Record<string, un
   return json;
 }
 
+export function normalizeTelegramChat(raw: string): string {
+  const value = raw.trim().replace(/^https?:\/\/(?:www\.)?t\.me\//i, "").replace(/^@/, "").split(/[/?#]/)[0] ?? "";
+  if (!value) return "";
+  return /^-?\d+$/.test(value) ? value : `@${value.toLowerCase()}`;
+}
+
 /** Records a technical failure for the admin debug page. Users never see these strings. */
 export async function logBotError(
   category: string,
@@ -52,6 +58,16 @@ export async function logBotError(
   context?: string | null,
 ) {
   try {
+    const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data: duplicate } = await db
+      .from("bot_error_logs")
+      .select("id")
+      .eq("category", category)
+      .eq("message", message.slice(0, 1000))
+      .gte("created_at", cutoff)
+      .limit(1)
+      .maybeSingle();
+    if (duplicate) return;
     await db.from("bot_error_logs").insert({
       category,
       message: message.slice(0, 1000),
@@ -229,7 +245,10 @@ export async function activeTasks(): Promise<TaskRow[]> {
   const rows = (data ?? []) as TaskRow[];
   const seen = new Set<string>();
   return rows.filter((task) => {
-    const identity = `${task.platform.trim().toLowerCase()}:${(task.telegram_chat_id || task.url || task.name).trim().toLowerCase()}`;
+    const telegramChat = normalizeTelegramChat(task.telegram_chat_id || task.url || "");
+    const identity = task.verification_type === "telegram_auto_verification"
+      ? `telegram:${telegramChat || task.id}`
+      : `${task.platform.trim().toLowerCase()}:${(task.url || task.name).trim().toLowerCase()}`;
     if (seen.has(identity)) return false;
     seen.add(identity);
     return true;
@@ -249,19 +268,18 @@ export async function refreshVerification(profile: Profile) {
 
   for (const task of tasks) {
     if (task.verification_type !== "telegram_auto_verification") continue;
-    const chat = (task.telegram_chat_id || "").trim();
+    const chat = normalizeTelegramChat(task.telegram_chat_id || task.url || "");
     if (!chat) {
       telegram.push({ id: task.id, name: task.name, url: task.url, ok: false, error: "Channel ID is not configured." });
       continue;
     }
     let ok = false;
     const res = await tg<{ status: string; is_member?: boolean }>("getChatMember", {
-      chat_id: chat.startsWith("-") ? chat : `@${chat.replace(/^@/, "")}`,
+      chat_id: chat,
       user_id: profile.telegram_user_id,
     });
     if (res.ok && res.result) {
-      ok = ["creator", "administrator", "member"].includes(res.result.status) ||
-        (res.result.status === "restricted" && res.result.is_member === true);
+      ok = ["creator", "owner", "administrator", "member"].includes(res.result.status);
     }
     const error = ok
       ? null
@@ -279,6 +297,8 @@ export async function refreshVerification(profile: Profile) {
           task_id: task.id,
           completed: true,
           verification_status: "verified",
+          verification_method: "telegram_api",
+          verified_at: new Date().toISOString(),
           completed_at: new Date().toISOString(),
         },
         { onConflict: "user_id,task_id" },
@@ -292,7 +312,13 @@ export async function refreshVerification(profile: Profile) {
         .maybeSingle();
       if (!prev?.completed) {
         await db.from("task_completions").upsert(
-          { user_id: profile.id, task_id: task.id, completed: false, verification_status: "pending" },
+          {
+            user_id: profile.id,
+            task_id: task.id,
+            completed: false,
+            verification_status: res.ok ? "failed" : "pending",
+            verification_method: "telegram_api",
+          },
           { onConflict: "user_id,task_id" },
         );
       }
@@ -339,7 +365,7 @@ export async function notifyReferralReward(referredUserId: string) {
   ]);
   if (!referrer) return;
 
-  await tg("sendMessage", {
+  const sent = await tg("sendMessage", {
     chat_id: referrer.telegram_user_id,
     parse_mode: "HTML",
     text:
@@ -349,6 +375,9 @@ export async function notifyReferralReward(referredUserId: string) {
       `💰 Available Credits: <b>${referrer.credits_available}</b>\n\n` +
       `Keep inviting friends to unlock free Lovable Unlimited licenses!`,
   });
+  if (!sent.ok) {
+    await logBotError("telegram_api", sent.description ?? "Referral notification failed", referrer.telegram_user_id, "notifyReferralReward");
+  }
 }
 
 
