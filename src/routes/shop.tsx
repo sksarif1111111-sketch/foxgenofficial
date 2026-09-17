@@ -8,6 +8,7 @@ import {
   shopMyOrders,
   shopPlaceOrder,
   shopSubmitPayment,
+  shopWallet,
   type MyOrder,
   type ShopCatalog,
 } from "@/lib/shop.functions";
@@ -103,6 +104,7 @@ function ShopPage() {
   const [evidence, setEvidence] = useState("");
   const [emails, setEmails] = useState("");
   const [emailSummary, setEmailSummary] = useState("");
+  const [wallet, setWallet] = useState<{ balance: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -132,6 +134,19 @@ function ShopPage() {
     void refreshOrders();
   }, [refreshOrders]);
 
+  const refreshWallet = useCallback(async () => {
+    if (!token) return;
+    try {
+      setWallet(await loadWallet({ data: { token } }));
+    } catch {
+      /* invalid token — wallet stays hidden */
+    }
+  }, [loadWallet, token]);
+
+  useEffect(() => {
+    void refreshWallet();
+  }, [refreshWallet]);
+
   const availableMethods = useMemo(() => {
     if (!catalog || !product) return [] as Method[];
     return catalog.methods.filter((m) => (m.currency === "INR" ? product.price_inr !== null : true));
@@ -149,7 +164,11 @@ function ShopPage() {
     }
   };
 
-  const total = product?.price_usdt !== null && product?.price_usdt !== undefined ? product.price_usdt * quantity : null;
+  const unitPrice = method?.currency === "INR" ? (product?.price_inr ?? null) : (product?.price_usdt ?? null);
+  const totalCurrency = method?.currency === "INR" ? "INR" : "USDT";
+  const total = unitPrice === null ? null : unitPrice * quantity;
+  const walletShort =
+    method?.provider === "wallet" && total !== null && (wallet?.balance ?? 0) < total;
 
   return (
     <main className="min-h-screen bg-background px-4 py-10 text-foreground">
@@ -371,7 +390,11 @@ function ShopPage() {
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-muted-foreground">Total</dt>
                 <dd className="text-lg font-black text-primary">
-                  {total === null ? "Price not configured" : `${total.toFixed(2)} USDT`}
+                  {total === null
+                    ? "Price not configured"
+                    : totalCurrency === "INR"
+                      ? `₹${total.toFixed(2)}`
+                      : `${total.toFixed(2)} USDT`}
                 </dd>
               </div>
             </dl>
@@ -390,9 +413,20 @@ function ShopPage() {
                     {m.name}
                     {m.network ? ` · ${m.network}` : ""}
                   </span>
-                  <span className="text-muted-foreground">{m.currency}</span>
+                  <span className="text-muted-foreground">
+                    {m.provider === "wallet"
+                      ? `Balance $${(wallet?.balance ?? 0).toFixed(2)}`
+                      : m.currency === "INR"
+                        ? "INR"
+                        : m.currency}
+                  </span>
                 </button>
               ))}
+              {walletShort && (
+                <p className="text-xs text-destructive">
+                  Your wallet balance is not enough for this order. Ask support to add funds.
+                </p>
+              )}
               {catalog?.methods.some((m) => m.currency === "INR") && product.price_inr === null && (
                 <p className="text-xs text-muted-foreground">
                   UPI is unavailable for this product until an INR price is configured.
@@ -402,14 +436,20 @@ function ShopPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                disabled={busy || !method || !token}
+                disabled={busy || !method || !token || walletShort}
                 onClick={() =>
                   void run(async () => {
                     const order = await place({
                       data: { token, productId: product.id, quantity, paymentMethodId: method!.id },
                     });
                     setDraft(order);
-                    setStep("pay");
+                    if (method?.provider === "wallet") {
+                      await refreshWallet();
+                      await refreshOrders();
+                      setStep("email");
+                    } else {
+                      setStep("pay");
+                    }
                   })
                 }
                 className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"

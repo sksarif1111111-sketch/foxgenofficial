@@ -27,6 +27,7 @@ export type ShopCatalog = {
   }>;
   methods: Array<{
     id: string;
+    provider: string;
     name: string;
     currency: string;
     network: string | null;
@@ -72,6 +73,7 @@ export const shopCatalog = createServerFn({ method: "POST" }).handler(async (): 
     })),
     methods: (methods as Array<Record<string, unknown>>).map((m) => ({
       id: String(m["id"]),
+      provider: String(m["provider"] ?? ""),
       name: String(m["name"]),
       currency: String(m["currency"]),
       network: (m["network"] as string) ?? null,
