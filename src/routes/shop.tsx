@@ -91,6 +91,7 @@ function ShopPage() {
   const confirmEmails = useServerFn(shopConfirmEmails);
   const loadOrders = useServerFn(shopMyOrders);
   const cancel = useServerFn(shopCancelOrder);
+  const loadWallet = useServerFn(shopWallet);
 
   const [token, setToken] = useState("");
   const [catalog, setCatalog] = useState<ShopCatalog | null>(null);
