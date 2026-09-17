@@ -269,7 +269,67 @@ export async function createOrder(input: {
 
   await orderEvent(order.id, "order_created", "customer", `${product.name} x${input.quantity}`);
   await logActivity("shop", "Order created", "info", `${order.order_number} — ${product.name} x${input.quantity}`);
+
+  if (method && String(method["provider"]) === "wallet") {
+    const amount = Number(order.total ?? 0);
+    const paid = input.profileId
+      ? await db.rpc("wallet_debit", {
+          _profile_id: input.profileId,
+          _amount: amount,
+          _order_id: order.id as string,
+          _note: `${product.name} x${input.quantity}`,
+        })
+      : { data: false, error: null };
+    if (!input.profileId || paid.error || paid.data !== true) {
+      await db.rpc("shop_release_stock", { _order_id: order.id });
+      await db
+        .from("shop_orders")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", order.id);
+      await orderEvent(order.id, "cancelled", "system", "Wallet balance was not enough");
+      throw new Error("Your wallet balance is not enough for this order. Ask support to add funds to your wallet.");
+    }
+    const { data: updated } = await db
+      .from("shop_orders")
+      .update({
+        payment_reference: `WALLET-${order.order_number}`,
+        status: "awaiting_email",
+        submitted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", order.id)
+      .select("*")
+      .single();
+    await orderEvent(order.id, "payment_submitted", "customer", `Paid ${amount.toFixed(2)} USD from wallet balance`);
+    if (updated) return updated;
+  }
+
   return order;
+}
+
+export async function refundWalletOrder(order: Record<string, unknown>, reason: string) {
+  const reference = String(order["payment_reference"] ?? "");
+  if (!reference.startsWith("WALLET-")) return { refunded: false };
+  const profileId = order["profile_id"] as string | null;
+  const amount = Number(order["total"] ?? 0);
+  if (!profileId || !(amount > 0)) return { refunded: false };
+  const { data: already } = await db
+    .from("wallet_transactions")
+    .select("id")
+    .eq("order_id", order["id"] as string)
+    .eq("kind", "refund")
+    .maybeSingle();
+  if (already) return { refunded: false };
+  await db.rpc("wallet_credit", {
+    _profile_id: profileId,
+    _amount: amount,
+    _kind: "refund",
+    _note: reason,
+    _order_id: order["id"] as string,
+    _actor: "system",
+  });
+  await orderEvent(order["id"] as string, "wallet_refunded", "system", `${amount.toFixed(2)} USD returned to wallet`);
+  return { refunded: true, amount };
 }
 
 export async function submitPayment(orderId: string, reference: string, evidenceUrl: string | null) {
