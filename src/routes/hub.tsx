@@ -224,7 +224,7 @@ function HubPage() {
             <a href={`https://t.me/share/url?url=${encodeURIComponent(state.referralLink)}&text=${encodeURIComponent(shareMessage.replace(state.referralLink, ""))}`} target="_blank" rel="noreferrer" className="rounded-xl border border-border px-4 py-2 text-xs font-bold">Telegram Share</a>
             <a href={`https://wa.me/?text=${encodedMessage}`} target="_blank" rel="noreferrer" className="rounded-xl border border-border px-4 py-2 text-xs font-bold">WhatsApp Share</a>
             <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(state.referralLink)}`} target="_blank" rel="noreferrer" className="rounded-xl border border-border px-4 py-2 text-xs font-bold">Facebook Share</a>
-            <button onClick={() => navigator.clipboard.writeText(state.referralLink).then(() => setFlash("Referral link copied"))} className="rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground">Copy Referral Link</button>
+            <button onClick={() => navigator.clipboard.writeText(state.referralLink ?? "").then(() => setFlash("Referral link copied"))} className="rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground">Copy Referral Link</button>
           </div>
           </>
           )}

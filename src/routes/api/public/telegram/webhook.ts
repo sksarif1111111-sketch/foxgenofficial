@@ -1093,7 +1093,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true });
           }
 
-          await render(await homeBody(profile), buildHomeKeyboard());
+          const fresh = (await profileByTelegramId(from.id)) ?? profile;
+          await render(await homeBody(fresh), buildHomeKeyboard(fresh.status === "active"));
           return Response.json({ ok: true });
         } catch (err) {
           await logBotError("callback", err instanceof Error ? err.message : "unhandled error", from.id, action);
