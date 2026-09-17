@@ -109,7 +109,9 @@ function HubPage() {
   if (!state) return <main className="p-10 text-sm text-muted-foreground">Loading…</main>;
 
   const links = state.links;
-  const shareMessage = `🦊 Join FoxGEN PRO Rewards Hub!\n\n🎁 Earn FREE Lovable Unlimited Extension licenses.\n\nComplete tasks, invite friends and earn credits.\n\nJoin using my referral link:\n${state.referralLink}`;
+  const shareMessage = state.referralLink
+    ? `🦊 Join FoxGEN PRO Rewards Hub!\n\n🎁 Earn FREE Lovable Unlimited Extension licenses.\n\nComplete tasks, invite friends and earn credits.\n\nJoin using my referral link:\n${state.referralLink}`
+    : "";
   const encodedMessage = encodeURIComponent(shareMessage);
 
   async function run(fn: () => Promise<string | void>) {
@@ -191,11 +193,19 @@ function HubPage() {
       {tab === "Invite" && (
         <section className="rounded-2xl border border-border bg-card/60 p-6">
           <h2 className="text-xl font-black">👥 Invite & Earn</h2>
+          {!state.referralLink ? (
+            <div className="mt-5 border border-border bg-muted/40 p-5">
+              <p className="font-bold">Complete every required task first.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Your referral link unlocks after your account is fully verified.</p>
+              <button onClick={() => setTab("Tasks")} className="mt-4 rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground">Open Tasks</button>
+            </div>
+          ) : (
+          <>
           <p className="mt-1 text-sm text-muted-foreground">1 verified referral = 1 credit.</p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <Card label="Valid referrals" value={state.verifiedReferrals} />
             <Card label="Available credits" value={state.profile.credits_available} />
-            <Card label="Referral code" value={state.profile.referral_code} />
+            <Card label="Referral code" value={state.profile.referral_code ?? "—"} />
           </div>
           <p className="mt-5 text-xs font-bold uppercase text-muted-foreground">Your referral link</p>
           <p className="mt-2 break-all rounded-xl bg-muted/40 px-4 py-3 font-mono text-sm">{state.referralLink}</p>
@@ -214,8 +224,10 @@ function HubPage() {
             <a href={`https://t.me/share/url?url=${encodeURIComponent(state.referralLink)}&text=${encodeURIComponent(shareMessage.replace(state.referralLink, ""))}`} target="_blank" rel="noreferrer" className="rounded-xl border border-border px-4 py-2 text-xs font-bold">Telegram Share</a>
             <a href={`https://wa.me/?text=${encodedMessage}`} target="_blank" rel="noreferrer" className="rounded-xl border border-border px-4 py-2 text-xs font-bold">WhatsApp Share</a>
             <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(state.referralLink)}`} target="_blank" rel="noreferrer" className="rounded-xl border border-border px-4 py-2 text-xs font-bold">Facebook Share</a>
-            <button onClick={() => navigator.clipboard.writeText(state.referralLink).then(() => setFlash("Referral link copied"))} className="rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground">Copy Referral Link</button>
+            <button onClick={() => navigator.clipboard.writeText(state.referralLink ?? "").then(() => setFlash("Referral link copied"))} className="rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground">Copy Referral Link</button>
           </div>
+          </>
+          )}
         </section>
       )}
 

@@ -239,15 +239,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---------- keyboard builders (always a brand new array) ----------
         const backRow = (to = "menu"): Btn[] => [{ text: `${E("back", "⬅️")} Back`, callback_data: to }];
 
-        const buildHomeKeyboard = (): Keyboard => [
+        const buildHomeKeyboard = (isActive: boolean): Keyboard => [
           [
             { text: `${E("shop", "🛍️")} Shop`, callback_data: "shop" },
             { text: `${E("rewards", "🎁")} Free Rewards`, callback_data: "rewards" },
           ],
-          [
-            { text: `${E("profile", "👤")} My Profile`, callback_data: "me" },
-            { text: `${E("invite", "👥")} Invite & Earn`, callback_data: "invite" },
-          ],
+          isActive
+            ? [
+                { text: `${E("profile", "👤")} My Profile`, callback_data: "me" },
+                { text: `${E("invite", "👥")} Invite & Earn`, callback_data: "invite" },
+              ]
+            : [{ text: `${E("profile", "👤")} My Profile`, callback_data: "me" }],
           [
             { text: `${E("tasks", "📋")} Tasks`, callback_data: "tasks" },
             { text: `${E("extension", "📦")} Extension`, callback_data: "extension" },
@@ -327,9 +329,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---------- /start ----------
         if (text.startsWith("/start")) {
           const payload = text.split(/\s+/)[1] ?? "";
-          // Fast first response: show the store immediately, then do the slower work.
-          await send(welcomeText, buildHomeKeyboard());
-          await ensureProfile(from, payload);
+          const { profile: startedProfile } = await ensureProfile(from, payload);
+          await send(welcomeText, buildHomeKeyboard(startedProfile.status === "active"));
           void tg("setMyCommands", {
             commands: [
               { command: "start", description: `${E("brand", "🦊")} Open ${storeName}` },
@@ -429,7 +430,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         try {
           if (action === "menu") {
-            await render(await homeBody(profile), buildHomeKeyboard());
+            const fresh = (await profileByTelegramId(from.id)) ?? profile;
+            await render(await homeBody(fresh), buildHomeKeyboard(fresh.status === "active"));
             return Response.json({ ok: true });
           }
 
@@ -666,7 +668,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
           if (action.startsWith("done:")) {
             const taskId = action.slice(5);
-            await db.from("task_completions").upsert(
+            const { error: completionError } = await db.from("task_completions").upsert(
               {
                 user_id: profile.id,
                 task_id: taskId,
@@ -677,6 +679,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               },
               { onConflict: "user_id,task_id" },
             );
+            if (completionError) throw new Error(`Could not save task completion: ${completionError.message}`);
             const state = await refreshVerification(profile);
             if (state.allDone) await render(activatedText, buildActivatedKeyboard());
             else await renderTasks();
@@ -824,10 +827,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 `${LINE}`,
               [
                 [{ text: `${E("license", "🔑")} My Licenses`, url: `${siteUrl}/hub?t=${profile.web_token}` }],
-                [
-                  { text: `${E("invite", "👥")} Invite`, callback_data: "invite" },
-                  { text: `${E("rank", "🏆")} Ranking`, callback_data: "board" },
-                ],
+                fresh.status === "active"
+                  ? [
+                      { text: `${E("invite", "👥")} Invite`, callback_data: "invite" },
+                      { text: `${E("rank", "🏆")} Ranking`, callback_data: "board" },
+                    ]
+                  : [{ text: `${E("tasks", "📋")} Complete Tasks`, callback_data: "tasks" }],
                 backRow(),
               ],
             );
@@ -856,6 +861,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
           if (action === "invite") {
             const fresh = await profileByTelegramId(from.id);
+            if (fresh?.status !== "active") {
+              await render(
+                `🔒 <b>Invites are locked</b>\n${LINE}\nComplete every required task and verify your account first. Your personal invite link will appear after activation.`,
+                [[{ text: `${E("tasks", "📋")} Complete Tasks`, callback_data: "tasks" }], backRow()],
+              );
+              return Response.json({ ok: true });
+            }
             const refs = await verifiedReferrals(profile.id);
             const credits = fresh?.credits_available ?? 0;
             const { data: nextReward } = await db
@@ -1081,7 +1093,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true });
           }
 
-          await render(await homeBody(profile), buildHomeKeyboard());
+          const fresh = (await profileByTelegramId(from.id)) ?? profile;
+          await render(await homeBody(fresh), buildHomeKeyboard(fresh.status === "active"));
           return Response.json({ ok: true });
         } catch (err) {
           await logBotError("callback", err instanceof Error ? err.message : "unhandled error", from.id, action);

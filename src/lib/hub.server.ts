@@ -194,6 +194,7 @@ export async function ensureProfile(
       .from("profiles")
       .select("*")
       .eq("referral_code", startPayload.trim().toUpperCase())
+      .eq("status", "active")
       .maybeSingle();
     referrer = (data ?? null) as Profile | null;
   }
@@ -256,7 +257,8 @@ export async function activeTasks(): Promise<TaskRow[]> {
 }
 
 export async function completionsFor(userId: string) {
-  const { data } = await db.from("task_completions").select("*").eq("user_id", userId);
+  const { data, error } = await db.from("task_completions").select("*").eq("user_id", userId);
+  if (error) throw new Error(`Could not load task progress: ${error.message}`);
   return data ?? [];
 }
 
@@ -291,7 +293,7 @@ export async function refreshVerification(profile: Profile) {
     telegram.push({ id: task.id, name: task.name, url: task.url, ok, error });
     // Never downgrade a previously verified membership on a transient API failure.
     if (ok) {
-      await db.from("task_completions").upsert(
+      const { error: completionError } = await db.from("task_completions").upsert(
         {
           user_id: profile.id,
           task_id: task.id,
@@ -303,6 +305,7 @@ export async function refreshVerification(profile: Profile) {
         },
         { onConflict: "user_id,task_id" },
       );
+      if (completionError) throw new Error(`Could not save ${task.name}: ${completionError.message}`);
     } else {
       const { data: prev } = await db
         .from("task_completions")
@@ -311,7 +314,7 @@ export async function refreshVerification(profile: Profile) {
         .eq("task_id", task.id)
         .maybeSingle();
       if (!prev?.completed) {
-        await db.from("task_completions").upsert(
+        const { error: completionError } = await db.from("task_completions").upsert(
           {
             user_id: profile.id,
             task_id: task.id,
@@ -321,6 +324,7 @@ export async function refreshVerification(profile: Profile) {
           },
           { onConflict: "user_id,task_id" },
         );
+        if (completionError) throw new Error(`Could not save ${task.name}: ${completionError.message}`);
       }
     }
   }
@@ -333,19 +337,15 @@ export async function refreshVerification(profile: Profile) {
 
   const allDone = missing.length === 0;
   if (allDone) {
-    if (profile.status !== "active") {
-      await db.from("profiles").update({ status: "active", updated_at: new Date().toISOString() }).eq("id", profile.id);
-      await db.from("notifications").insert({
-        user_id: profile.id,
-        title: "Account activated",
-        body: "All tasks completed. You can now earn credits and redeem licenses.",
-        kind: "account",
-      });
+    // Activation and referral credit are committed together. The referral award
+    // remains idempotent, so retrying verification cannot issue duplicate credit.
+    const { data, error } = await db.rpc("activate_verified_profile", { _user_id: profile.id });
+    if (error) {
+      await logBotError("referral_activation", error.message, profile.telegram_user_id, "refreshVerification");
+      throw new Error("Account activation could not be completed. Please try again.");
     }
-    // Safe to retry on every successful verification: award_referral is row-locked
-    // and permanently records credit_awarded before issuing exactly one credit.
-    const { data: awarded } = await db.rpc("award_referral", { _referred_user_id: profile.id });
-    if (awarded) await notifyReferralReward(profile.id);
+    const result = Array.isArray(data) ? data[0] : data;
+    if (result?.referral_awarded) await notifyReferralReward(profile.id);
   }
   return { allDone, missing, telegram, doneIds: [...doneIds] };
 }

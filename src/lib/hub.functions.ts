@@ -10,12 +10,12 @@ export type HubState = {
     username: string | null;
     initials: string;
     status: string;
-    referral_code: string;
+    referral_code: string | null;
     credits_available: number;
     credits_earned: number;
     credits_spent: number;
   };
-  referralLink: string;
+  referralLink: string | null;
   verifiedReferrals: number;
   pendingReferrals: number;
   bonusCredits: number;
@@ -86,14 +86,16 @@ export const getHubState = createServerFn({ method: "POST" })
           .map((part) => part?.charAt(0).toUpperCase())
           .join("") || "FG",
         status: profile.status,
-        referral_code: profile.referral_code,
+        referral_code: profile.status === "active" ? profile.referral_code : null,
         credits_available: profile.credits_available,
         credits_earned: profile.credits_earned,
         credits_spent: profile.credits_spent,
       },
-      referralLink: botUser
-        ? `https://t.me/${botUser}?start=${profile.referral_code}`
-        : `Referral code: ${profile.referral_code}`,
+      referralLink: profile.status !== "active"
+        ? null
+        : botUser
+          ? `https://t.me/${botUser}?start=${profile.referral_code}`
+          : `Referral code: ${profile.referral_code}`,
       verifiedReferrals: (refs.data ?? []).filter((r) => r.status === "verified").length,
       pendingReferrals: (refs.data ?? []).filter((r) => r.status === "pending").length,
       bonusCredits: transactions
@@ -131,7 +133,7 @@ export const completeTask = createServerFn({ method: "POST" })
     const { db, profileByToken, refreshVerification } = await import("@/lib/hub.server");
     const profile = await profileByToken(data.token);
     if (!profile) throw new Error("Invalid access link.");
-    await db.from("task_completions").upsert(
+    const { error } = await db.from("task_completions").upsert(
       {
         user_id: profile.id,
         task_id: data.taskId,
@@ -142,6 +144,7 @@ export const completeTask = createServerFn({ method: "POST" })
       },
       { onConflict: "user_id,task_id" },
     );
+    if (error) throw new Error("Could not save this task. Please try again.");
     return await refreshVerification(profile);
   });
 
