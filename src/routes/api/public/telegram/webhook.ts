@@ -318,7 +318,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             `<i>${esc(storeTagline)}</i>\n` +
             `${LINE}\n` +
             `${E("credits", "💰")} Credits: <b>${p.credits_available}</b>\n` +
-            `${E("invite", "👥")} Verified Referrals: <b>${refs.count ?? 0}</b>\n` +
+            `${E("invite", "👥")} Joined Referrals: <b>${refs.count ?? 0}</b>\n` +
             `${E("license", "🔑")} Licenses Claimed: <b>${lic.count ?? 0}</b>\n` +
             `${E("rank", "🏆")} Global Rank: <b>#${(ahead.count ?? 0) + 1}</b>\n` +
             `${LINE}\n` +
@@ -440,7 +440,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               `${E("help", "ℹ️")} <b>HELP &amp; RULES</b>\n${LINE}\n` +
                 `1️⃣ Complete all community tasks\n` +
                 `2️⃣ Share your personal invite link\n` +
-                `3️⃣ 1 verified referral = 1 credit\n` +
+                `3️⃣ A friend's first Start = 1 credit\n` +
                 `4️⃣ Redeem credits for free licenses\n\n` +
                 `⚠️ Fake or duplicate accounts are rejected and never earn credits.\n` +
                 `${LINE}\nNeed a hand? Tap Support.`,
@@ -624,7 +624,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const activatedText =
             `${E("success", "🎉")} <b>ACCOUNT ACTIVATED</b>\n${LINE}\n` +
             `All tasks completed.\n\n${E("invite", "👥")} Invite friends\n${E("credits", "💰")} Earn credits\n${E("rewards", "🎁")} Redeem licenses\n\n` +
-            `1 verified referral = 1 credit.`;
+            `A friend's first Start = 1 credit.`;
 
           const buildActivatedKeyboard = (): Keyboard => [
             [{ text: `${E("invite", "👥")} Invite Friends`, callback_data: "invite" }],
@@ -883,7 +883,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             const message = `${shareText}\n\n${inviteLink}`;
             await render(
               `${E("invite", "👥")} <b>INVITE &amp; EARN</b>\n${LINE}\n` +
-                `👤 Valid Referrals: <b>${refs}</b>\n` +
+                `👤 Joined Referrals: <b>${refs}</b>\n` +
                 `${E("credits", "💰")} Available Credits: <b>${credits}</b>\n` +
                 (nextReward
                   ? `🎯 Next Reward: <b>${esc(nextReward.name)}</b>\n${bar(credits, target)}\n${credits} / ${target} Credits\n`

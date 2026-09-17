@@ -172,7 +172,7 @@ function HubPage() {
           <Card label="Available credits" value={state.profile.credits_available} />
           <Card label="Total earned" value={state.profile.credits_earned} />
           <Card label="Total spent" value={state.profile.credits_spent} />
-          <Card label="Valid referrals" value={state.verifiedReferrals} />
+           <Card label="Joined referrals" value={state.verifiedReferrals} />
           <Card label="Bonus credits" value={state.bonusCredits} />
           <Card label="Pending referrals" value={state.pendingReferrals} />
           <Card label="Status" value={state.profile.status} />
@@ -201,9 +201,9 @@ function HubPage() {
             </div>
           ) : (
           <>
-          <p className="mt-1 text-sm text-muted-foreground">1 verified referral = 1 credit.</p>
+           <p className="mt-1 text-sm text-muted-foreground">A friend's first bot Start = 1 credit.</p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <Card label="Valid referrals" value={state.verifiedReferrals} />
+             <Card label="Joined referrals" value={state.verifiedReferrals} />
             <Card label="Available credits" value={state.profile.credits_available} />
             <Card label="Referral code" value={state.profile.referral_code ?? "—"} />
           </div>

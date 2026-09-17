@@ -391,9 +391,9 @@ export async function notifyReferralReward(referredUserId: string) {
     chat_id: referrer.telegram_user_id,
     parse_mode: "HTML",
     text:
-      `🎉 <b>New Referral Verified!</b>\n\n` +
+      `🎉 <b>New Friend Joined!</b>\n\n` +
       `You earned:\n💰 <b>+1 Credit</b>\n\n━━━━━━━━━━\n\n` +
-      `👥 Valid Referrals: <b>${count ?? 0}</b>\n` +
+      `👥 Joined Referrals: <b>${count ?? 0}</b>\n` +
       `💰 Available Credits: <b>${referrer.credits_available}</b>\n\n` +
       `Keep inviting friends to unlock free Lovable Unlimited licenses!`,
   });
