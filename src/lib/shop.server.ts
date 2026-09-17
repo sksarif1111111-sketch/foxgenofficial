@@ -398,6 +398,7 @@ export async function cancelOrder(orderId: string, actor: string, reason: string
     .update({ status: "cancelled", updated_at: new Date().toISOString() })
     .eq("id", orderId);
   await orderEvent(orderId, "cancelled", actor, reason);
+  await refundWalletOrder(order as Record<string, unknown>, `Order ${order.order_number} cancelled`);
   return { ok: true };
 }
 
