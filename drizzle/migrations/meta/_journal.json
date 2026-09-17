@@ -57,6 +57,13 @@
       "when": 1789658570089,
       "tag": "0007_customer_usd_wallet",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789661059214,
+      "tag": "0008_award_referral_on_first_bot_start",
+      "breakpoints": true
     }
   ]
 }

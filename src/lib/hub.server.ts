@@ -147,7 +147,7 @@ export async function profileByToken(token: string) {
   return (data ?? null) as Profile | null;
 }
 
-/** Creates the profile if missing and records a pending referral. */
+/** Creates the profile and awards an eligible referral on the first bot start. */
 export async function ensureProfile(
   tgUser: { id: number; username?: string; first_name?: string; last_name?: string },
   startPayload?: string,
@@ -223,7 +223,21 @@ export async function ensureProfile(
   if (!profile) throw new Error("Could not create profile");
 
   if (referrer && referrer.id !== profile.id) {
-    await db.from("referrals").insert({ referrer_id: referrer.id, referred_user_id: profile.id });
+    const { error: referralError } = await db
+      .from("referrals")
+      .insert({ referrer_id: referrer.id, referred_user_id: profile.id });
+    if (referralError) {
+      await logBotError("referral_create", referralError.message, tgUser.id, "ensureProfile");
+    } else {
+      const { data: awarded, error: awardError } = await db.rpc("award_referral", {
+        _referred_user_id: profile.id,
+      });
+      if (awardError) {
+        await logBotError("referral_award", awardError.message, tgUser.id, "ensureProfile");
+      } else if (awarded === true) {
+        await notifyReferralReward(profile.id);
+      }
+    }
   }
   return { profile, created: true };
 }
@@ -341,8 +355,8 @@ export async function refreshVerification(profile: Profile) {
 
   const allDone = missing.length === 0;
   if (allDone) {
-    // Activation and referral credit are committed together. The referral award
-    // remains idempotent, so retrying verification cannot issue duplicate credit.
+    // Activation remains safe to retry. If the referral was already awarded on
+    // first /start, award_referral returns false and cannot issue duplicate credit.
     const { data, error } = await db.rpc("activate_verified_profile", { _user_id: profile.id });
     if (error) {
       await logBotError("referral_activation", error.message, profile.telegram_user_id, "refreshVerification");
@@ -377,9 +391,9 @@ export async function notifyReferralReward(referredUserId: string) {
     chat_id: referrer.telegram_user_id,
     parse_mode: "HTML",
     text:
-      `🎉 <b>New Referral Verified!</b>\n\n` +
+      `🎉 <b>New Friend Joined!</b>\n\n` +
       `You earned:\n💰 <b>+1 Credit</b>\n\n━━━━━━━━━━\n\n` +
-      `👥 Valid Referrals: <b>${count ?? 0}</b>\n` +
+      `👥 Joined Referrals: <b>${count ?? 0}</b>\n` +
       `💰 Available Credits: <b>${referrer.credits_available}</b>\n\n` +
       `Keep inviting friends to unlock free Lovable Unlimited licenses!`,
   });
@@ -389,8 +403,7 @@ export async function notifyReferralReward(referredUserId: string) {
 }
 
 /**
- * Safety net: if a referred member is already active but the referrer's credit was
- * never awarded (an earlier failed request, a manual activation, etc.), award it now.
+ * Safety net: if a referral exists but its first-start award was missed, award it now.
  * award_referral is idempotent, so this can run on every dashboard/bot load.
  */
 export async function reconcileReferralCredits(referrerId: string) {
@@ -404,7 +417,6 @@ export async function reconcileReferralCredits(referrerId: string) {
 
   let awarded = 0;
   for (const row of (pending ?? []) as Array<{ referred_user_id: string; profiles?: { status?: string } | null }>) {
-    if (row.profiles?.status !== "active") continue;
     const { data, error } = await db.rpc("award_referral", { _referred_user_id: row.referred_user_id });
     if (error) {
       await logBotError("referral_award", error.message, null, "reconcileReferralCredits");

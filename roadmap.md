@@ -15,4 +15,4 @@
 - [x] Make referral credit atomic and hide invite links until all required tasks are verified.
 - [x] Three payment options at checkout, Gemini ₹150 UPI price, and an admin-funded customer dollar wallet.
 
-- [ ] Award exactly 1 referral credit when a referred Telegram user first starts the bot; keep invite links hidden until referrer verification.
+- [x] Award exactly 1 referral credit when a referred Telegram user first starts the bot; keep invite links hidden until referrer verification.
