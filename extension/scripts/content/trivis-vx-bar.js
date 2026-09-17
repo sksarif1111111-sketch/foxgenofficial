@@ -1488,15 +1488,8 @@
         var support = bodyEl.querySelector("#vx-support");
         if (support) {
           support.onclick = function () {
-            setBody(
-              '<div class="zk-shop-head"><div class="zk-shop-title">Community</div><div class="zk-shop-sub">Zokys <span style="color:#f87171">×</span> Trivis</div></div>' +
-                '<a class="zk-social-card sc-discord" href="' +
-                LINKS.discord +
-                '" target="_blank" rel="noopener"><div class="zk-sc-icon">💬</div><div class="zk-sc-body"><b>Discord</b><span>Support · keys · updates</span></div><div class="zk-sc-go">→</div></a>' +
-                '<a class="zk-social-card sc-tg" href="' +
-                LINKS.telegram +
-                '" target="_blank" rel="noopener"><div class="zk-sc-icon">✈️</div><div class="zk-sc-body"><b>Telegram</b><span>News · quick help</span></div><div class="zk-sc-go">→</div></a>'
-            );
+            window.open(LINKS.support, "_blank", "noopener");
+            toast("Opening FoxGEN support");
           };
         }
         var swBtn = bodyEl.querySelector("#vx-account-switch");
@@ -1532,12 +1525,18 @@
 
   function showSocial() {
     expand(true);
-    setBody(`<div class="vx-grid">
-      <div class="vx-scard"><div class="name">Instagram</div><div class="sub">@Zokys</div><a class="cta" href="${LINKS.instagram}" target="_blank" rel="noopener">${t("follow")}</a></div>
-      <div class="vx-scard"><div class="name">Discord</div><div class="sub">Zokys Dev</div><a class="cta" href="${LINKS.discord}" target="_blank" rel="noopener">${t("join")}</a></div>
-      <div class="vx-scard"><div class="name">YouTube</div><div class="sub">@Triv1s</div><a class="cta" href="${LINKS.youtube}" target="_blank" rel="noopener">${t("subscribe")}</a></div>
-      <div class="vx-scard"><div class="name">Telegram</div><div class="sub">t.me/Zokysvx</div><a class="cta" href="${LINKS.telegram}" target="_blank" rel="noopener">${t("joinTg")}</a></div>
-    </div>`);
+    var cards = [
+      { name: "Telegram Channel", sub: "@foxgenofficial", url: LINKS.telegramChannel, cta: t("joinTg") },
+      { name: "Telegram Group", sub: "Lovable Unlimited", url: LINKS.telegramGroup, cta: t("join") },
+      { name: "YouTube", sub: "Tutorials & updates", url: LINKS.youtube, cta: t("subscribe") },
+      { name: "Facebook", sub: "FoxGEN page", url: LINKS.facebook, cta: t("follow") },
+      { name: "WhatsApp Channel", sub: "Daily updates", url: LINKS.whatsappChannel, cta: t("follow") },
+      { name: "Community", sub: "WhatsApp group", url: LINKS.community, cta: t("join") }
+    ];
+    setBody('<div class="vx-grid">' + cards.map(function (c) {
+      return '<div class="vx-scard"><div class="name">' + c.name + '</div><div class="sub">' + c.sub +
+        '</div><a class="cta" href="' + c.url + '" target="_blank" rel="noopener">' + c.cta + '</a></div>';
+    }).join("") + '</div>');
   }
 
   function showApp() {
@@ -1795,7 +1794,7 @@
     function showShop() {
     expand(true);
     setBody(
-      '<div class="zk-shop-head"><div class="zk-shop-title">Subscription Plans</div><div class="zk-shop-sub">Zokys <span style="color:#f87171">×</span> Trivis · pick your tier</div></div>' +
+      '<div class="zk-shop-head"><div class="zk-shop-title">Subscription Plans</div><div class="zk-shop-sub">FoxGEN <span style="color:#22d3ee">Pro</span> · pick your tier</div></div>' +
         PLANS.map(function (p, i) {
           var hot = p.hot ? " featured" : "";
           var feats = (p.feats || [])
@@ -1832,8 +1831,8 @@
     );
     bodyEl.querySelectorAll(".zk-buy").forEach(function (btn) {
       btn.onclick = function () {
-        window.open(LINKS.discord, "_blank", "noopener");
-        toast("Discord · " + btn.getAttribute("data-id"));
+        window.open(LINKS.store, "_blank", "noopener");
+        toast("Opening FoxGEN Store · " + btn.getAttribute("data-id"));
       };
     });
   }
