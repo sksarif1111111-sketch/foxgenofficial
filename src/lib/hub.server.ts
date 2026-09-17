@@ -185,6 +185,10 @@ export async function ensureProfile(
         });
       }
     }
+    if (await reconcileReferralCredits(existing.id)) {
+      const refreshed = await profileByTelegramId(existing.telegram_user_id);
+      if (refreshed) return { profile: refreshed, created: false };
+    }
     return { profile: existing, created: false };
   }
 
