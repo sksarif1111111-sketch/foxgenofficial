@@ -384,6 +384,38 @@ export async function notifyReferralReward(referredUserId: string) {
   }
 }
 
+/**
+ * Safety net: if a referred member is already active but the referrer's credit was
+ * never awarded (an earlier failed request, a manual activation, etc.), award it now.
+ * award_referral is idempotent, so this can run on every dashboard/bot load.
+ */
+export async function reconcileReferralCredits(referrerId: string) {
+  const { data: pending } = await db
+    .from("referrals")
+    .select("referred_user_id, profiles!referrals_referred_user_id_fkey(status)")
+    .eq("referrer_id", referrerId)
+    .eq("status", "pending")
+    .eq("credit_awarded", false)
+    .limit(25);
+
+  let awarded = 0;
+  for (const row of (pending ?? []) as Array<{ referred_user_id: string; profiles?: { status?: string } | null }>) {
+    if (row.profiles?.status !== "active") continue;
+    const { data, error } = await db.rpc("award_referral", { _referred_user_id: row.referred_user_id });
+    if (error) {
+      await logBotError("referral_award", error.message, null, "reconcileReferralCredits");
+      continue;
+    }
+    if (data === true) {
+      awarded += 1;
+      await notifyReferralReward(row.referred_user_id);
+    }
+  }
+  return awarded;
+}
+
+
+
 
 export async function redeem(profileId: string, rewardId: string) {
   for (let attempt = 0; attempt < 3; attempt++) {
