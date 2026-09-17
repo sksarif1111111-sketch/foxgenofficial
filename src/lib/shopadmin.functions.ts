@@ -166,7 +166,7 @@ export const shopRejectOrder = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid(), reason: z.string().trim().min(3).max(600) }).parse(input))
   .handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");
-    const { orderEvent, notifyBuyerTelegram } = await import("@/lib/shop.server");
+    const { orderEvent, notifyBuyerTelegram, refundWalletOrder } = await import("@/lib/shop.server");
     const { data: order } = await db.from("shop_orders").select("*").eq("id", data.id).maybeSingle();
     if (!order) throw new Error("Order not found.");
     if (order.stock_consumed) throw new Error("A confirmed order cannot be rejected here.");
