@@ -32,7 +32,7 @@ import {
   type AdminOverview,
 } from "@/lib/hubadmin.functions";
 import { ActivityPanel, CatalogPanel, ProductFilesPanel, ProductsPanel } from "@/components/admin/catalog-panels";
-import { BuyingPanel, ShopProductsPanel } from "@/components/admin/shop-panels";
+import { BuyingPanel, ShopProductsPanel, WalletPanel } from "@/components/admin/shop-panels";
 
 export const Route = createFileRoute("/hub-admin")({
   head: () => ({
@@ -294,7 +294,12 @@ function HubAdmin() {
       )}
 
       {section === "Shop" && <ShopProductsPanel notify={setFlash} />}
-      {section === "Buying" && <BuyingPanel notify={setFlash} />}
+      {section === "Buying" && (
+        <div className="space-y-6">
+          <BuyingPanel notify={setFlash} />
+          <WalletPanel notify={setFlash} />
+        </div>
+      )}
       {section === "Products" && <ProductsPanel notify={setFlash} />}
       {section === "Catalog" && <CatalogPanel notify={setFlash} />}
       {section === "Activity" && <ActivityPanel notify={setFlash} />}

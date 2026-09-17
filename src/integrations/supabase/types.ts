@@ -1480,6 +1480,86 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          actor: string
+          amount_usd: number
+          balance_after: number
+          created_at: string
+          id: string
+          kind: string
+          note: string | null
+          order_id: string | null
+          profile_id: string
+        }
+        Insert: {
+          actor?: string
+          amount_usd: number
+          balance_after: number
+          created_at?: string
+          id?: string
+          kind: string
+          note?: string | null
+          order_id?: string | null
+          profile_id: string
+        }
+        Update: {
+          actor?: string
+          amount_usd?: number
+          balance_after?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          order_id?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          balance_usd: number
+          created_at: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          balance_usd?: number
+          created_at?: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          balance_usd?: number
+          created_at?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallets_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1508,6 +1588,26 @@ export type Database = {
       shop_release_stock: { Args: { _order_id: string }; Returns: boolean }
       shop_reserve_stock: {
         Args: { _product_id: string; _qty: number }
+        Returns: boolean
+      }
+      wallet_credit: {
+        Args: {
+          _actor?: string
+          _amount: number
+          _kind: string
+          _note?: string
+          _order_id?: string
+          _profile_id: string
+        }
+        Returns: number
+      }
+      wallet_debit: {
+        Args: {
+          _amount: number
+          _note?: string
+          _order_id?: string
+          _profile_id: string
+        }
         Returns: boolean
       }
     }

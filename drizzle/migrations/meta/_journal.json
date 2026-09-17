@@ -50,6 +50,13 @@
       "when": 1789658392266,
       "tag": "0006_atomic_referral_activation",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789658570089,
+      "tag": "0007_customer_usd_wallet",
+      "breakpoints": true
     }
   ]
 }

@@ -17,6 +17,8 @@ import {
   shopSendDelivery,
   shopSetProductState,
   shopSummary,
+  shopWalletAccounts,
+  shopWalletTopUp,
   type BuyingSummary,
 } from "@/lib/shopadmin.functions";
 
@@ -875,6 +877,113 @@ function PaymentMethodsEditor({
           </div>
         </div>
       )}
+    </section>
+  );
+}
+
+/* --------------------------------- Wallets -------------------------------- */
+
+type WalletAccount = {
+  id: string;
+  name: string;
+  username: string | null;
+  telegram_user_id: number | null;
+  balance: number;
+};
+
+export function WalletPanel({ notify }: { notify: Notify }) {
+  const fAccounts = useServerFn(shopWalletAccounts);
+  const fTopUp = useServerFn(shopWalletTopUp);
+  const [search, setSearch] = useState("");
+  const [rows, setRows] = useState<WalletAccount[]>([]);
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      setRows(await fAccounts({ data: { search: search.trim() || undefined } }));
+    } catch {
+      notify("Could not load wallets.");
+    }
+  }, [fAccounts, notify, search]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const topUp = async (row: WalletAccount) => {
+    const amount = Number(amounts[row.id] ?? "");
+    if (!Number.isFinite(amount) || amount <= 0) {
+      notify("Enter a dollar amount greater than zero.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await fTopUp({ data: { profileId: row.id, amount, note: "Added by admin" } });
+      setAmounts((prev) => ({ ...prev, [row.id]: "" }));
+      notify(`Added $${amount.toFixed(2)} to ${row.name}.`);
+      await load();
+    } catch (err) {
+      notify(err instanceof Error ? err.message : "Could not add funds.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="space-y-4 rounded-2xl border border-border bg-card/60 p-5">
+      <div>
+        <h3 className="text-lg font-black">Customer wallets</h3>
+        <p className="text-sm text-muted-foreground">
+          Add dollars to a customer&apos;s wallet. They can then pay for products instantly from that balance.
+        </p>
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search by name or username"
+          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+        />
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted/40"
+        >
+          Search
+        </button>
+      </div>
+      <div className="space-y-2">
+        {rows.map((row) => (
+          <div key={row.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold">{row.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {row.username ? `@${row.username}` : row.telegram_user_id ?? "—"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-black text-primary">${row.balance.toFixed(2)}</span>
+              <input
+                value={amounts[row.id] ?? ""}
+                onChange={(event) => setAmounts((prev) => ({ ...prev, [row.id]: event.target.value }))}
+                placeholder="0.00"
+                inputMode="decimal"
+                className="w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void topUp(row)}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              >
+                Add funds
+              </button>
+            </div>
+          </div>
+        ))}
+        {rows.length === 0 && <p className="text-sm text-muted-foreground">No customers found.</p>}
+      </div>
     </section>
   );
 }

@@ -166,7 +166,7 @@ export const shopRejectOrder = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid(), reason: z.string().trim().min(3).max(600) }).parse(input))
   .handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");
-    const { orderEvent, notifyBuyerTelegram } = await import("@/lib/shop.server");
+    const { orderEvent, notifyBuyerTelegram, refundWalletOrder } = await import("@/lib/shop.server");
     const { data: order } = await db.from("shop_orders").select("*").eq("id", data.id).maybeSingle();
     if (!order) throw new Error("Order not found.");
     if (order.stock_consumed) throw new Error("A confirmed order cannot be rejected here.");
@@ -182,6 +182,7 @@ export const shopRejectOrder = createServerFn({ method: "POST" })
       })
       .eq("id", data.id);
     await orderEvent(data.id, "rejected", "admin", data.reason);
+    await refundWalletOrder(order as Record<string, unknown>, `Order ${order.order_number} rejected`);
     await logActivity("shop", "Payment rejected", "warning", `${order.order_number} — ${data.reason}`);
     await notifyBuyerTelegram(
       data.id,
@@ -428,4 +429,60 @@ export const shopSaveEmailDraft = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { saveFulfillmentEmailDraft } = await import("@/lib/shop.server");
     return await saveFulfillmentEmailDraft(data.id, data.subject, data.body);
+  });
+
+export const shopWalletAccounts = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ search: z.string().trim().max(120).optional() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    let query = db
+      .from("profiles")
+      .select("id, first_name, last_name, telegram_username, telegram_user_id")
+      .order("created_at", { ascending: false })
+      .limit(40);
+    const search = data.search?.trim();
+    if (search) {
+      query = query.or(
+        `telegram_username.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`,
+      );
+    }
+    const { data: profiles } = await query;
+    const ids = (profiles ?? []).map((p) => p.id);
+    const { data: wallets } = ids.length
+      ? await db.from("wallets").select("profile_id, balance_usd").in("profile_id", ids)
+      : { data: [] as Array<Record<string, unknown>> };
+    return (profiles ?? []).map((p) => ({
+      id: p.id as string,
+      name: [p.first_name, p.last_name].filter(Boolean).join(" ") || (p.telegram_username as string) || "Customer",
+      username: (p.telegram_username as string) ?? null,
+      telegram_user_id: p.telegram_user_id as number | null,
+      balance: Number(
+        (wallets ?? []).find((w) => w["profile_id"] === p.id)?.["balance_usd"] ?? 0,
+      ),
+    }));
+  });
+
+export const shopWalletTopUp = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        profileId: z.string().uuid(),
+        amount: z.number().positive().max(100000),
+        note: z.string().trim().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { db, logActivity } = await import("@/lib/hub.server");
+    const { data: balance, error } = await db.rpc("wallet_credit", {
+      _profile_id: data.profileId,
+      _amount: data.amount,
+      _kind: "topup",
+      _note: data.note ?? "Added by admin",
+      _order_id: undefined,
+      _actor: "admin",
+    });
+    if (error) throw new Error("Could not add funds to this wallet.");
+    await logActivity("shop", "Wallet funded", "success", `${data.amount.toFixed(2)} USD added`);
+    return { balance: Number(balance) };
   });
