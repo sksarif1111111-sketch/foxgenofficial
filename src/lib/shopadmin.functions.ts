@@ -430,3 +430,59 @@ export const shopSaveEmailDraft = createServerFn({ method: "POST" })
     const { saveFulfillmentEmailDraft } = await import("@/lib/shop.server");
     return await saveFulfillmentEmailDraft(data.id, data.subject, data.body);
   });
+
+export const shopWalletAccounts = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ search: z.string().trim().max(120).optional() }).parse(input))
+  .handler(async ({ data }) => {
+    const { db } = await import("@/lib/hub.server");
+    let query = db
+      .from("profiles")
+      .select("id, first_name, last_name, username, telegram_user_id")
+      .order("created_at", { ascending: false })
+      .limit(40);
+    const search = data.search?.trim();
+    if (search) {
+      query = query.or(
+        `username.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`,
+      );
+    }
+    const { data: profiles } = await query;
+    const ids = (profiles ?? []).map((p) => p.id);
+    const { data: wallets } = ids.length
+      ? await db.from("wallets").select("profile_id, balance_usd").in("profile_id", ids)
+      : { data: [] as Array<Record<string, unknown>> };
+    return (profiles ?? []).map((p) => ({
+      id: p.id as string,
+      name: [p.first_name, p.last_name].filter(Boolean).join(" ") || (p.username as string) || "Customer",
+      username: (p.username as string) ?? null,
+      telegram_user_id: p.telegram_user_id as number | null,
+      balance: Number(
+        (wallets ?? []).find((w) => w["profile_id"] === p.id)?.["balance_usd"] ?? 0,
+      ),
+    }));
+  });
+
+export const shopWalletTopUp = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        profileId: z.string().uuid(),
+        amount: z.number().positive().max(100000),
+        note: z.string().trim().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { db, logActivity } = await import("@/lib/hub.server");
+    const { data: balance, error } = await db.rpc("wallet_credit", {
+      _profile_id: data.profileId,
+      _amount: data.amount,
+      _kind: "topup",
+      _note: data.note ?? "Added by admin",
+      _order_id: null,
+      _actor: "admin",
+    });
+    if (error) throw new Error("Could not add funds to this wallet.");
+    await logActivity("shop", "Wallet funded", "success", `${data.amount.toFixed(2)} USD added`);
+    return { balance: Number(balance) };
+  });

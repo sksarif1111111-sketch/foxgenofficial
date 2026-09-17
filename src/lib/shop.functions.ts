@@ -240,3 +240,35 @@ export const shopMyOrders = createServerFn({ method: "POST" })
           : [],
     }));
   });
+
+export type WalletView = {
+  balance: number;
+  transactions: Array<{ id: string; amount: number; balance_after: number; kind: string; note: string | null; created_at: string }>;
+};
+
+export const shopWallet = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ token }).parse(input))
+  .handler(async ({ data }): Promise<WalletView> => {
+    const profile = await requireProfile(data.token);
+    const { db } = await import("@/lib/hub.server");
+    const [{ data: wallet }, { data: rows }] = await Promise.all([
+      db.from("wallets").select("balance_usd").eq("profile_id", profile.id).maybeSingle(),
+      db
+        .from("wallet_transactions")
+        .select("id, amount_usd, balance_after, kind, note, created_at")
+        .eq("profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(25),
+    ]);
+    return {
+      balance: Number(wallet?.balance_usd ?? 0),
+      transactions: (rows ?? []).map((r) => ({
+        id: r.id as string,
+        amount: Number(r.amount_usd),
+        balance_after: Number(r.balance_after),
+        kind: r.kind as string,
+        note: (r.note as string) ?? null,
+        created_at: r.created_at as string,
+      })),
+    };
+  });
