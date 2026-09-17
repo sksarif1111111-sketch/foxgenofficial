@@ -178,6 +178,11 @@ function ShopPage() {
           <div>
             <h1 className="text-3xl font-black tracking-tight">🦊 FOXGEN STORE</h1>
             <p className="text-sm text-muted-foreground">Choose a product to view its details.</p>
+            {wallet && (
+              <p className="mt-1 inline-flex rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                Wallet balance: ${wallet.balance.toFixed(2)}
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             <button
