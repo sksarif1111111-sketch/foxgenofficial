@@ -391,7 +391,13 @@ function ShopPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Unit price</dt>
-                <dd className="font-semibold">{product.price_label}</dd>
+                <dd className="font-semibold">
+                  {unitPrice === null
+                    ? product.price_label
+                    : totalCurrency === "INR"
+                      ? `₹${unitPrice.toFixed(2)}`
+                      : `${unitPrice.toFixed(2)} USDT`}
+                </dd>
               </div>
               <div className="flex justify-between border-t border-border pt-2">
                 <dt className="text-muted-foreground">Total</dt>
