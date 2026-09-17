@@ -41,9 +41,15 @@ export type HubState = {
 export const getHubState = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => tokenSchema.parse(input))
   .handler(async ({ data }): Promise<HubState> => {
-    const { db, getSettings, profileByToken, activeTasks, completionsFor } = await import("@/lib/hub.server");
-    const profile = await profileByToken(data.token);
+    const { db, getSettings, profileByToken, activeTasks, completionsFor, reconcileReferralCredits } =
+      await import("@/lib/hub.server");
+    let profile = await profileByToken(data.token);
     if (!profile) throw new Error("Invalid access link. Open the bot and press “My account”.");
+
+    // Self-healing: award any referral credit that is due but was missed earlier.
+    if (await reconcileReferralCredits(profile.id)) {
+      profile = (await profileByToken(data.token)) ?? profile;
+    }
 
     const settings = await getSettings();
     const tasks = await activeTasks();
