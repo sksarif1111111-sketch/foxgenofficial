@@ -182,6 +182,7 @@ export const shopRejectOrder = createServerFn({ method: "POST" })
       })
       .eq("id", data.id);
     await orderEvent(data.id, "rejected", "admin", data.reason);
+    await refundWalletOrder(order as Record<string, unknown>, `Order ${order.order_number} rejected`);
     await logActivity("shop", "Payment rejected", "warning", `${order.order_number} — ${data.reason}`);
     await notifyBuyerTelegram(
       data.id,
