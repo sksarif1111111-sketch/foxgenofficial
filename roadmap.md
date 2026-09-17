@@ -12,3 +12,4 @@
 - [x] Direct reward redemption: generate a valid license immediately from credits without bulk inventory.
 - [x] Remove obsolete bulk-license controls and make generated-license history the only Rewards admin workflow.
 - [x] FOXGEN STORE shop catalogue, website checkout, Telegram Stars checkout, Buying dashboard and email delivery.
+- [x] Make referral credit atomic and hide invite links until all required tasks are verified.

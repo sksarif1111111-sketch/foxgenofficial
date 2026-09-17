@@ -1485,6 +1485,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_verified_profile: {
+        Args: { _user_id: string }
+        Returns: {
+          activated: boolean
+          referral_awarded: boolean
+        }[]
+      }
       award_referral: { Args: { _referred_user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       redeem_reward: {
