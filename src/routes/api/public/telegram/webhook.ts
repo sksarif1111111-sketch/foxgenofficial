@@ -654,8 +654,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               if (!isTg && !ok) rows.push([{ text: `✅ Done · ${label}`.slice(0, 40), callback_data: `done:${t.id}` }]);
             }
 
-            body += `${LINE}\nComplete all tasks to activate referrals.`;
-            rows.push([{ text: "🔄 Verify Telegram Tasks", callback_data: "verify" }]);
+            body += `${LINE}\nFinish the tasks above, then complete verification.`;
+            rows.push([{ text: "✅ Complete Verification", callback_data: "verify" }]);
             rows.push(backRow());
 
             await render(body, rows);
@@ -680,14 +680,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               { onConflict: "user_id,task_id" },
             );
             if (completionError) throw new Error(`Could not save task completion: ${completionError.message}`);
-            const state = await refreshVerification(profile);
-            if (state.allDone) await render(activatedText, buildActivatedKeyboard());
-            else await renderTasks();
+            await renderTasks();
             return Response.json({ ok: true });
           }
 
           if (action === "verify") {
-            await render(`${E("loading", "⏳")} <b>Checking your Telegram memberships...</b>\n${LINE}\nThis takes a moment.`, [
+            await render(`${E("loading", "⏳")} <b>Completing verification...</b>\n${LINE}\nThis takes a moment.`, [
               backRow("tasks"),
             ]);
             let state: Awaited<ReturnType<typeof refreshVerification>> | null = null;
@@ -697,8 +695,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               await logBotError("verification", err instanceof Error ? err.message : "verify failed", from.id);
             }
             if (!state) {
-              await render(`${E("error", "⚠️")} <b>Verification unavailable</b>\n${LINE}\nPlease try again shortly.`, [
-                [{ text: "🔄 Verify Again", callback_data: "verify" }],
+              await render(`${E("error", "⚠️")} <b>Verification could not be completed</b>\n${LINE}\nPlease try again shortly.`, [
+                [{ text: "🔄 Try Again", callback_data: "verify" }],
                 backRow("tasks"),
               ]);
               return Response.json({ ok: true });
@@ -710,30 +708,30 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
             const pending = state.telegram.filter((c) => !c.ok);
             for (const c of pending) {
-              if (c.error && !c.error.includes("has not joined"))
+              if (c.error?.startsWith("telegram_api:"))
                 await logBotError("channel_verification", `${c.name}: ${c.error}`, from.id);
             }
-            const apiIssue = pending.some((c) => c.error && !c.error.includes("has not joined"));
+            const apiIssue = pending.some((c) => c.error?.startsWith("telegram_api:"));
 
             const rows: Keyboard = [];
             let body: string;
             if (apiIssue) {
-              body = `${E("error", "⚠️")} <b>Verification temporarily unavailable</b>\n${LINE}\nPlease try again shortly.`;
+              body = `${E("error", "⚠️")} <b>Verification could not be completed</b>\n${LINE}\nPlease try again shortly.`;
             } else {
               const tgMissing = pending.map((c) => c.name.replace(/^follow\s+/i, "").trim());
               if (tgMissing.length === 1) {
-                body = `❌ <b>Please follow ${esc(tgMissing[0]!)} first.</b>\n${LINE}\n`;
+                body = `❌ <b>One required task is still incomplete.</b>\n${LINE}\n`;
               } else if (tgMissing.length > 1) {
-                body = `❌ <b>Please follow both required Telegram channels.</b>\n${LINE}\n`;
+                body = `❌ <b>Some required tasks are still incomplete.</b>\n${LINE}\n`;
               } else {
                 body = `❌ <b>Verification Incomplete</b>\n${LINE}\nPlease complete:\n`;
               }
               for (const name of state.missing) body += `• ${esc(name.replace(/^follow\s+/i, ""))}\n`;
-              body += `${LINE}\nAfter following, tap Verify Again.`;
+              body += `${LINE}\nComplete the remaining tasks, then try again.`;
             }
 
             for (const c of pending) if (c.url) rows.push([{ text: shortLabel("telegram", c.name), url: c.url }]);
-            rows.push([{ text: "🔄 Verify Again", callback_data: "verify" }]);
+            rows.push([{ text: "🔄 Try Again", callback_data: "verify" }]);
             rows.push(backRow("tasks"));
             await render(body, rows);
             return Response.json({ ok: true });
