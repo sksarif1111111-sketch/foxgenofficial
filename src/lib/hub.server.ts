@@ -299,7 +299,7 @@ export async function refreshVerification(profile: Profile) {
     if (task.verification_type !== "telegram_auto_verification") continue;
     const chat = normalizeTelegramChat(task.telegram_chat_id || task.url || "");
     if (!chat) {
-      telegram.push({ id: task.id, name: task.name, url: task.url, ok: false, error: "Channel ID is not configured." });
+      telegram.push({ id: task.id, name: task.name, url: task.url, ok: false, error: "configuration_missing" });
       continue;
     }
     let ok = false;
@@ -331,27 +331,21 @@ export async function refreshVerification(profile: Profile) {
         { onConflict: "user_id,task_id" },
       );
       if (completionError) throw new Error(`Could not save ${task.name}: ${completionError.message}`);
-    } else {
-      const { data: prev } = await db
-        .from("task_completions")
-        .select("completed")
-        .eq("user_id", profile.id)
-        .eq("task_id", task.id)
-        .maybeSingle();
-      if (!prev?.completed) {
-        const { error: completionError } = await db.from("task_completions").upsert(
-          {
-            user_id: profile.id,
-            task_id: task.id,
-            completed: false,
-            verification_status: res.ok ? "failed" : "pending",
-            verification_method: "telegram_api",
-          },
-          { onConflict: "user_id,task_id" },
-        );
-        if (completionError) throw new Error(`Could not save ${task.name}: ${completionError.message}`);
-      }
+    } else if (res.ok) {
+      // Telegram gave a definitive membership result, so keep progress accurate.
+      const { error: completionError } = await db.from("task_completions").upsert(
+        {
+          user_id: profile.id,
+          task_id: task.id,
+          completed: false,
+          verification_status: "failed",
+          verification_method: "telegram_api",
+        },
+        { onConflict: "user_id,task_id" },
+      );
+      if (completionError) throw new Error(`Could not save ${task.name}: ${completionError.message}`);
     }
+    // API/configuration failures do not overwrite an earlier verified membership.
   }
 
   const done = await completionsFor(profile.id);

@@ -708,10 +708,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
             const pending = state.telegram.filter((c) => !c.ok);
             for (const c of pending) {
-              if (c.error?.startsWith("telegram_api:"))
+              if (c.error && c.error !== "not_joined")
                 await logBotError("channel_verification", `${c.name}: ${c.error}`, from.id);
             }
-            const apiIssue = pending.some((c) => c.error?.startsWith("telegram_api:"));
+            const apiIssue = pending.some((c) => c.error !== "not_joined");
 
             const rows: Keyboard = [];
             let body: string;
