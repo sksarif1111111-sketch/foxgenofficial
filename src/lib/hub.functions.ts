@@ -139,6 +139,14 @@ export const completeTask = createServerFn({ method: "POST" })
     const { db, profileByToken } = await import("@/lib/hub.server");
     const profile = await profileByToken(data.token);
     if (!profile) throw new Error("Invalid access link.");
+    const { data: task } = await db
+      .from("social_tasks")
+      .select("id, verification_type, enabled")
+      .eq("id", data.taskId)
+      .maybeSingle();
+    if (!task?.enabled || task.verification_type !== "manual_confirmation") {
+      throw new Error("This task must be verified automatically.");
+    }
     const { error } = await db.from("task_completions").upsert(
       {
         user_id: profile.id,

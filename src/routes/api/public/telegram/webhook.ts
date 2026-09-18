@@ -668,6 +668,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
           if (action.startsWith("done:")) {
             const taskId = action.slice(5);
+            const { data: task } = await db
+              .from("social_tasks")
+              .select("id, verification_type, enabled")
+              .eq("id", taskId)
+              .maybeSingle();
+            if (!task?.enabled || task.verification_type !== "manual_confirmation") {
+              await renderTasks();
+              return Response.json({ ok: true });
+            }
             const { error: completionError } = await db.from("task_completions").upsert(
               {
                 user_id: profile.id,
