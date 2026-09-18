@@ -268,12 +268,13 @@ function HubPage() {
             onClick={() =>
               run(async () => {
                 const res = await verify({ data: { token } });
-                return res.allDone ? "Verified — account active!" : `Still missing: ${res.missing.join(", ")}`;
+                await refresh(token);
+                return res.allDone ? "Verified — account active!" : "Some required tasks are still incomplete.";
               })
             }
             className="rounded-xl bg-accent px-5 py-3 text-xs font-black uppercase text-primary-foreground"
           >
-            Verify membership
+            Complete verification
           </button>
         </section>
       )}

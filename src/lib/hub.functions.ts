@@ -136,9 +136,17 @@ export const getHubState = createServerFn({ method: "POST" })
 export const completeTask = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => tokenSchema.extend({ taskId: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
-    const { db, profileByToken, refreshVerification } = await import("@/lib/hub.server");
+    const { db, profileByToken } = await import("@/lib/hub.server");
     const profile = await profileByToken(data.token);
     if (!profile) throw new Error("Invalid access link.");
+    const { data: task } = await db
+      .from("social_tasks")
+      .select("id, verification_type, enabled")
+      .eq("id", data.taskId)
+      .maybeSingle();
+    if (!task?.enabled || task.verification_type !== "manual_confirmation") {
+      throw new Error("This task must be verified automatically.");
+    }
     const { error } = await db.from("task_completions").upsert(
       {
         user_id: profile.id,
@@ -151,7 +159,7 @@ export const completeTask = createServerFn({ method: "POST" })
       { onConflict: "user_id,task_id" },
     );
     if (error) throw new Error("Could not save this task. Please try again.");
-    return await refreshVerification(profile);
+    return { ok: true };
   });
 
 export const verifyMembership = createServerFn({ method: "POST" })

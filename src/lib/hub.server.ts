@@ -271,7 +271,16 @@ export async function activeTasks(): Promise<TaskRow[]> {
     if (seen.has(identity)) return false;
     seen.add(identity);
     return true;
+  }).sort((a, b) => {
+    const aTelegram = a.verification_type === "telegram_auto_verification" ? 1 : 0;
+    const bTelegram = b.verification_type === "telegram_auto_verification" ? 1 : 0;
+    return aTelegram - bTelegram || a.display_order - b.display_order;
   });
+}
+
+function isTelegramMember(result: { status: string; is_member?: boolean }) {
+  return ["creator", "owner", "administrator", "member"].includes(result.status) ||
+    (result.status === "restricted" && result.is_member === true);
 }
 
 export async function completionsFor(userId: string) {
@@ -290,7 +299,7 @@ export async function refreshVerification(profile: Profile) {
     if (task.verification_type !== "telegram_auto_verification") continue;
     const chat = normalizeTelegramChat(task.telegram_chat_id || task.url || "");
     if (!chat) {
-      telegram.push({ id: task.id, name: task.name, url: task.url, ok: false, error: "Channel ID is not configured." });
+      telegram.push({ id: task.id, name: task.name, url: task.url, ok: false, error: "configuration_missing" });
       continue;
     }
     let ok = false;
@@ -299,15 +308,13 @@ export async function refreshVerification(profile: Profile) {
       user_id: profile.telegram_user_id,
     });
     if (res.ok && res.result) {
-      ok = ["creator", "owner", "administrator", "member"].includes(res.result.status);
+      ok = isTelegramMember(res.result);
     }
     const error = ok
       ? null
       : res.ok
-        ? "Telegram reports that this account has not joined yet."
-        : res.description?.includes("member list is inaccessible") || res.description?.includes("not enough rights")
-          ? "The FoxGEN bot must be an administrator in this channel before it can verify members."
-          : res.description || "Telegram could not verify this channel right now.";
+        ? "not_joined"
+        : `telegram_api:${res.description || "membership check failed"}`;
     telegram.push({ id: task.id, name: task.name, url: task.url, ok, error });
     // Never downgrade a previously verified membership on a transient API failure.
     if (ok) {
@@ -324,27 +331,21 @@ export async function refreshVerification(profile: Profile) {
         { onConflict: "user_id,task_id" },
       );
       if (completionError) throw new Error(`Could not save ${task.name}: ${completionError.message}`);
-    } else {
-      const { data: prev } = await db
-        .from("task_completions")
-        .select("completed")
-        .eq("user_id", profile.id)
-        .eq("task_id", task.id)
-        .maybeSingle();
-      if (!prev?.completed) {
-        const { error: completionError } = await db.from("task_completions").upsert(
-          {
-            user_id: profile.id,
-            task_id: task.id,
-            completed: false,
-            verification_status: res.ok ? "failed" : "pending",
-            verification_method: "telegram_api",
-          },
-          { onConflict: "user_id,task_id" },
-        );
-        if (completionError) throw new Error(`Could not save ${task.name}: ${completionError.message}`);
-      }
+    } else if (res.ok) {
+      // Telegram gave a definitive membership result, so keep progress accurate.
+      const { error: completionError } = await db.from("task_completions").upsert(
+        {
+          user_id: profile.id,
+          task_id: task.id,
+          completed: false,
+          verification_status: "failed",
+          verification_method: "telegram_api",
+        },
+        { onConflict: "user_id,task_id" },
+      );
+      if (completionError) throw new Error(`Could not save ${task.name}: ${completionError.message}`);
     }
+    // API/configuration failures do not overwrite an earlier verified membership.
   }
 
   const done = await completionsFor(profile.id);
