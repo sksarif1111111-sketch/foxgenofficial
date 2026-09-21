@@ -16,4 +16,4 @@
 - [x] Three payment options at checkout, Gemini ₹150 UPI price, and an admin-funded customer dollar wallet.
 
 - [x] Award exactly 1 referral credit when a referred Telegram user first starts the bot; keep invite links hidden until referrer verification.
-- [ ] Rebrand the newly uploaded extension, replace its legacy license validation with FoxGEN verification, remove notice UI, package it, and add a second download panel.
+- [x] Rebrand the newly uploaded extension, replace its legacy license validation with FoxGEN verification, remove notice UI, package it, and add a second download panel.
