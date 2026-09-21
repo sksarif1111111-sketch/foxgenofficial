@@ -1,6 +1,8 @@
 (function () {
   const API_BASE = "https://io.eklas.dev";
-  const CURRENT_VERSION = "6.0";
+  const CURRENT_VERSION = "6.1.0";
+  const FOXGEN_VERIFY_URL = "https://foxgenofficial.lovable.app/api/public/license/verify";
+  const FOXGEN_CONFIG = { brandName: "FoxGEN Pro", brandText: "FoxGEN Pro", badgeText: "PRO", logoUrl: "", socialLinks: { poweredBy: "FoxGEN Pro \u2022 v6.1.0" } };
   const LICENSE_ATTESTATION_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEH2QnTYPpfzaCe8lbuDjxl57/Ltje
 bcLX12+2QfP8axSYO5nipG0unE8svZvOUAymW692MPg06yF4iKlP1UiiAg==
@@ -22,7 +24,7 @@ bcLX12+2QfP8axSYO5nipG0unE8svZvOUAymW692MPg06yF4iKlP1UiiAg==
   function normalizeValidation(payload, key) {
     const license = payload && payload.license ? payload.license : {};
     const config = payload && payload.config ? payload.config : {};
-    const brandName = config.brandName || config.brandText || license.bound_email || "Lovable";
+    const brandName = config.brandName || config.brandText || "FoxGEN Pro";
     return {
       valid: !!(payload && payload.ok),
       message: payload && payload.ok ? "License activated" : payload?.error || "Invalid license",
@@ -47,11 +49,11 @@ bcLX12+2QfP8axSYO5nipG0unE8svZvOUAymW692MPg06yF4iKlP1UiiAg==
   function normalizeBranding(config) {
     const social = config?.socialLinks || {};
     return {
-      brandName: config?.brandName || "Lovable",
-      brandText: config?.brandText || config?.brandName || "Lovable",
+      brandName: config?.brandName || "FoxGEN Pro",
+      brandText: config?.brandText || config?.brandName || "FoxGEN Pro",
       logoUrl: config?.logoUrl || "",
       socialLinks: social,
-      footerText: social.poweredBy || `${config?.brandText || config?.brandName || "Lovable"} • v${CURRENT_VERSION}`,
+      footerText: social.poweredBy || `${config?.brandText || config?.brandName || "FoxGEN Pro"} • v${CURRENT_VERSION}`,
       badgeText: config?.badgeText || config?.badge || config?.badge_text || "",
     };
   }
@@ -177,49 +179,56 @@ bcLX12+2QfP8axSYO5nipG0unE8svZvOUAymW692MPg06yF4iKlP1UiiAg==
   }
 
   async function validateLicense(key, options) {
-    const email = String(options?.email || (await getStoredLovableEmail()) || "").trim().toLowerCase();
-    const response = await fetch(`${API_BASE}/api/v1/licenses/validate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        key,
-        licenseKey: key,
-        email,
-        extensionVersion: CURRENT_VERSION,
-        deviceId: options?.deviceId || "",
-        heartbeat: !!options?.heartbeat,
-      }),
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok && !payload.error) {
-      payload.error = `HTTP ${response.status}`;
+    const licenseKey = String(key || "").trim().toUpperCase();
+    if (!licenseKey) return normalizeValidation({ ok: false, error: "Enter your FoxGEN license key" }, licenseKey);
+    let response;
+    let payload = {};
+    try {
+      response = await fetch(FOXGEN_VERIFY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          licenseKey,
+          key: licenseKey,
+          deviceId: options?.deviceId || "",
+          device_id: options?.deviceId || "",
+          name: "FoxGEN Pro",
+        }),
+      });
+      payload = await response.json().catch(() => ({}));
+    } catch (err) {
+      return normalizeValidation({ ok: false, error: "Could not reach the FoxGEN license server" }, licenseKey);
     }
-    if (response.ok && payload?.ok) {
-      const serverTime = normalizeServerTime(payload.server_time || response.headers.get("Date"));
-      const attestationOk = await verifyServerAttestation(
-        payload.attestation,
-        key,
-        payload.license || {},
-        serverTime,
+    const valid = !!(payload && (payload.valid === true || payload.ok === true));
+    if (!valid) {
+      return normalizeValidation(
+        {
+          ok: false,
+          error: payload?.message || payload?.error || `HTTP ${response.status}`,
+          reason: payload?.reason || payload?.status || null,
+        },
+        licenseKey,
       );
-      if (!serverTime || !attestationOk) {
-        return normalizeValidation(
-          {
-            ok: false,
-            error: !serverTime
-              ? "License server did not provide verified time"
-              : "License server attestation failed",
-          },
-          key,
-        );
-      }
-      if (isExpiredAtServerTime(payload.license?.expires_at || payload.license?.expiresAt, serverTime)) {
-        return normalizeValidation({ ok: false, error: "License expired", reason: "expired" }, key);
-      }
     }
-    return normalizeValidation(payload, key);
+    const expiresAt = payload.expires_at || payload.expiresAt || null;
+    if (expiresAt && new Date(expiresAt).getTime() <= Date.now()) {
+      return normalizeValidation({ ok: false, error: "License expired", reason: "expired" }, licenseKey);
+    }
+    return normalizeValidation(
+      {
+        ok: true,
+        session_id: payload.token || payload.session_id || null,
+        license_id: payload.license_id || null,
+        license: {
+          expires_at: expiresAt,
+          created_at: payload.activated_at || null,
+          plan: payload.plan_days ? `${payload.plan_days}-Day FoxGEN Pro` : "FoxGEN Pro",
+        },
+        config: FOXGEN_CONFIG,
+      },
+      licenseKey,
+    );
   }
 
   function normalizeServerTime(input) {
@@ -374,26 +383,30 @@ bcLX12+2QfP8axSYO5nipG0unE8svZvOUAymW692MPg06yF4iKlP1UiiAg==
   }
 
   async function getNotifications() {
-    const payload = await getExtensionV5Runtime();
-    return payload.notifications || [];
+    return [];
   }
 
   async function getExtensionV5Runtime() {
-    const response = await fetch(`${API_BASE}/api/v1/extension/v5?version=${encodeURIComponent(CURRENT_VERSION)}`, {
+    let response;
+    try {
+    response = await fetch(`${API_BASE}/api/v1/extension/v5?version=${encodeURIComponent(CURRENT_VERSION)}`, {
       method: "GET",
       headers: {
         Accept: "application/json",
       },
       cache: "no-store",
     });
+    } catch (err) { return {}; }
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.error || `Runtime config failed: ${response.status}`);
-    return payload && typeof payload === "object" ? payload : {};
+    if (!response.ok) return {};
+    const runtime = payload && typeof payload === "object" ? payload : {};
+    runtime.notifications = [];
+    return runtime;
   }
 
   function applyBranding(root, branding) {
     if (!root || !branding) return;
-    const brandText = branding.brandText || branding.brandName || "Lovable";
+    const brandText = branding.brandText || branding.brandName || "FoxGEN Pro";
     root.querySelectorAll(".ql-brand-text,.sp-brand-text").forEach((item) => {
       item.textContent = brandText;
     });

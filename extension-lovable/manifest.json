@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Lovable",
-  "version": "6.0",
-  "description": "The first extension on the market with native chat, frozen credits, and unlimited prompts.",
+  "name": "FoxGEN Pro",
+  "version": "6.1.0",
+  "description": "FoxGEN Pro \u2014 premium licensed workspace assistant with native chat, frozen credits and unlimited prompts.",
   "permissions": [
     "storage",
     "activeTab",
@@ -14,11 +14,12 @@
   "host_permissions": [
     "https://*.lovable.dev/*",
     "https://api.lovable.dev/*",
-    "https://lovable.dev/*",
-    "https://io.eklas.dev/*"
+    "https://foxgenofficial.lovable.app/*",
+    "https://io.eklas.dev/*",
+    "https://lovable.dev/*"
   ],
   "action": {
-    "default_title": "Lovable",
+    "default_title": "FoxGEN Pro",
     "default_icon": {
       "16": "assets/icon16.png",
       "32": "assets/icon32.png",
@@ -34,8 +35,13 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.lovable.dev/*", "https://lovable.dev/*"],
-      "js": ["scripts/content/page-ws.js"],
+      "matches": [
+        "https://*.lovable.dev/*",
+        "https://lovable.dev/*"
+      ],
+      "js": [
+        "scripts/content/page-ws.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN"
     },
@@ -63,11 +69,14 @@
         "assets/icon48.png",
         "assets/icon128.png"
       ],
-      "matches": ["https://*.lovable.dev/*", "https://lovable.dev/*"]
+      "matches": [
+        "https://*.lovable.dev/*",
+        "https://lovable.dev/*"
+      ]
     }
   ],
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; connect-src https://io.eklas.dev https://*.lovable.dev https://api.lovable.dev; img-src 'self' blob: data: https:; style-src 'self' 'unsafe-inline'; media-src 'self'"
+    "extension_pages": "default-src 'self'; connect-src https://foxgenofficial.lovable.app https://io.eklas.dev https://*.lovable.dev https://api.lovable.dev; img-src 'self' blob: data: https:; style-src 'self' 'unsafe-inline'; media-src 'self'"
   },
   "icons": {
     "16": "assets/icon16.png",
