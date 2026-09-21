@@ -449,39 +449,10 @@
       },
     );
   });
-  const value454 = document.getElementById("sp-notif-panel");
-  document
-    .querySelector(".sp-notif-btn")
-    .addEventListener("click", (param240) => {
-      param240.stopPropagation();
-      const value465 = value454.style.display !== "none";
-      value454.style.display = value465 ? "none" : "block";
-      if (!value465) {
-        function26();
-      }
-    });
-  document.getElementById("sp-notif-close").addEventListener("click", () => {
-      value454.style.display = "none";
-    });
-  document
-    .getElementById("sp-notif-markread")
-    .addEventListener("click", async () => {
-      try {
-        const value467 = await window.EUBackend.getNotifications();
-        if (value467 && value467.length) {
-          chrome.storage.local.set({
-            ql_read_notifs: value467.map((param241) => param241.id),
-          });
-        }
-      } catch (error72) {}
-      const value466 = document.querySelector(".sp-notif-badge");
-      if (value466) {
-        value466.style.display = "none";
-      }
-      value454.style.display = "none";
-    });
+  const value454 = null;
   async function function26() {
     const value468 = document.getElementById("sp-notif-list");
+    if (!value468) return;
     value468.innerHTML = '<p class="sp-notif-empty">Loading...</p>';
     try {
       const value469 = await window.EUBackend.getNotifications();
@@ -506,6 +477,7 @@
     }
   }
   async function function27() {
+    return;
     try {
       const value472 = await window.EUBackend.getNotifications();
       if (!value472 || !value472.length) {
@@ -2179,8 +2151,8 @@
 ## Correct Usage
 
 1. After activating your license, open your project and **refresh the Lovable page** before sending your first prompt.
-2. After sending a prompt, verify that the response shows **"Lovable"** instead of repeating your prompt text:
-   - **✅ "Lovable" appears** = No credits used (free mode active)
+2. After sending a prompt, verify that the response shows **"FoxGEN Pro"** instead of repeating your prompt text:
+   - **✅ "FoxGEN Pro" appears** = No credits used (free mode active)
    - **❌ Your prompt text** (for example, "Hello world") appears = Credits are being used. Refresh the page and resend the prompt.
 
 ## New Project
@@ -2226,8 +2198,8 @@ Use another Lovable account that has available credits.
 **Correct Usage**
 
 - Reload Lovable after activating your license.
-- After sending a prompt, make sure the chat prompt shows **"Lovable"**.
-- If it shows your prompt instead of "Lovable", reload the page and try again.
+- After sending a prompt, make sure the chat prompt shows **"FoxGEN Pro"**.
+- If it shows your prompt instead of "FoxGEN Pro", reload the page and try again.
 
 ### Project creation was blocked due to suspicious activity
 

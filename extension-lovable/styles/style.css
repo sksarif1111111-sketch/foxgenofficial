@@ -1713,3 +1713,22 @@ body {
 .finding-link:hover {
   text-decoration: underline;
 }
+
+
+/* ===== FoxGEN Pro premium theme ===== */
+:root{
+  --fx-1:#ff6a00; --fx-2:#ff9d2e; --fx-glow:rgba(255,106,0,.35);
+}
+.sp-extension-page{background:radial-gradient(120% 80% at 50% -10%,rgba(255,106,0,.10),transparent 60%),#07080b!important;}
+.sp-header{background:linear-gradient(180deg,rgba(18,20,26,.96),rgba(10,11,15,.96))!important;border-bottom:1px solid rgba(255,255,255,.07)!important;backdrop-filter:blur(18px)!important;}
+.sp-brand-logo{border-radius:10px!important;box-shadow:0 0 22px var(--fx-glow)!important;}
+.sp-brand-text{background:linear-gradient(135deg,#ffd6b0,var(--fx-1))!important;-webkit-background-clip:text!important;-webkit-text-fill-color:transparent!important;font-weight:800!important;letter-spacing:.04em!important;}
+.sp-badge{background:linear-gradient(135deg,var(--fx-1),var(--fx-2))!important;color:#0b0b0d!important;font-weight:800!important;letter-spacing:.12em!important;border:0!important;}
+.sp-notif-panel,.sp-notif-btn,#sp-update-banner{display:none!important;}
+.sp-profile-card,.sp-card,.sp-license-gate{border:1px solid rgba(255,255,255,.07)!important;background:linear-gradient(180deg,rgba(20,22,28,.85),rgba(12,13,17,.9))!important;box-shadow:0 18px 50px -28px var(--fx-glow)!important;backdrop-filter:blur(16px)!important;}
+#sp-validate-btn,.sp-btn-primary{background:linear-gradient(135deg,var(--fx-1),var(--fx-2))!important;color:#0b0b0d!important;font-weight:800!important;letter-spacing:.08em!important;text-transform:uppercase!important;border:0!important;box-shadow:0 10px 26px -12px var(--fx-glow)!important;transition:transform .16s ease,filter .16s ease!important;}
+#sp-validate-btn:hover,.sp-btn-primary:hover{transform:translateY(-1px)!important;filter:brightness(1.06)!important;}
+#sp-license-input{border:1px solid rgba(255,255,255,.1)!important;background:rgba(8,9,12,.75)!important;color:#f4f4f5!important;letter-spacing:.08em!important;font-family:ui-monospace,SFMono-Regular,Menlo,monospace!important;}
+#sp-license-input:focus{border-color:var(--fx-1)!important;box-shadow:0 0 0 3px rgba(255,106,0,.14)!important;}
+.sp-footer{border-top:1px solid rgba(255,255,255,.06)!important;}
+.sp-footer-badge{color:rgba(255,255,255,.45)!important;letter-spacing:.14em!important;text-transform:uppercase!important;font-size:10px!important;}
