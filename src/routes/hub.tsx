@@ -379,6 +379,21 @@ function HubPage() {
           >
             📥 Download Extension
           </a>
+          <div className="mx-auto mt-6 max-w-2xl border border-border bg-background/40 p-5">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Lovable edition</p>
+            <p className="mt-1 text-lg font-bold">FoxGEN Pro 6.1.0</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Side panel build for lovable.dev — unlocks with your FoxGEN license key.
+            </p>
+            <a
+              href="/foxgen-pro-lovable-extension.zip"
+              download="FoxGEN-Pro-Lovable-6.1.0.zip"
+              className="mt-4 inline-block rounded-xl bg-primary px-6 py-3 text-xs font-black uppercase text-primary-foreground"
+            >
+              📥 Download Extension
+            </a>
+          </div>
+
           <p className="mt-7 text-xs font-bold uppercase text-muted-foreground">Need help?</p>
           <div className="mt-3 flex flex-wrap justify-center gap-3 text-sm text-primary">
             {links["installation_guide_url"] && <a className="rounded-lg border border-border px-4 py-2" href={links["installation_guide_url"]}>📖 Installation Guide</a>}
