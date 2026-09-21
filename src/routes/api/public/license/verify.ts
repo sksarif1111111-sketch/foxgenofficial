@@ -96,6 +96,19 @@ export const Route = createFileRoute("/api/public/license/verify")({
           );
         }
 
+        if (row.device_id && deviceId && row.device_id !== deviceId) {
+          return reply(
+            {
+              ok: false,
+              valid: false,
+              status: "device_mismatch",
+              reason: "device_mismatch",
+              message: "This license is already active on another device.",
+            },
+            403,
+          );
+        }
+
 
         const now = new Date();
         let expiresAt = row.expires_at ? new Date(row.expires_at) : null;
@@ -147,6 +160,7 @@ export const Route = createFileRoute("/api/public/license/verify")({
           success: true,
           token: row.id,
           session_id: row.id,
+          license_id: row.id,
           user_name: "FoxGEN User",
           activated_at: (patch.activated_at ?? row.activated_at),
           online_count: 1,

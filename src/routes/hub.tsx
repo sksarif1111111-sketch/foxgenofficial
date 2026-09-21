@@ -381,13 +381,13 @@ function HubPage() {
           </a>
           <div className="mx-auto mt-6 max-w-2xl border border-border bg-background/40 p-5">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">Lovable edition</p>
-            <p className="mt-1 text-lg font-bold">FoxGEN Pro 6.1.0</p>
+            <p className="mt-1 text-lg font-bold">FoxGEN Pro 6.2.0</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Side panel build for lovable.dev — unlocks with your FoxGEN license key.
+              Updated license sync and direct Approve action for lovable.dev.
             </p>
             <a
               href="/foxgen-pro-lovable-extension.zip"
-              download="FoxGEN-Pro-Lovable-6.1.0.zip"
+              download="FoxGEN-Pro-Lovable-6.2.0.zip"
               className="mt-4 inline-block rounded-xl bg-primary px-6 py-3 text-xs font-black uppercase text-primary-foreground"
             >
               📥 Download Extension
