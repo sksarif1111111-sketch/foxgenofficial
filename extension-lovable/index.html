@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" class="sp-extension-root">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FoxGEN Pro</title>
+    <link rel="stylesheet" href="styles/style.css" />
+  </head>
+  <body class="sp-extension-page">
+    <div class="sp-header">
+      <div class="sp-brand">
+        <img
+          class="sp-brand-logo"
+          src="assets/logo-square.png"
+          alt="FoxGEN Pro"
+        /><span class="sp-brand-text">FoxGEN Pro</span>
+        <span class="sp-badge">PRO 6.1</span>
+      </div>
+      <div class="sp-header-actions">
+        <button
+          class="sp-icon-btn sp-logout-btn"
+          data-i18n-title="header.logout"
+          title="Logout"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="sp-body" id="sp-body">
+      <div
+        class="sp-license-gate"
+        id="sp-loading"
+        style="padding: 40px 0; text-align: center"
+      >
+        <p style="color: var(--ql-text-muted)" data-i18n="loading">
+          ⏳ Loading...
+        </p>
+      </div>
+    </div>
+
+    <div class="sp-footer" id="sp-footer" style="display: none">
+      <div class="sp-social-links"></div>
+      <span class="sp-footer-badge">FoxGEN Pro • v6.1.0</span>
+    </div>
+
+
+    <script src="scripts/shared/fingerprint.js"></script>
+    <script src="scripts/shared/flow.js"></script>
+    <script src="scripts/shared/translations.js"></script>
+    <script src="scripts/panel/panel-templates.js"></script>
+    <script src="scripts/panel/panel.js"></script>
+  </body>
+</html>
