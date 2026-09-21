@@ -87,15 +87,15 @@ export default function DownloadPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
                 Lovable edition
               </p>
-              <p className="text-2xl font-bold">FoxGEN Pro 6.2.0</p>
+              <p className="text-2xl font-bold">FoxGEN Pro 6.3.0</p>
               <p className="text-sm text-muted-foreground">
-                Updated license sync · direct Approve action · premium side panel build
+                Reliable activation · stable device binding · direct Approve action
               </p>
             </div>
             <a
               className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent to-primary px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
               href="/foxgen-pro-lovable-extension.zip"
-              download="FoxGEN-Pro-Lovable-6.2.0.zip"
+              download="FoxGEN-Pro-Lovable-6.3.0.zip"
             >
               Download extension
             </a>

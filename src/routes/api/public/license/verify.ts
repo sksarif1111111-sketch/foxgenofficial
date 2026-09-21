@@ -151,7 +151,14 @@ export const Route = createFileRoute("/api/public/license/verify")({
           );
         }
 
-        await supabaseAdmin.from("licenses").update(patch).eq("id", row.id);
+        const { error: updateError } = await supabaseAdmin.from("licenses").update(patch).eq("id", row.id);
+        if (updateError) {
+          console.error("license state update failed", updateError);
+          return reply(
+            { ok: false, valid: false, status: "error", reason: "server_error", message: "License check could not be completed. Try again." },
+            500,
+          );
+        }
 
         return reply({
           status: "valid",
