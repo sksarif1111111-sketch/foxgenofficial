@@ -81,6 +81,8 @@ export const Route = createFileRoute("/api/public/license/issue")({
               plan_days: row.plan_days,
               duration_seconds: row.duration_seconds,
               status: row.status,
+              multi_device: true,
+              device_limit: null,
               created_at: row.created_at,
             });
           }

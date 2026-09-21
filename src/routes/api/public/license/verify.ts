@@ -46,7 +46,6 @@ export const Route = createFileRoute("/api/public/license/verify")({
         }
         const d = parsed.data;
         const licenseKey = (d.licenseKey ?? d.key ?? d.license_key ?? "").trim().toUpperCase();
-        const deviceId = (d.deviceId ?? d.device_id ?? d.hwid ?? "").trim().slice(0, 120);
         if (!licenseKey) {
           return reply(
             { ok: false, valid: false, status: "invalid", reason: "invalid_license", message: "License key missing." },
@@ -96,20 +95,6 @@ export const Route = createFileRoute("/api/public/license/verify")({
           );
         }
 
-        if (row.device_id && deviceId && row.device_id !== deviceId) {
-          return reply(
-            {
-              ok: false,
-              valid: false,
-              status: "device_mismatch",
-              reason: "device_mismatch",
-              message: "This license is already active on another device.",
-            },
-            403,
-          );
-        }
-
-
         const now = new Date();
         let expiresAt = row.expires_at ? new Date(row.expires_at) : null;
         const patch: {
@@ -117,7 +102,6 @@ export const Route = createFileRoute("/api/public/license/verify")({
           check_count: number;
           activated_at?: string;
           expires_at?: string;
-          device_id?: string;
         } = {
           last_seen_at: now.toISOString(),
           check_count: (row.check_count ?? 0) + 1,
@@ -132,9 +116,6 @@ export const Route = createFileRoute("/api/public/license/verify")({
           expiresAt = new Date(now.getTime() + durationSeconds * 1000);
           patch.activated_at = now.toISOString();
           patch.expires_at = expiresAt.toISOString();
-          if (deviceId) patch.device_id = deviceId;
-        } else if (deviceId && !row.device_id) {
-          patch.device_id = deviceId;
         }
 
         if (expiresAt.getTime() <= now.getTime()) {
@@ -170,7 +151,9 @@ export const Route = createFileRoute("/api/public/license/verify")({
           license_id: row.id,
           user_name: "FoxGEN User",
           activated_at: (patch.activated_at ?? row.activated_at),
-          online_count: 1,
+          online_count: 0,
+          multi_device: true,
+          device_limit: null,
           ttl: Math.max(5, Math.min(900, Math.floor((expiresAt.getTime() - now.getTime()) / 1000))),
           plan_days: row.plan_days,
           duration_seconds: durationSeconds,
@@ -179,7 +162,8 @@ export const Route = createFileRoute("/api/public/license/verify")({
           license: {
             plan: durationSeconds >= 86400 ? `${Math.round(durationSeconds / 86400)}-day` : `${durationSeconds}s`,
             expires_at: expiresAt.toISOString(),
-            max_devices: 1,
+            max_devices: null,
+            multi_device: true,
             is_trial: false,
           },
         });
