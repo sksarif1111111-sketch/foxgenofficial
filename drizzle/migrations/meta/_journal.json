@@ -64,6 +64,13 @@
       "when": 1789661059214,
       "tag": "0008_award_referral_on_first_bot_start",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791012461103,
+      "tag": "0009_drop_redundant_storage_deny_policies",
+      "breakpoints": true
     }
   ]
 }
