@@ -1,5 +1,5 @@
 /**
- * DG Extension light-pink polish. No heavy observers.
+ * DIGI Extension light-pink polish. No heavy observers.
  */
 (function () {
   if (window.__zokysUiPolishLite__) return;
@@ -39,7 +39,7 @@
       if (!wrap.querySelector(".zokys-pro-badge")) {
         var b = document.createElement("div");
         b.className = "zokys-pro-badge";
-        b.textContent = "DG Extension";
+        b.textContent = "DIGI Extension";
         wrap.appendChild(b);
       }
     } catch (e) {}

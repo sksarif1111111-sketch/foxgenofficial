@@ -1,5 +1,5 @@
 /**
- * Replace legacy visible branding with DG Extension attribution. No credit logic.
+ * Replace legacy visible branding with DIGI Extension attribution. No credit logic.
  * Runs only on project pages, throttled.
  */
 (function () {
@@ -7,7 +7,7 @@
   window.__zokysLabelMain__ = true;
   if (!/\/projects\//i.test(location.pathname)) return;
 
-  var BRAND = "DG Extension";
+  var BRAND = "DIGI Extension";
   var CREDIT = "Made by Krishna Gupta";
   var busy = false;
   function scrub() {
