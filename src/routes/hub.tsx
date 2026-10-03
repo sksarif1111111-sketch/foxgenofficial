@@ -399,14 +399,14 @@ function HubPage() {
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:text-left">
               <img
                 src={digiExtensionLogo.url}
-                alt="DG Extension logo"
+                alt="DIGI Extension logo"
                 width={64}
                 height={64}
                 className="h-16 w-16 rounded-xl border border-accent/30 object-cover"
               />
               <div className="flex-1">
                 <p className="text-xs font-black uppercase tracking-[0.3em] text-accent">Reseller 3</p>
-                <p className="mt-1 text-lg font-bold">DG Extension 5.1.5</p>
+                <p className="mt-1 text-lg font-bold">DIGI Extension 5.1.5</p>
                 <p className="mt-1 text-xs text-muted-foreground">Light pink edition · Made by Krishna Gupta</p>
               </div>
             </div>
