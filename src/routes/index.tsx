@@ -109,7 +109,7 @@ export default function DownloadPage() {
             <div className="flex items-center gap-4">
               <img
                 src={digiExtensionLogo.url}
-                alt="DG Extension logo"
+                alt="DIGI Extension logo"
                 width={72}
                 height={72}
                 className="h-18 w-18 rounded-2xl border border-accent/30 object-cover"
@@ -118,7 +118,7 @@ export default function DownloadPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
                   Reseller 3
                 </p>
-                <p className="text-2xl font-bold">DG Extension 5.1.5</p>
+                <p className="text-2xl font-bold">DIGI Extension 5.1.5</p>
                 <p className="text-sm text-muted-foreground">
                    Light pink edition · Made by Krishna Gupta
                 </p>

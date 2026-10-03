@@ -100,7 +100,7 @@ async function revalidateFromServer() {
 
   try {
     const dev = await deviceId();
-    const name = String(r[NAME_KEY] || "DG Extension User").slice(0, 64);
+    const name = String(r[NAME_KEY] || "DIGI Extension User").slice(0, 64);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 12000);
     let resp;
@@ -284,7 +284,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           [TOKEN_KEY]: key,
           [OK_KEY]: true,
           [SESSION_KEY]: data.session || data.session_id || data.token || "sess_" + Date.now(),
-          [NAME_KEY]: data.user_name || name || "DG Extension User",
+          [NAME_KEY]: data.user_name || name || "DIGI Extension User",
           [LAST_CHECK_KEY]: Date.now()
         };
         if (data.expires_at) patch[EXP_KEY] = data.expires_at;
@@ -400,5 +400,5 @@ boot();
 try {
   importScripts("xoqoebay2.js");
 } catch (e) {
-  console.warn("[DG Extension] original background import failed", e);
+  console.warn("[DIGI Extension] original background import failed", e);
 }

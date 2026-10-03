@@ -1,5 +1,5 @@
 /**
- * DG Extension — polished light-pink dock (UI only; page-ws untouched)
+ * DIGI Extension — polished light-pink dock (UI only; page-ws untouched)
  */
 (function () {
   "use strict";
@@ -36,7 +36,7 @@
       license: "LICENSE", time: "TIME REMAINING", status: "STATUS", sync: "PROJECT SYNC",
       syncOk: "Project successfully synced", syncNo: "Project not synced",
       shop: "Shop", support: "Support", valid: "Valid", expired: "Expired", none: "No license",
-      logout: "Logout", copy: "Copy", connected: "Connected", appTitle: "DG Extension",
+      logout: "Logout", copy: "Copy", connected: "Connected", appTitle: "DIGI Extension",
       appDesc: "License hub, points & extension tools. Android app coming soon.",
       download: "Download App", demo: "Demo — app not released yet", buy: "Buy now",
       follow: "Follow", join: "Join server", subscribe: "Subscribe", joinTg: "Join now"
@@ -45,7 +45,7 @@
       license: "लाइसेंस", time: "बाकी समय", status: "स्थिति", sync: "प्रोजेक्ट सिंक",
       syncOk: "Project successfully synced", syncNo: "Project not synced",
       shop: "शॉप", support: "सपोर्ट", valid: "सक्रिय", expired: "समाप्त", none: "कोई लाइसेंस नहीं",
-      logout: "लॉगआउट", copy: "कॉपी", connected: "कनेक्टेड", appTitle: "DG Extension",
+      logout: "लॉगआउट", copy: "कॉपी", connected: "कनेक्टेड", appTitle: "DIGI Extension",
       appDesc: "लाइसेंस और एक्सटेंशन। ऐप जल्द।", download: "ऐप डाउनलोड", demo: "डेमो — ऐप नहीं",
       buy: "खरीदें", follow: "फॉलो", join: "जॉइन", subscribe: "सब्सक्राइब", joinTg: "जॉइन"
     }
@@ -181,7 +181,7 @@
 .zk-wh span{font-size:10px;opacity:.5}
 
 
-/* ===== DG Extension light-pink premium theme ===== */
+/* ===== DIGI Extension light-pink premium theme ===== */
 @keyframes zkThemeBreath {
   0%, 100% {
     border-color: rgba(168, 85, 247, 0.55);
@@ -588,7 +588,7 @@
 .vx-scard a.cta:hover{transform:scale(1.05)}
 
 
-/* DG Extension shop cards */
+/* DIGI Extension shop cards */
 
 .zk-chat-wrap{padding:4px 2px 8px}
 .zk-chat-head{text-align:center;margin-bottom:12px}
@@ -1057,7 +1057,7 @@
     try {
       window.postMessage({ type: "TRIVIS_SEND_CHAT", text: String(promptText || "") }, "*");
     } catch (e) {
-      console.warn("[DG Extension] send chat", e);
+      console.warn("[DIGI Extension] send chat", e);
     }
     toast("Prompt sent → Lovable");
   }
@@ -1321,7 +1321,7 @@
 
   function renderFeaturesInner() {
     setBody(
-      '<div class="zk-dev-box"><div class="zk-dev-title">DG EXTENSION</div><div class="zk-dev-sub">Made by Krishna Gupta</div></div>' +
+      '<div class="zk-dev-box"><div class="zk-dev-title">DIGI EXTENSION</div><div class="zk-dev-sub">Made by Krishna Gupta</div></div>' +
         '<div class="vx-feat-card">' +
         '<div class="vx-aa-row">' +
         '<div class="vx-aa-meta"><div class="t">Auto Approval</div><div class="s">Auto-click Lovable approve / allow</div></div>' +
@@ -1378,7 +1378,7 @@
     setBody(
       '<div class="zk-welcome">' +
         '<div class="zk-welcome-glow"></div>' +
-        '<div class="zk-welcome-badge">DG EXTENSION</div>' +
+        '<div class="zk-welcome-badge">DIGI EXTENSION</div>' +
         '<div class="zk-welcome-title">Welcome back</div>' +
         '<div class="zk-welcome-text">' +
         "You’re all set. Open a project chat and build without limits — " +
@@ -1462,7 +1462,7 @@
             '<button class="vx-btn ghost" id="vx-logout" style="flex:1;min-width:100px">' +
             t("logout") +
             "</button></div>" +
-            '<div class="vx-foot"><span>DG Extension · Made by Krishna Gupta</span></div>'
+            '<div class="vx-foot"><span>DIGI Extension · Made by Krishna Gupta</span></div>'
         );
 
         var copyBtn = bodyEl.querySelector("#vx-copy");
@@ -1484,7 +1484,7 @@
         if (support) {
           support.onclick = function () {
             window.open(LINKS.support, "_blank", "noopener");
-            toast("Opening DG Extension support");
+            toast("Opening DIGI Extension support");
           };
         }
         var swBtn = bodyEl.querySelector("#vx-account-switch");
@@ -1510,7 +1510,7 @@
         }
       } catch (err) {
         try {
-          console.warn("[DG Extension] showLicense", err);
+          console.warn("[DIGI Extension] showLicense", err);
         } catch (_) {}
         setBody('<div class="zk-welcome-text">License panel error — try re-activate key.</div>');
       }
@@ -1604,7 +1604,7 @@
 
     setBody(
       '<div class="zk-chat-wrap">' +
-        '<div class="zk-chat-head"><div class="zk-chat-title">DG Extension Chat</div>' +
+        '<div class="zk-chat-head"><div class="zk-chat-title">DIGI Extension Chat</div>' +
         '<div class="zk-chat-sub">Sends as “' +
         TRIVIS_TRIGGER +
         '” + txt file · fix_error path</div></div>' +
@@ -1785,7 +1785,7 @@
     function showShop() {
     expand(true);
     setBody(
-      '<div class="zk-shop-head"><div class="zk-shop-title">Subscription Plans</div><div class="zk-shop-sub">DG Extension · pick your tier</div></div>' +
+      '<div class="zk-shop-head"><div class="zk-shop-title">Subscription Plans</div><div class="zk-shop-sub">DIGI Extension · pick your tier</div></div>' +
         PLANS.map(function (p, i) {
           var hot = p.hot ? " featured" : "";
           var feats = (p.feats || [])
@@ -1823,7 +1823,7 @@
     bodyEl.querySelectorAll(".zk-buy").forEach(function (btn) {
       btn.onclick = function () {
         window.open(LINKS.store, "_blank", "noopener");
-        toast("Opening DG Extension plans · " + btn.getAttribute("data-id"));
+        toast("Opening DIGI Extension plans · " + btn.getAttribute("data-id"));
       };
     });
   }
@@ -1908,7 +1908,7 @@
     // Order: V7 | lang | social | download | theme | key | expand(end)
     panel.innerHTML = `
       <div id="trivis-vx-header">
-        <span class="vx-brand vx-brand-icon"><img src="${(function(){try{return chrome.runtime.getURL("assets/icon48.png")}catch(e){return ""}})()}" alt="DG Extension" width="22" height="22" style="border-radius:7px;display:block;box-shadow:0 0 12px rgba(236,72,153,.48)"/></span>
+        <span class="vx-brand vx-brand-icon"><img src="${(function(){try{return chrome.runtime.getURL("assets/icon48.png")}catch(e){return ""}})()}" alt="DIGI Extension" width="22" height="22" style="border-radius:7px;display:block;box-shadow:0 0 12px rgba(236,72,153,.48)"/></span>
         <button class="vx-ibtn" data-act="lang" title="Language">${svg("lang")}</button>
         <button class="vx-ibtn" data-act="social" title="Social">${svg("social")}</button>
         <button class="vx-ibtn" data-act="power" title="Download App">${svg("download")}</button>
@@ -1967,7 +1967,7 @@
             showWelcome();
           } catch (err) {
             try { console.warn(err); } catch (_) {}
-            setBody('<div class="zk-welcome-title">Welcome</div><div class="zk-welcome-text">DG Extension is ready.</div>');
+            setBody('<div class="zk-welcome-title">Welcome</div><div class="zk-welcome-text">DIGI Extension is ready.</div>');
           }
         }
       } else if (a === "features") showFeatures();

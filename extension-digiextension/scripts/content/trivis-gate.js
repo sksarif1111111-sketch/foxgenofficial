@@ -1,5 +1,5 @@
 /**
- * DG Extension license gate — liquid glass (storage keys unchanged; page-ws untouched)
+ * DIGI Extension license gate — liquid glass (storage keys unchanged; page-ws untouched)
  */
 (function () {
   if (window.__TRIVIS_V8_GATE__) return;
@@ -80,7 +80,7 @@
       "@media(min-width:431px){#trivis-pro-gate .btn,#trivis-pro-gate .field{width:100%!important;margin-left:0!important;margin-right:0!important}}" +
       "#trivis-pro-gate .field{transition:border-color .2s cubic-bezier(.22,1,.36,1),box-shadow .2s cubic-bezier(.22,1,.36,1)!important}#trivis-pro-gate .paste{transition:transform .18s cubic-bezier(.22,1,.36,1),color .18s ease,background .18s ease,border-color .18s ease!important}#trivis-pro-gate .paste:hover{transform:translateY(-1px) scale(1.05)!important}#trivis-pro-gate .paste:active{transform:scale(.96)!important}#trivis-pro-gate .btn{transition:transform .18s cubic-bezier(.22,1,.36,1),filter .18s ease,box-shadow .22s cubic-bezier(.22,1,.36,1)!important}#trivis-pro-gate .btn:hover{transform:translateY(-1.5px)!important;filter:brightness(1.06)!important}#trivis-pro-gate .btn:active{transform:scale(.98)!important}#trivis-pro-gate .logo-wrap,#trivis-pro-gate .logo{transition:transform .3s cubic-bezier(.22,1,.36,1)!important}@media (prefers-reduced-motion:reduce){#trivis-pro-gate, #trivis-pro-gate *{animation-duration:.01ms!important;transition-duration:.01ms!important}}</style>" +
       '<div class="wrap">' +
-        '<div class="logo"><img alt="DG Extension" src="' +
+        '<div class="logo"><img alt="DIGI Extension" src="' +
       (function () {
         try { return chrome.runtime.getURL("assets/zokys-avatar.png"); } catch (_) { return ""; }
       })() +
@@ -93,7 +93,7 @@
       '</button></div>' +
       '<button type="button" class="btn" id="trivis-gate-go"><span class="spin"></span><span class="lbl">ACTIVATE LICENSE</span><span class="arrow">→</span></button>' +
       '<div class="msg" id="trivis-gate-msg"></div>' +
-        '<div class="secure"><span class="secure-icon"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V2a4 4 0 0 1 8 0v3"></path><path d="M12 14v2"></path></svg></span>DG EXTENSION SECURE LICENSE · MADE BY KRISHNA GUPTA</div>' +
+        '<div class="secure"><span class="secure-icon"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V2a4 4 0 0 1 8 0v3"></path><path d="M12 14v2"></path></svg></span>DIGI EXTENSION SECURE LICENSE · MADE BY KRISHNA GUPTA</div>' +
       '</div>';
 
     document.documentElement.appendChild(root);
