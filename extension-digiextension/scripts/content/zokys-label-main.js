@@ -1,5 +1,5 @@
 /**
- * Light UsagiAutoX → Made by Krishna Gupta (MAIN). No credit logic.
+ * Replace legacy visible branding with DG Extension attribution. No credit logic.
  * Runs only on project pages, throttled.
  */
 (function () {
@@ -7,7 +7,8 @@
   window.__zokysLabelMain__ = true;
   if (!/\/projects\//i.test(location.pathname)) return;
 
-  var LABEL = "Made by Krishna Gupta";
+  var BRAND = "DG Extension";
+  var CREDIT = "Made by Krishna Gupta";
   var busy = false;
   function scrub() {
     if (busy) return;
@@ -18,8 +19,9 @@
         var el = nodes[i];
         if (!el || el.children.length > 2) continue;
         var t = el.childNodes.length === 1 && el.childNodes[0].nodeType === 3 ? el.textContent : "";
-        if (t && /UsagiAutoX/i.test(t) && t.length < 40) {
-          el.textContent = t.replace(/UsagiAutoX/gi, LABEL);
+        if (t && /(Foxzin(?:\s*Pro)?|FoxGEN(?:\s*Pro)?|Zokys|Trivis|UsagiAutoX)/i.test(t) && t.length < 80) {
+          var replaced = t.replace(/Foxzin(?:\s*Pro)?|FoxGEN(?:\s*Pro)?|Zokys|Trivis|UsagiAutoX/gi, BRAND);
+          el.textContent = /made by krishna gupta/i.test(replaced) ? replaced : replaced + " · " + CREDIT;
         }
       }
     } catch (e) {}
