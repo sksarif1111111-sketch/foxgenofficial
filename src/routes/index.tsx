@@ -109,7 +109,7 @@ export default function DownloadPage() {
             <div className="flex items-center gap-4">
               <img
                 src={digiExtensionLogo.url}
-                alt="DigiExtension logo"
+                alt="DG Extension logo"
                 width={72}
                 height={72}
                 className="h-18 w-18 rounded-2xl border border-accent/30 object-cover"
@@ -118,16 +118,16 @@ export default function DownloadPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
                   Reseller 3
                 </p>
-                <p className="text-2xl font-bold">DigiExtension 5.1.5</p>
+                <p className="text-2xl font-bold">DG Extension 5.1.5</p>
                 <p className="text-sm text-muted-foreground">
-                  Light pink edition · made by Krishna Gupta · FoxGEN license compatible
+                   Light pink edition · Made by Krishna Gupta
                 </p>
               </div>
             </div>
             <a
               className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent to-primary px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
               href="/digiextension-reseller-3.zip"
-              download="DigiExtension-Reseller-3-5.1.5.zip"
+              download="DG-Extension-Reseller-3-5.1.5.zip"
             >
               Download extension
             </a>

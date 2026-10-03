@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "DigiExtension",
+  "name": "DG Extension",
   "version": "5.1.5",
-  "description": "DigiExtension — premium licensed tools for lovable.dev.",
+  "description": "DG Extension — premium licensed tools for lovable.dev. Made by Krishna Gupta.",
   "author": "Krishna Gupta",
   "permissions": [
     "storage",
@@ -23,7 +23,7 @@
     "https://*.lovable.app/*"
   ],
   "action": {
-    "default_title": "DigiExtension",
+    "default_title": "DG Extension",
     "default_popup": "index.html",
     "default_icon": {
       "16": "assets/icon16.png",
