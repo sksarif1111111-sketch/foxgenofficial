@@ -1,5 +1,5 @@
 /**
- * Zokys × Trivis — polished liquid glass dock (UI only; page-ws untouched)
+ * DigiExtension — polished light-pink dock (UI only; page-ws untouched)
  */
 (function () {
   "use strict";
@@ -7,15 +7,10 @@
   window.__TRIVIS_VX_BAR_V9__ = true;
 
   const LINKS = {
-    telegramChannel: "https://t.me/foxgenofficial",
-    telegramGroup: "https://t.me/lovableunlimitedfoxgen",
-    facebook: "https://www.facebook.com/share/18PfyFqPJ3/",
-    youtube: "https://youtube.com/@mirza-p7x6s?si=21Eq6GmwCZ66wXu2",
-    whatsappChannel: "https://whatsapp.com/channel/0029VbDK6SHKLaHn5vxOQa0v",
-    community: "https://chat.whatsapp.com/KvOy0Fw8IWL0NGwc5zVTxf",
-    support: "https://t.me/FoXGENSPORT",
-    whatsapp: "https://wa.me/917699355860",
-    store: "https://nextgen.lovableunlimitedc.workers.dev"
+    telegramChannel: "https://t.me/av_techtak",
+    whatsappChannel: "https://whatsapp.com/channel/0029Vb99Mkp7IUYXOSrLDe3I",
+    support: "https://t.me/av_techtak",
+    store: "https://t.me/av_techtak"
   };
   const PLANS = [
     { price: "FREE", label: "30-Minute Free Trial", id: "trial", devices: "Instant access", tag: "TRIAL", feats: ["Full premium features", "Fast activation", "No payment needed"] },
@@ -41,7 +36,7 @@
       license: "LICENSE", time: "TIME REMAINING", status: "STATUS", sync: "PROJECT SYNC",
       syncOk: "Project successfully synced", syncNo: "Project not synced",
       shop: "Shop", support: "Support", valid: "Valid", expired: "Expired", none: "No license",
-      logout: "Logout", copy: "Copy", connected: "Connected", appTitle: "Zokys × Trivis",
+      logout: "Logout", copy: "Copy", connected: "Connected", appTitle: "DigiExtension",
       appDesc: "License hub, points & extension tools. Android app coming soon.",
       download: "Download App", demo: "Demo — app not released yet", buy: "Buy now",
       follow: "Follow", join: "Join server", subscribe: "Subscribe", joinTg: "Join now"
@@ -50,7 +45,7 @@
       license: "लाइसेंस", time: "बाकी समय", status: "स्थिति", sync: "प्रोजेक्ट सिंक",
       syncOk: "Project successfully synced", syncNo: "Project not synced",
       shop: "शॉप", support: "सपोर्ट", valid: "सक्रिय", expired: "समाप्त", none: "कोई लाइसेंस नहीं",
-      logout: "लॉगआउट", copy: "कॉपी", connected: "कनेक्टेड", appTitle: "ट्रिव्हिस ऐप",
+      logout: "लॉगआउट", copy: "कॉपी", connected: "कनेक्टेड", appTitle: "DigiExtension",
       appDesc: "लाइसेंस और एक्सटेंशन। ऐप जल्द।", download: "ऐप डाउनलोड", demo: "डेमो — ऐप नहीं",
       buy: "खरीदें", follow: "फॉलो", join: "जॉइन", subscribe: "सब्सक्राइब", joinTg: "जॉइन"
     }
@@ -66,7 +61,7 @@
 #trivis-vx-root button,#trivis-vx-root a{outline:none!important;-webkit-tap-highlight-color:transparent!important}
 
 #trivis-vx-panel{
-  --vx-sky:#38bdf8;--vx-sky2:#0ea5e9;--vx-sky-soft:rgba(168,85,247,.12);
+  --vx-sky:#ec4899;--vx-sky2:#db2777;--vx-sky-soft:rgba(236,72,153,.12);
   pointer-events:auto;position:fixed;left:16px;bottom:18px;width:min(348px,calc(100vw - 24px));max-height:86vh;
   color:#f4f4f5;border-radius:22px;overflow:hidden;display:flex;flex-direction:column;
   background:rgba(14,16,22,.44);
@@ -90,7 +85,7 @@
 #trivis-vx-body{display:block;pointer-events:auto;}
 #trivis-vx-panel.minimized #trivis-vx-body{display:none!important}
 #trivis-vx-panel.minimized #trivis-vx-header{position:relative;z-index:5;border-bottom:0;padding:7px 9px;border-radius:18px;background:transparent}
-#trivis-vx-panel.dragging{transition:none!important;transform:scale(1.03);box-shadow:0 28px 70px rgba(0,0,0,.4),0 0 36px rgba(168,85,247,.2)}
+#trivis-vx-panel.dragging{transition:none!important;transform:scale(1.03);box-shadow:0 28px 70px rgba(0,0,0,.4),0 0 36px rgba(236,72,153,.2)}
 
 #trivis-vx-header{
   display:flex;align-items:center;gap:2px;padding:10px 11px;
@@ -103,27 +98,27 @@
   border-bottom-color:rgba(15,23,42,.08)
 }
 #trivis-vx-header:active{cursor:grabbing}
-.vx-brand-icon{padding:0 6px 0 4px!important;border-right:1px solid rgba(168,85,247,.25)!important;display:inline-flex!important;align-items:center!important}
+.vx-brand-icon{padding:0 6px 0 4px!important;border-right:1px solid rgba(236,72,153,.25)!important;display:inline-flex!important;align-items:center!important}
 .vx-brand-icon img{width:22px!important;height:22px!important;object-fit:cover!important}
 
 /* zk-force-purple */
-#trivis-vx-root, #trivis-vx-root * { --zk-accent:#a855f7; --zk-accent2:#c084fc; }
+#trivis-vx-root, #trivis-vx-root * { --zk-accent:#ec4899; --zk-accent2:#f9a8d4; }
 #trivis-vx-root.light { /* force dark purple glass */ }
 #trivis-vx-root {
-  --vx-cyan:#a855f7 !important;
-  --vx-sky:#c084fc !important;
+  --vx-cyan:#ec4899 !important;
+  --vx-sky:#f9a8d4 !important;
 }
 #trivis-vx-root .vx-btn:not(.ghost) {
-  background: linear-gradient(135deg,#9333ea,#a855f7) !important;
+  background: linear-gradient(135deg,#db2777,#ec4899) !important;
   color:#fff !important;
 }
-#trivis-vx-root .vx-dot { background:#a855f7 !important; box-shadow:0 0 8px #a855f7 !important; }
+#trivis-vx-root .vx-dot { background:#ec4899 !important; box-shadow:0 0 8px #ec4899 !important; }
 #trivis-vx-root .vx-fbtn.on {
-  border-color:rgba(168,85,247,.55) !important;
-  box-shadow:0 0 20px rgba(168,85,247,.25) !important;
+  border-color:rgba(236,72,153,.55) !important;
+  box-shadow:0 0 20px rgba(236,72,153,.25) !important;
 }
 #trivis-vx-root #trivis-vx-header, #trivis-vx-root .vx-panel {
-  border-color:rgba(168,85,247,.25) !important;
+  border-color:rgba(236,72,153,.25) !important;
 }
 
 
@@ -133,23 +128,23 @@
   padding: 0 4px; white-space: nowrap; flex-shrink:1; max-width:88px; overflow:hidden;
   pointer-events:none;
 }
-.zk-brand-duo .z { color: #c084fc; }
+.zk-brand-duo .z { color: #f9a8d4; }
 .zk-brand-duo .x { color: #94a3b8; margin: 0 3px; }
-.zk-brand-duo .t { color: #f87171; }
+.zk-brand-duo .t { color: #f472b6; }
 .zk-dev-box {
   text-align: center; padding: 14px 12px; margin-bottom: 12px; border-radius: 16px;
-  background: linear-gradient(135deg, rgba(168,85,247,.2), rgba(239,35,53,.12));
-  border: 1px solid rgba(168,85,247,.3);
+  background: linear-gradient(135deg, rgba(236,72,153,.2), rgba(225,29,116,.12));
+  border: 1px solid rgba(236,72,153,.3);
 }
 .zk-dev-title {
   font-size: 16px; font-weight: 900; letter-spacing: .14em;
-  background: linear-gradient(90deg, #c084fc, #fff, #f87171);
+  background: linear-gradient(90deg, #f9a8d4, #fff, #f472b6);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
 .zk-dev-sub { font-size: 10px; opacity: .55; margin-top: 4px; }
 .vx-fbtn.zk-3d {
   background: linear-gradient(145deg, rgba(40,24,64,.9), rgba(20,12,36,.95)) !important;
-  border: 1px solid rgba(168,85,247,.35) !important;
+  border: 1px solid rgba(236,72,153,.35) !important;
   box-shadow: 0 6px 16px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06) !important;
   margin-bottom: 8px;
 }
@@ -157,15 +152,15 @@
   display: flex; align-items: center; gap: 12px; padding: 14px; margin-bottom: 10px;
   border-radius: 16px; text-decoration: none; color: #f5f3ff;
   background: linear-gradient(135deg, rgba(40,24,64,.9), rgba(24,12,32,.95));
-  border: 1px solid rgba(168,85,247,.3);
-  box-shadow: 0 8px 22px rgba(88,28,135,.2);
+  border: 1px solid rgba(236,72,153,.3);
+  box-shadow: 0 8px 22px rgba(157,23,77,.2);
   transition: transform .15s;
 }
 .zk-social-card:hover { transform: translateY(-2px); }
 .zk-social-card.sc-discord { border-color: rgba(129,140,248,.45); }
 .zk-social-card.sc-tg { border-color: rgba(56,189,248,.4); }
 .zk-sc-icon { font-size: 22px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
-  border-radius: 12px; background: rgba(168,85,247,.18); }
+  border-radius: 12px; background: rgba(236,72,153,.18); }
 .zk-sc-body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .zk-sc-body b { font-size: 13px; font-weight: 800; }
 .zk-sc-body span { font-size: 11px; opacity: .55; }
@@ -173,20 +168,20 @@
 
 
 .zk-welcome{position:relative;padding:18px 12px 12px;text-align:center;overflow:hidden}
-.zk-welcome-glow{position:absolute;inset:-20% -10% auto;height:120px;background:radial-gradient(ellipse at center,rgba(168,85,247,.35),rgba(239,35,53,.12),transparent 70%);pointer-events:none}
+.zk-welcome-glow{position:absolute;inset:-20% -10% auto;height:120px;background:radial-gradient(ellipse at center,rgba(236,72,153,.35),rgba(225,29,116,.12),transparent 70%);pointer-events:none}
 .zk-welcome-badge{position:relative;display:inline-block;font-size:10px;font-weight:900;letter-spacing:.14em;padding:5px 12px;border-radius:999px;margin-bottom:12px;
-  background:linear-gradient(135deg,rgba(168,85,247,.25),rgba(239,35,53,.15));border:1px solid rgba(168,85,247,.35);color:#e9d5ff}
-.zk-welcome-badge span{color:#f87171;margin:0 4px}
+  background:linear-gradient(135deg,rgba(236,72,153,.25),rgba(225,29,116,.15));border:1px solid rgba(236,72,153,.35);color:#fce7f3}
+.zk-welcome-badge span{color:#f472b6;margin:0 4px}
 .zk-welcome-title{position:relative;font-size:20px;font-weight:900;letter-spacing:.04em;margin-bottom:8px;
-  background:linear-gradient(90deg,#e9d5ff,#fff,#fecaca);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  background:linear-gradient(90deg,#fce7f3,#fff,#fbcfe8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .zk-welcome-text{position:relative;font-size:12px;line-height:1.55;opacity:.7;margin-bottom:14px;padding:0 4px}
 .zk-welcome-hints{position:relative;display:flex;flex-direction:column;gap:8px;text-align:left}
 .zk-wh{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:2px}
-.zk-wh b{font-size:12px;color:#e9d5ff}
+.zk-wh b{font-size:12px;color:#fce7f3}
 .zk-wh span{font-size:10px;opacity:.5}
 
 
-/* ===== Zokys × Trivis live theme: 15s purple → 15s red → loop ===== */
+/* ===== DigiExtension light-pink premium theme ===== */
 @keyframes zkThemeBreath {
   0%, 100% {
     border-color: rgba(168, 85, 247, 0.55);
@@ -205,23 +200,23 @@
 }
 @keyframes zkHdrWash {
   0%, 100% {
-    background: linear-gradient(105deg, rgba(88,28,135,.35), rgba(168,85,247,.18), rgba(15,10,24,.5));
+    background: linear-gradient(105deg, rgba(157,23,77,.35), rgba(236,72,153,.18), rgba(15,10,24,.5));
   }
   50% {
-    background: linear-gradient(105deg, rgba(136,19,55,.4), rgba(239,35,53,.2), rgba(15,10,24,.5));
+    background: linear-gradient(105deg, rgba(190,24,93,.4), rgba(225,29,116,.2), rgba(15,10,24,.5));
   }
 }
 @keyframes zkGlowOrb {
-  0%, 100% { opacity: 0.55; background: radial-gradient(circle, rgba(168,85,247,.45), transparent 70%); }
-  50% { opacity: 0.55; background: radial-gradient(circle, rgba(239,35,53,.45), transparent 70%); }
+  0%, 100% { opacity: 0.55; background: radial-gradient(circle, rgba(236,72,153,.45), transparent 70%); }
+  50% { opacity: 0.55; background: radial-gradient(circle, rgba(225,29,116,.45), transparent 70%); }
 }
 @keyframes zkFadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes zkSoftPulse {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(168,85,247,.35)); }
-  50% { filter: drop-shadow(0 0 10px rgba(239,35,53,.4)); }
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(236,72,153,.35)); }
+  50% { filter: drop-shadow(0 0 10px rgba(225,29,116,.4)); }
 }
 
 #trivis-vx-panel {
@@ -272,7 +267,7 @@
 }
 .vx-ibtn:hover {
   transform: translateY(-1px) scale(1.06);
-  box-shadow: 0 0 12px rgba(168,85,247,.35);
+  box-shadow: 0 0 12px rgba(236,72,153,.35);
 }
 .vx-ibtn:active { transform: scale(0.94); }
 .vx-brand-icon img {
@@ -283,7 +278,7 @@
   animation: zkSoftPulse 30s ease-in-out infinite;
 }
 .zk-brand-duo .t {
-  color: #f87171 !important;
+  color: #f472b6 !important;
 }
 
 /* Body content polish */
@@ -295,7 +290,7 @@
 }
 .vx-fbtn:hover, .zk-buy:hover, .vx-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,.25), 0 0 16px rgba(168,85,247,.2);
+  box-shadow: 0 8px 20px rgba(0,0,0,.25), 0 0 16px rgba(236,72,153,.2);
 }
 .vx-toggle {
   transition: background .25s ease !important;
@@ -322,7 +317,7 @@
 .vx-ibtn:hover,.vx-ibtn:focus{color:#fff;background:rgba(255,255,255,.12);transform:translateY(-1px) scale(1.06);outline:none!important;box-shadow:none}
 #trivis-vx-root.light .vx-ibtn:hover,#trivis-vx-root.light .vx-ibtn:focus{color:#0f172a;background:rgba(15,23,42,.06)}
 .vx-ibtn:active{transform:scale(.88)!important;background:rgba(255,255,255,.08)!important}
-.vx-ibtn.active-sky{color:#38bdf8;background:var(--vx-sky-soft)}
+.vx-ibtn.active-sky{color:#ec4899;background:var(--vx-sky-soft)}
 .vx-ibtn svg{width:17px;height:17px;pointer-events:none;transition:transform .4s cubic-bezier(.32,.72,0,1)}
 
 #trivis-vx-body{padding:12px 12px 14px;overflow:auto;max-height:min(70vh,540px)}
@@ -362,10 +357,10 @@
 .vx-card .ic{
   width:38px;height:38px;border-radius:12px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  background:rgba(168,85,247,.14);color:#38bdf8;
-  border:1px solid rgba(168,85,247,.2)
+  background:rgba(236,72,153,.14);color:#ec4899;
+  border:1px solid rgba(236,72,153,.2)
 }
-#trivis-vx-root.light .vx-card .ic{background:rgba(147,51,234,.12);color:#0284c7;border-color:rgba(147,51,234,.2)}
+#trivis-vx-root.light .vx-card .ic{background:rgba(219,39,119,.12);color:#be185d;border-color:rgba(219,39,119,.2)}
 .vx-card .lab{font-size:9px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.42);text-transform:uppercase}
 #trivis-vx-root.light .vx-card .lab{color:rgba(15,23,42,.45)}
 .vx-card .val{font-size:13px;font-weight:700;margin-top:3px;word-break:break-all;color:inherit;letter-spacing:.01em}
@@ -373,9 +368,9 @@
 
 .vx-copy{
   all:unset;cursor:pointer;flex-shrink:0;padding:8px 12px;border-radius:10px;font-size:11px;font-weight:700;
-  color:#0c4a6e;background:rgba(168,85,247,.9);
+  color:#500724;background:rgba(236,72,153,.9);
   border:1px solid rgba(255,255,255,.25);
-  box-shadow:0 4px 14px rgba(147,51,234,.25);
+  box-shadow:0 4px 14px rgba(219,39,119,.25);
   transition:transform .22s cubic-bezier(.32,.72,0,1),filter .2s;
   -webkit-tap-highlight-color:transparent
 }
@@ -385,15 +380,15 @@
 .vx-actions{display:flex;gap:8px;margin-top:6px;animation:vxRow .45s .14s both}
 .vx-btn{
   all:unset;cursor:pointer;flex:1;text-align:center;padding:12px 12px;border-radius:14px;
-  font-size:12px;font-weight:700;color:#0c4a6e;
-  background:linear-gradient(135deg,rgba(168,85,247,.92),rgba(147,51,234,.88));
+  font-size:12px;font-weight:700;color:#500724;
+  background:linear-gradient(135deg,rgba(236,72,153,.92),rgba(219,39,119,.88));
   border:1px solid rgba(255,255,255,.22);
-  box-shadow:0 8px 22px rgba(147,51,234,.22),0 1px 0 rgba(255,255,255,.25) inset;
+  box-shadow:0 8px 22px rgba(219,39,119,.22),0 1px 0 rgba(255,255,255,.25) inset;
   backdrop-filter:blur(8px);
   transition:transform .25s cubic-bezier(.32,.72,0,1),filter .2s,box-shadow .25s;
   -webkit-tap-highlight-color:transparent
 }
-.vx-btn:hover{filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 12px 28px rgba(147,51,234,.3)}
+.vx-btn:hover{filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 12px 28px rgba(219,39,119,.3)}
 .vx-btn:active{transform:scale(.96)}
 
 .vx-free{
@@ -423,12 +418,12 @@
 #trivis-vx-root.light .vx-free .fr-track{background:rgba(15,23,42,.08)}
 .vx-free .fr-fill{
   height:100%;border-radius:999px;
-  background:linear-gradient(90deg,#38bdf8,#c084fc,#34d399);
-  box-shadow:0 0 12px rgba(168,85,247,.35);
+  background:linear-gradient(90deg,#ec4899,#f9a8d4,#34d399);
+  box-shadow:0 0 12px rgba(236,72,153,.35);
   transition:width .45s cubic-bezier(.22,1,.36,1);
 }
 .vx-free .fr-fill.low{background:linear-gradient(90deg,#fbbf24,#f97316)}
-.vx-free .fr-fill.empty{background:linear-gradient(90deg,#f87171,#ef4444);box-shadow:0 0 12px rgba(248,113,113,.3)}
+.vx-free .fr-fill.empty{background:linear-gradient(90deg,#f472b6,#ef4444);box-shadow:0 0 12px rgba(248,113,113,.3)}
 .vx-free .fr-hint{font-size:11px;line-height:1.35;opacity:.55;font-weight:500}
 .vx-free .fr-hint.warn{color:#fbbf24;opacity:.9}
 .vx-free .fr-hint.ok{color:#34d399;opacity:.9}
@@ -461,7 +456,7 @@
   transition:transform .35s cubic-bezier(.22,1,.36,1),background .3s;
 }
 .vx-toggle.on{
-  background:linear-gradient(135deg,rgba(52,211,153,.35),rgba(168,85,247,.25));
+  background:linear-gradient(135deg,rgba(52,211,153,.35),rgba(236,72,153,.25));
   border-color:rgba(52,211,153,.45);
   box-shadow:inset 0 0 12px rgba(52,211,153,.2),0 0 16px rgba(52,211,153,.15);
 }
@@ -489,7 +484,7 @@
 }
 .vx-fbtn:hover{filter:brightness(1.08);transform:translateY(-1px);
   box-shadow:0 5px 0 rgba(0,0,0,.35),0 12px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.22)}
-.vx-fbtn.on{border-color:rgba(168,85,247,.45);box-shadow:0 4px 0 rgba(147,51,234,.35),0 8px 20px rgba(168,85,247,.2),inset 0 1px 0 rgba(255,255,255,.2);background:linear-gradient(165deg,rgba(168,85,247,.2),rgba(0,0,0,.2))}
+.vx-fbtn.on{border-color:rgba(236,72,153,.45);box-shadow:0 4px 0 rgba(219,39,119,.35),0 8px 20px rgba(236,72,153,.2),inset 0 1px 0 rgba(255,255,255,.2);background:linear-gradient(165deg,rgba(236,72,153,.2),rgba(0,0,0,.2))}
 .vx-fbtn:active{transform:translateY(3px);
   box-shadow:0 1px 0 rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.1)}
 .vx-fbtn .fi{
@@ -582,7 +577,7 @@
 .vx-scard:nth-child(1){background:linear-gradient(160deg,rgba(244,63,94,.22),rgba(20,12,18,.55));animation-delay:.02s}
 .vx-scard:nth-child(2){background:linear-gradient(160deg,rgba(99,102,241,.25),rgba(14,16,32,.55));animation-delay:.06s}
 .vx-scard:nth-child(3){background:linear-gradient(160deg,rgba(239,68,68,.22),rgba(24,10,10,.55));animation-delay:.1s}
-.vx-scard:nth-child(4){background:linear-gradient(160deg,rgba(168,85,247,.22),rgba(10,18,28,.55));animation-delay:.14s}
+.vx-scard:nth-child(4){background:linear-gradient(160deg,rgba(236,72,153,.22),rgba(10,18,28,.55));animation-delay:.14s}
 #trivis-vx-root.light .vx-scard{border-color:rgba(15,23,42,.08)}
 .vx-scard .name{font-size:13px;font-weight:800;color:#fff}
 .vx-scard .sub{font-size:10px;color:rgba(255,255,255,.7);margin:2px 0 8px}
@@ -593,81 +588,81 @@
 .vx-scard a.cta:hover{transform:scale(1.05)}
 
 
-/* Zokys × Trivis shop cards */
+/* DigiExtension shop cards */
 
 .zk-chat-wrap{padding:4px 2px 8px}
 .zk-chat-head{text-align:center;margin-bottom:12px}
-.zk-chat-title{font-size:15px;font-weight:800;background:linear-gradient(135deg,#e9d5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.zk-chat-title{font-size:15px;font-weight:800;background:linear-gradient(135deg,#fce7f3,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .zk-chat-sub{font-size:10px;opacity:.55;margin-top:4px;line-height:1.35}
 .zk-chat-input{
   width:100%;box-sizing:border-box;min-height:96px;resize:vertical;padding:12px 12px;border-radius:14px;
-  border:1px solid rgba(168,85,247,.35);background:rgba(12,8,24,.85);color:#f5f3ff;font-size:13px;
+  border:1px solid rgba(236,72,153,.35);background:rgba(12,8,24,.85);color:#f5f3ff;font-size:13px;
   font-family:Inter,-apple-system,sans-serif;outline:none;margin-bottom:10px
 }
-.zk-chat-input:focus{border-color:rgba(192,132,252,.7);box-shadow:0 0 0 3px rgba(168,85,247,.15)}
+.zk-chat-input:focus{border-color:rgba(249,168,212,.7);box-shadow:0 0 0 3px rgba(236,72,153,.15)}
 .zk-chat-send{
   all:unset;box-sizing:border-box;display:block;width:100%;text-align:center;cursor:pointer;
   padding:12px 14px;border-radius:12px;font-size:13px;font-weight:800;color:#fff;
-  background:linear-gradient(135deg,#9333ea,#a855f7 50%,#c084fc);
-  box-shadow:0 8px 22px rgba(147,51,234,.35);margin-bottom:8px
+  background:linear-gradient(135deg,#db2777,#ec4899 50%,#f9a8d4);
+  box-shadow:0 8px 22px rgba(219,39,119,.35);margin-bottom:8px
 }
 .zk-chat-send:disabled{opacity:.55;cursor:wait}
 .zk-chat-status{font-size:11px;text-align:center;min-height:16px;margin-bottom:10px;opacity:.8}
 .zk-chat-status.zk-busy{color:#c4b5fd}
 .zk-chat-status.zk-ok{color:#86efac}
-.zk-chat-status.zk-fail{color:#f87171}
+.zk-chat-status.zk-fail{color:#f472b6}
 .zk-chat-hist-label{font-size:10px;font-weight:700;letter-spacing:.08em;opacity:.45;margin:4px 0 8px;text-transform:uppercase}
 .zk-chat-hist{max-height:180px;overflow:auto;display:flex;flex-direction:column;gap:8px}
 .zk-hist-item{padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04)}
 .zk-hist-ok{border-color:rgba(52,211,153,.25)}
 .zk-hist-fail{border-color:rgba(248,113,113,.4);background:rgba(127,29,29,.2)}
-.zk-hist-text{font-size:12px;line-height:1.4;color:#e9d5ff;word-break:break-word}
-.zk-hist-fail .zk-hist-text{color:#fecaca}
+.zk-hist-text{font-size:12px;line-height:1.4;color:#fce7f3;word-break:break-word}
+.zk-hist-fail .zk-hist-text{color:#fbcfe8}
 .zk-hist-meta{font-size:10px;margin-top:6px;opacity:.65}
-.zk-hist-fail .zk-hist-meta{color:#f87171;opacity:1;font-weight:700}
+.zk-hist-fail .zk-hist-meta{color:#f472b6;opacity:1;font-weight:700}
 .zk-hist-empty{font-size:11px;opacity:.45;text-align:center;padding:12px}
 
 .zk-shop-head{padding:4px 4px 12px;text-align:center}
-.zk-shop-title{font-size:15px;font-weight:800;letter-spacing:.04em;background:linear-gradient(135deg,#e9d5ff,#c084fc 40%,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.zk-shop-title{font-size:15px;font-weight:800;letter-spacing:.04em;background:linear-gradient(135deg,#fce7f3,#f9a8d4 40%,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .zk-shop-sub{font-size:11px;opacity:.55;margin-top:4px}
 .zk-card{
   position:relative;padding:16px 14px 14px;border-radius:18px;margin-bottom:12px;
   background:linear-gradient(145deg,rgba(40,20,70,.75),rgba(18,12,32,.9));
-  border:1px solid rgba(168,85,247,.28);
-  box-shadow:0 0 0 1px rgba(255,255,255,.04) inset,0 12px 32px rgba(88,28,135,.25),0 0 24px var(--glow,rgba(168,85,247,.2));
+  border:1px solid rgba(236,72,153,.28);
+  box-shadow:0 0 0 1px rgba(255,255,255,.04) inset,0 12px 32px rgba(157,23,77,.25),0 0 24px var(--glow,rgba(236,72,153,.2));
   animation:vxRow .45s cubic-bezier(.32,.72,0,1) both;animation-delay:calc(var(--i,0)*.06s);
   overflow:hidden
 }
 .zk-card::before{
   content:"";position:absolute;inset:-40% -20% auto auto;width:120px;height:120px;border-radius:50%;
-  background:radial-gradient(circle,var(--glow,rgba(168,85,247,.35)),transparent 70%);pointer-events:none
+  background:radial-gradient(circle,var(--glow,rgba(236,72,153,.35)),transparent 70%);pointer-events:none
 }
 .zk-card.featured{
-  border-color:rgba(192,132,252,.55);
+  border-color:rgba(249,168,212,.55);
   transform:scale(1.02);
-  box-shadow:0 0 0 1px rgba(192,132,252,.2) inset,0 16px 40px rgba(126,34,206,.4),0 0 40px rgba(168,85,247,.3)
+  box-shadow:0 0 0 1px rgba(249,168,212,.2) inset,0 16px 40px rgba(126,34,206,.4),0 0 40px rgba(236,72,153,.3)
 }
 .zk-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;position:relative;z-index:1}
 .zk-tag{
   font-size:9px;font-weight:800;letter-spacing:.12em;padding:4px 8px;border-radius:999px;
-  background:rgba(168,85,247,.2);color:#e9d5ff;border:1px solid rgba(168,85,247,.35)
+  background:rgba(236,72,153,.2);color:#fce7f3;border:1px solid rgba(236,72,153,.35)
 }
 .zk-hot{
   font-size:9px;font-weight:800;padding:3px 7px;border-radius:999px;
-  background:linear-gradient(135deg,#f472b6,#a855f7);color:#fff
+  background:linear-gradient(135deg,#f472b6,#ec4899);color:#fff
 }
 .zk-price{font-size:26px;font-weight:900;letter-spacing:-.03em;color:#faf5ff;position:relative;z-index:1;line-height:1.1}
 .zk-dur{font-size:11px;opacity:.55;margin:2px 0 10px;position:relative;z-index:1}
 .zk-feats{list-style:none;margin:0 0 12px;padding:0;position:relative;z-index:1}
 .zk-feats li{font-size:11px;opacity:.8;padding:3px 0;display:flex;align-items:center;gap:6px}
-.zk-check{color:#c084fc;font-weight:800}
+.zk-check{color:#f9a8d4;font-weight:800}
 .zk-buy{
   all:unset;box-sizing:border-box;display:block;width:100%;text-align:center;cursor:pointer;
   padding:12px 14px;border-radius:12px;font-size:12px;font-weight:800;color:#fff;
-  background:linear-gradient(135deg,#9333ea,#a855f7 50%,#c084fc);
-  box-shadow:0 8px 20px rgba(147,51,234,.35);transition:transform .15s ease,box-shadow .15s
+  background:linear-gradient(135deg,#db2777,#ec4899 50%,#f9a8d4);
+  box-shadow:0 8px 20px rgba(219,39,119,.35);transition:transform .15s ease,box-shadow .15s
 }
-.zk-buy:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(147,51,234,.45)}
+.zk-buy:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(219,39,119,.45)}
 .vx-plan{
   display:flex;align-items:center;justify-content:space-between;padding:13px 12px;border-radius:16px;margin-bottom:8px;
   background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
@@ -677,8 +672,8 @@
 .vx-plan:nth-child(2){animation-delay:.05s}.vx-plan:nth-child(3){animation-delay:.1s}.vx-plan:nth-child(4){animation-delay:.15s}
 .vx-plan .p{font-weight:800;font-size:15px}.vx-plan .l{font-size:11px;opacity:.55;margin-top:2px}
 .vx-plan button{
-  all:unset;cursor:pointer;padding:9px 14px;border-radius:11px;font-size:11px;font-weight:700;color:#1e1b4b;
-  background:linear-gradient(135deg,rgba(192,132,252,.95),rgba(147,51,234,.9))
+  all:unset;cursor:pointer;padding:9px 14px;border-radius:11px;font-size:11px;font-weight:700;color:#500724;
+  background:linear-gradient(135deg,rgba(249,168,212,.95),rgba(219,39,119,.9))
 ;
   border:1px solid rgba(255,255,255,.25);transition:transform .22s;-webkit-tap-highlight-color:transparent
 }
@@ -692,9 +687,9 @@
 }
 #trivis-vx-root.light .vx-lang button{background:rgba(255,255,255,.7);border-color:rgba(15,23,42,.08);color:#0f172a}
 .vx-lang button:nth-child(n){animation-delay:calc(var(--i,0)*.04s)}
-.vx-lang button:hover{transform:translateX(5px);background:rgba(168,85,247,.12);border-color:rgba(168,85,247,.3)}
-.vx-lang button.active{border-color:rgba(168,85,247,.5);background:rgba(168,85,247,.15);color:#7dd3fc}
-#trivis-vx-root.light .vx-lang button.active{color:#0369a1;background:rgba(147,51,234,.12)}
+.vx-lang button:hover{transform:translateX(5px);background:rgba(236,72,153,.12);border-color:rgba(236,72,153,.3)}
+.vx-lang button.active{border-color:rgba(236,72,153,.5);background:rgba(236,72,153,.15);color:#f9a8d4}
+#trivis-vx-root.light .vx-lang button.active{color:#9d174d;background:rgba(219,39,119,.12)}
 
 .vx-toast{
   pointer-events:none;position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(12px) scale(.96);
@@ -1062,7 +1057,7 @@
     try {
       window.postMessage({ type: "TRIVIS_SEND_CHAT", text: String(promptText || "") }, "*");
     } catch (e) {
-      console.warn("[Zokys] send chat", e);
+      console.warn("[DigiExtension] send chat", e);
     }
     toast("Prompt sent → Lovable");
   }
@@ -1217,13 +1212,13 @@
     ov.id = "zokys-switch-modal";
     ov.style.cssText = "position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;background:rgba(6,6,12,.78);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:20px;font-family:Inter,-apple-system,sans-serif;";
     ov.innerHTML = [
-      '<div style="width:min(400px,100%);background:rgba(24,16,40,.95);border:1px solid rgba(168,85,247,.4);border-radius:20px;padding:22px 20px;color:#f5f3ff;box-shadow:0 24px 64px rgba(88,28,135,.4)">',
-      '<div style="font-size:16px;font-weight:800;margin-bottom:6px;color:#e9d5ff">Account Switch</div>',
+      '<div style="width:min(400px,100%);background:rgba(24,16,40,.95);border:1px solid rgba(236,72,153,.4);border-radius:20px;padding:22px 20px;color:#f5f3ff;box-shadow:0 24px 64px rgba(157,23,77,.4)">',
+      '<div style="font-size:16px;font-weight:800;margin-bottom:6px;color:#fce7f3">Account Switch</div>',
       '<div style="font-size:12px;color:#c4b5fd;margin-bottom:14px;line-height:1.5">1) Paste project <b>invite link</b><br/>2) Tap Switch — current Lovable session logs out<br/>3) Log in with your other account<br/>4) Accept the project invite</div>',
-      '<input id="zokys-invite-input" type="url" placeholder="https://lovable.dev/invite/..." style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1px solid rgba(168,85,247,.35);background:rgba(12,8,24,.85);color:#fff;font-size:13px;outline:none;margin-bottom:12px"/>',
+      '<input id="zokys-invite-input" type="url" placeholder="https://lovable.dev/invite/..." style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1px solid rgba(236,72,153,.35);background:rgba(12,8,24,.85);color:#fff;font-size:13px;outline:none;margin-bottom:12px"/>',
       '<div style="display:flex;gap:8px">',
       '<button id="zokys-switch-cancel" style="flex:1;padding:12px;border-radius:12px;border:none;background:rgba(255,255,255,.08);color:#c4b5fd;font-weight:600;cursor:pointer">Cancel</button>',
-      '<button id="zokys-switch-go" style="flex:1.3;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#9333ea,#a855f7);color:#fff;font-weight:800;cursor:pointer">Switch account</button>',
+      '<button id="zokys-switch-go" style="flex:1.3;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#db2777,#ec4899);color:#fff;font-weight:800;cursor:pointer">Switch account</button>',
       '</div></div>'
     ].join("");
     document.documentElement.appendChild(ov);
@@ -1326,7 +1321,7 @@
 
   function renderFeaturesInner() {
     setBody(
-      '<div class="zk-dev-box"><div class="zk-dev-title">DEV TOOL</div><div class="zk-dev-sub">Zokys <span style="color:#f87171">×</span> Trivis · quick actions</div></div>' +
+      '<div class="zk-dev-box"><div class="zk-dev-title">DIGI TOOL</div><div class="zk-dev-sub">DigiExtension · made by Krishna Gupta</div></div>' +
         '<div class="vx-feat-card">' +
         '<div class="vx-aa-row">' +
         '<div class="vx-aa-meta"><div class="t">Auto Approval</div><div class="s">Auto-click Lovable approve / allow</div></div>' +
@@ -1383,7 +1378,7 @@
     setBody(
       '<div class="zk-welcome">' +
         '<div class="zk-welcome-glow"></div>' +
-        '<div class="zk-welcome-badge">ZOKYS <span>×</span> TRIVIS</div>' +
+        '<div class="zk-welcome-badge">DIGIEXTENSION</div>' +
         '<div class="zk-welcome-title">Welcome back</div>' +
         '<div class="zk-welcome-text">' +
         "You’re all set. Open a project chat and build without limits — " +
@@ -1392,7 +1387,7 @@
         '<div class="zk-welcome-hints">' +
         '<div class="zk-wh"><b>License</b><span>Key icon · status & shop</span></div>' +
         '<div class="zk-wh"><b>Dev Tool</b><span>Features · auto approve</span></div>' +
-        '<div class="zk-wh"><b>Community</b><span>Social · Discord</span></div>' +
+        '<div class="zk-wh"><b>Community</b><span>Telegram · WhatsApp</span></div>' +
         "</div>" +
         '<button type="button" class="vx-btn" id="zk-welcome-lic" style="width:100%;margin-top:14px">Open license</button>' +
         "</div>"
@@ -1463,11 +1458,11 @@
             t("support") +
             "</button></div>" +
             '<div class="vx-actions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' +
-            '<button class="vx-btn ghost" id="vx-account-switch" style="flex:1;min-width:120px;border-color:rgba(168,85,247,.45);color:#e9d5ff">Account Switch</button>' +
+            '<button class="vx-btn ghost" id="vx-account-switch" style="flex:1;min-width:120px;border-color:rgba(236,72,153,.45);color:#fce7f3">Account Switch</button>' +
             '<button class="vx-btn ghost" id="vx-logout" style="flex:1;min-width:100px">' +
             t("logout") +
             "</button></div>" +
-            '<div class="vx-foot"><span>Zokys × Trivis</span></div>'
+            '<div class="vx-foot"><span>DigiExtension · Made by Krishna Gupta</span></div>'
         );
 
         var copyBtn = bodyEl.querySelector("#vx-copy");
@@ -1489,7 +1484,7 @@
         if (support) {
           support.onclick = function () {
             window.open(LINKS.support, "_blank", "noopener");
-            toast("Opening FoxGEN support");
+            toast("Opening DigiExtension support");
           };
         }
         var swBtn = bodyEl.querySelector("#vx-account-switch");
@@ -1515,7 +1510,7 @@
         }
       } catch (err) {
         try {
-          console.warn("[Zokys] showLicense", err);
+          console.warn("[DigiExtension] showLicense", err);
         } catch (_) {}
         setBody('<div class="zk-welcome-text">License panel error — try re-activate key.</div>');
       }
@@ -1526,12 +1521,8 @@
   function showSocial() {
     expand(true);
     var cards = [
-      { name: "Telegram Channel", sub: "@foxgenofficial", url: LINKS.telegramChannel, cta: t("joinTg") },
-      { name: "Telegram Group", sub: "Lovable Unlimited", url: LINKS.telegramGroup, cta: t("join") },
-      { name: "YouTube", sub: "Tutorials & updates", url: LINKS.youtube, cta: t("subscribe") },
-      { name: "Facebook", sub: "FoxGEN page", url: LINKS.facebook, cta: t("follow") },
-      { name: "WhatsApp Channel", sub: "Daily updates", url: LINKS.whatsappChannel, cta: t("follow") },
-      { name: "Community", sub: "WhatsApp group", url: LINKS.community, cta: t("join") }
+      { name: "Telegram Channel", sub: "@av_techtak", url: LINKS.telegramChannel, cta: t("joinTg") },
+      { name: "WhatsApp Channel", sub: "Official updates", url: LINKS.whatsappChannel, cta: t("follow") }
     ];
     setBody('<div class="vx-grid">' + cards.map(function (c) {
       return '<div class="vx-scard"><div class="name">' + c.name + '</div><div class="sub">' + c.sub +
@@ -1613,7 +1604,7 @@
 
     setBody(
       '<div class="zk-chat-wrap">' +
-        '<div class="zk-chat-head"><div class="zk-chat-title">Trivis Chat</div>' +
+        '<div class="zk-chat-head"><div class="zk-chat-title">DigiExtension Chat</div>' +
         '<div class="zk-chat-sub">Sends as “' +
         TRIVIS_TRIGGER +
         '” + txt file · fix_error path</div></div>' +
@@ -1794,7 +1785,7 @@
     function showShop() {
     expand(true);
     setBody(
-      '<div class="zk-shop-head"><div class="zk-shop-title">Subscription Plans</div><div class="zk-shop-sub">FoxGEN <span style="color:#22d3ee">Pro</span> · pick your tier</div></div>' +
+      '<div class="zk-shop-head"><div class="zk-shop-title">Subscription Plans</div><div class="zk-shop-sub">DigiExtension · pick your tier</div></div>' +
         PLANS.map(function (p, i) {
           var hot = p.hot ? " featured" : "";
           var feats = (p.feats || [])
@@ -1832,7 +1823,7 @@
     bodyEl.querySelectorAll(".zk-buy").forEach(function (btn) {
       btn.onclick = function () {
         window.open(LINKS.store, "_blank", "noopener");
-        toast("Opening FoxGEN Store · " + btn.getAttribute("data-id"));
+        toast("Opening DigiExtension plans · " + btn.getAttribute("data-id"));
       };
     });
   }
@@ -1917,7 +1908,7 @@
     // Order: V7 | lang | social | download | theme | key | expand(end)
     panel.innerHTML = `
       <div id="trivis-vx-header">
-        <span class="vx-brand vx-brand-icon"><img src="${(function(){try{return chrome.runtime.getURL("assets/icon48.png")}catch(e){return ""}})()}" alt="FoxGEN Pro" width="22" height="22" style="border-radius:7px;display:block;box-shadow:0 0 12px rgba(22,217,255,.48)"/></span>
+        <span class="vx-brand vx-brand-icon"><img src="${(function(){try{return chrome.runtime.getURL("assets/icon48.png")}catch(e){return ""}})()}" alt="DigiExtension" width="22" height="22" style="border-radius:7px;display:block;box-shadow:0 0 12px rgba(22,217,255,.48)"/></span>
         <button class="vx-ibtn" data-act="lang" title="Language">${svg("lang")}</button>
         <button class="vx-ibtn" data-act="social" title="Social">${svg("social")}</button>
         <button class="vx-ibtn" data-act="power" title="Download App">${svg("download")}</button>
@@ -1976,7 +1967,7 @@
             showWelcome();
           } catch (err) {
             try { console.warn(err); } catch (_) {}
-            setBody('<div class="zk-welcome-title">Welcome</div><div class="zk-welcome-text">Zokys × Trivis is ready.</div>');
+            setBody('<div class="zk-welcome-title">Welcome</div><div class="zk-welcome-text">DigiExtension is ready.</div>');
           }
         }
       } else if (a === "features") showFeatures();
