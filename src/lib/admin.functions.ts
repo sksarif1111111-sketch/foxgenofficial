@@ -25,9 +25,14 @@ function block(len: number) {
   return Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join("");
 }
 
-/** FOXGEN-XXX-XXX */
-function makeKey() {
-  return `FOXGEN-${block(3)}-${block(3)}`;
+function cleanPrefix(name?: string) {
+  const p = (name ?? "").normalize("NFC").replace(/[^\p{L}\p{N}]/gu, "").toUpperCase().slice(0, 24);
+  return p || "FOXGEN";
+}
+
+/** NAME-XXX-XXX (defaults to FOXGEN) */
+function makeKey(name?: string) {
+  return `${cleanPrefix(name)}-${block(3)}-${block(3)}`;
 }
 
 export const listLicenses = createServerFn({ method: "POST" }).handler(async (): Promise<LicenseRow[]> => {
