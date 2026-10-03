@@ -69,6 +69,7 @@ function AdminPage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [amount, setAmount] = useState("30");
   const [unit, setUnit] = useState<Unit>("minutes");
+  const [keyName, setKeyName] = useState("");
 
   const refresh = useCallback(async () => {
     try {
@@ -86,7 +87,7 @@ function AdminPage() {
     setBusy(tag);
     setError(null);
     try {
-      const row = await create({ data: { durationSeconds } });
+      const row = await create({ data: { durationSeconds, name: keyName.trim() || undefined } });
       setRows((prev) => [row, ...prev]);
       await navigator.clipboard.writeText(row.license_key).catch(() => undefined);
       setCopied(row.license_key);
@@ -129,6 +130,23 @@ function AdminPage() {
             </p>
           </div>
         </header>
+
+        <section className="rounded-2xl border border-border bg-card/60 p-6 backdrop-blur">
+          <label className="text-xs font-bold uppercase tracking-[0.3em] text-primary" htmlFor="key-name">
+            Custom name (optional)
+          </label>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Example: RAM → RAM-AB3-K9X. Leave empty for FOXGEN-XXX-XXX. Applies to every button below.
+          </p>
+          <input
+            id="key-name"
+            value={keyName}
+            maxLength={24}
+            onChange={(e) => setKeyName(e.target.value)}
+            placeholder="e.g. RAM, DG, LOVABLE"
+            className="mt-4 w-full max-w-sm rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold uppercase outline-none focus:border-primary"
+          />
+        </section>
 
         <section className="grid gap-4 sm:grid-cols-3">
           {PLANS.map((plan) => (

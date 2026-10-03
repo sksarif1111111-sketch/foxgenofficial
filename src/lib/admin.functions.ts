@@ -51,6 +51,7 @@ export const generateLicense = createServerFn({ method: "POST" })
       .object({
         durationSeconds: z.number().int().min(1).max(60 * 60 * 24 * 3650),
         note: z.string().trim().max(120).optional(),
+        name: z.string().trim().max(40).optional(),
       })
       .parse(input),
   )
@@ -61,7 +62,7 @@ export const generateLicense = createServerFn({ method: "POST" })
       const { data: row, error } = await supabaseAdmin
         .from("licenses")
         .insert({
-          license_key: makeKey(),
+          license_key: makeKey(data.name),
           plan_days: planDays,
           duration_seconds: data.durationSeconds,
           note: data.note ?? null,

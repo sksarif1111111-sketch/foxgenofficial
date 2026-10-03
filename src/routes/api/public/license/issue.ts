@@ -6,6 +6,8 @@ const bodySchema = z.object({
   days: z.number().int().min(1).max(3650).optional(),
   plan_days: z.number().int().min(1).max(3650).optional(),
   note: z.string().trim().max(120).optional(),
+  name: z.string().trim().max(40).optional(),
+  prefix: z.string().trim().max(40).optional(),
 });
 
 const cors = {
@@ -25,8 +27,9 @@ function block(len: number) {
   const bytes = crypto.getRandomValues(new Uint8Array(len));
   return Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join("");
 }
-function makeKey() {
-  return `FOXGEN-${block(3)}-${block(3)}`;
+function makeKey(name?: string) {
+  const p = (name ?? "").normalize("NFC").replace(/[^\p{L}\p{N}]/gu, "").toUpperCase().slice(0, 24) || "FOXGEN";
+  return `${p}-${block(3)}-${block(3)}`;
 }
 
 export const Route = createFileRoute("/api/public/license/issue")({
@@ -65,7 +68,7 @@ export const Route = createFileRoute("/api/public/license/issue")({
           const { data: row, error } = await supabaseAdmin
             .from("licenses")
             .insert({
-              license_key: makeKey(),
+              license_key: makeKey(d.name ?? d.prefix),
               plan_days: planDays,
               duration_seconds: durationSeconds,
               note: d.note ?? "external-api",
