@@ -181,7 +181,7 @@
 .zk-wh span{font-size:10px;opacity:.5}
 
 
-/* ===== DigiExtension light-pink premium theme ===== */
+/* ===== DG Extension light-pink premium theme ===== */
 @keyframes zkThemeBreath {
   0%, 100% {
     border-color: rgba(168, 85, 247, 0.55);
@@ -588,7 +588,7 @@
 .vx-scard a.cta:hover{transform:scale(1.05)}
 
 
-/* DigiExtension shop cards */
+/* DG Extension shop cards */
 
 .zk-chat-wrap{padding:4px 2px 8px}
 .zk-chat-head{text-align:center;margin-bottom:12px}
@@ -1057,7 +1057,7 @@
     try {
       window.postMessage({ type: "TRIVIS_SEND_CHAT", text: String(promptText || "") }, "*");
     } catch (e) {
-      console.warn("[DigiExtension] send chat", e);
+      console.warn("[DG Extension] send chat", e);
     }
     toast("Prompt sent → Lovable");
   }
@@ -1462,7 +1462,7 @@
             '<button class="vx-btn ghost" id="vx-logout" style="flex:1;min-width:100px">' +
             t("logout") +
             "</button></div>" +
-            '<div class="vx-foot"><span>DigiExtension · Made by Krishna Gupta</span></div>'
+            '<div class="vx-foot"><span>DG Extension · Made by Krishna Gupta</span></div>'
         );
 
         var copyBtn = bodyEl.querySelector("#vx-copy");
@@ -1484,7 +1484,7 @@
         if (support) {
           support.onclick = function () {
             window.open(LINKS.support, "_blank", "noopener");
-            toast("Opening DigiExtension support");
+            toast("Opening DG Extension support");
           };
         }
         var swBtn = bodyEl.querySelector("#vx-account-switch");
@@ -1510,7 +1510,7 @@
         }
       } catch (err) {
         try {
-          console.warn("[DigiExtension] showLicense", err);
+          console.warn("[DG Extension] showLicense", err);
         } catch (_) {}
         setBody('<div class="zk-welcome-text">License panel error — try re-activate key.</div>');
       }
@@ -1604,7 +1604,7 @@
 
     setBody(
       '<div class="zk-chat-wrap">' +
-        '<div class="zk-chat-head"><div class="zk-chat-title">DigiExtension Chat</div>' +
+        '<div class="zk-chat-head"><div class="zk-chat-title">DG Extension Chat</div>' +
         '<div class="zk-chat-sub">Sends as “' +
         TRIVIS_TRIGGER +
         '” + txt file · fix_error path</div></div>' +
@@ -1785,7 +1785,7 @@
     function showShop() {
     expand(true);
     setBody(
-      '<div class="zk-shop-head"><div class="zk-shop-title">Subscription Plans</div><div class="zk-shop-sub">DigiExtension · pick your tier</div></div>' +
+      '<div class="zk-shop-head"><div class="zk-shop-title">Subscription Plans</div><div class="zk-shop-sub">DG Extension · pick your tier</div></div>' +
         PLANS.map(function (p, i) {
           var hot = p.hot ? " featured" : "";
           var feats = (p.feats || [])
@@ -1823,7 +1823,7 @@
     bodyEl.querySelectorAll(".zk-buy").forEach(function (btn) {
       btn.onclick = function () {
         window.open(LINKS.store, "_blank", "noopener");
-        toast("Opening DigiExtension plans · " + btn.getAttribute("data-id"));
+        toast("Opening DG Extension plans · " + btn.getAttribute("data-id"));
       };
     });
   }
@@ -1967,7 +1967,7 @@
             showWelcome();
           } catch (err) {
             try { console.warn(err); } catch (_) {}
-            setBody('<div class="zk-welcome-title">Welcome</div><div class="zk-welcome-text">DigiExtension is ready.</div>');
+            setBody('<div class="zk-welcome-title">Welcome</div><div class="zk-welcome-text">DG Extension is ready.</div>');
           }
         }
       } else if (a === "features") showFeatures();
