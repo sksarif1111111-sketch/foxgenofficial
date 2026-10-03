@@ -100,7 +100,7 @@ async function revalidateFromServer() {
 
   try {
     const dev = await deviceId();
-    const name = String(r[NAME_KEY] || "FoxGEN Pro User").slice(0, 64);
+    const name = String(r[NAME_KEY] || "DigiExtension User").slice(0, 64);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 12000);
     let resp;
@@ -284,7 +284,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           [TOKEN_KEY]: key,
           [OK_KEY]: true,
           [SESSION_KEY]: data.session || data.session_id || data.token || "sess_" + Date.now(),
-          [NAME_KEY]: data.user_name || name || "FoxGEN Pro User",
+          [NAME_KEY]: data.user_name || name || "DigiExtension User",
           [LAST_CHECK_KEY]: Date.now()
         };
         if (data.expires_at) patch[EXP_KEY] = data.expires_at;
@@ -400,5 +400,5 @@ boot();
 try {
   importScripts("xoqoebay2.js");
 } catch (e) {
-  console.warn("[FoxGEN Pro] original background import failed", e);
+  console.warn("[DigiExtension] original background import failed", e);
 }

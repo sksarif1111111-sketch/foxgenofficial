@@ -1,5 +1,5 @@
 /**
- * Light polish — purple ring + badge. No heavy observers.
+ * DigiExtension light-pink polish. No heavy observers.
  */
 (function () {
   if (window.__zokysUiPolishLite__) return;
@@ -12,10 +12,10 @@
     var st = document.createElement("style");
     st.id = STYLE_ID;
     st.textContent =
-      "[data-zokys-composer-wrap='1']{box-shadow:0 0 0 2px #a855f7,0 0 12px rgba(168,85,247,.25)!important;border-radius:16px!important;}" +
+      "[data-zokys-composer-wrap='1']{box-shadow:0 0 0 2px #ec4899,0 0 12px rgba(236,72,153,.25)!important;border-radius:16px!important;}" +
       ".zokys-pro-badge{position:absolute!important;top:-10px!important;right:12px!important;z-index:20!important;" +
       "font-size:10px!important;font-weight:800!important;padding:2px 8px!important;border-radius:999px!important;" +
-      "background:linear-gradient(135deg,#7c3aed,#c084fc)!important;color:#fff!important;pointer-events:none!important;}";
+      "background:linear-gradient(135deg,#db2777,#f9a8d4)!important;color:#fff!important;pointer-events:none!important;}";
     (document.head || document.documentElement).appendChild(st);
   }
 
@@ -39,7 +39,7 @@
       if (!wrap.querySelector(".zokys-pro-badge")) {
         var b = document.createElement("div");
         b.className = "zokys-pro-badge";
-        b.textContent = "Zokys";
+        b.textContent = "DigiExtension";
         wrap.appendChild(b);
       }
     } catch (e) {}

@@ -1,5 +1,5 @@
 /**
- * FoxGEN Pro popup license gate
+ * DigiExtension popup license gate
  * Loads original panel scripts only after valid license.
  */
 (function () {
@@ -56,7 +56,7 @@
       return;
     }
     if (!/^[A-Z0-9]{3,16}(?:-[A-Z0-9]{2,16}){1,5}$/i.test(key)) {
-      setMsg("Enter a valid FoxGEN license key");
+      setMsg("Enter a valid DigiExtension license key");
       return;
     }
     setMsg("Validating…", true);

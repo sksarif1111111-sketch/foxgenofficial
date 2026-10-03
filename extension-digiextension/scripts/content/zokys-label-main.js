@@ -1,5 +1,5 @@
 /**
- * Light UsagiAutoX → Send By Zokys ❤️ (MAIN). No credit logic.
+ * Light UsagiAutoX → Made by Krishna Gupta (MAIN). No credit logic.
  * Runs only on project pages, throttled.
  */
 (function () {
@@ -7,7 +7,7 @@
   window.__zokysLabelMain__ = true;
   if (!/\/projects\//i.test(location.pathname)) return;
 
-  var LABEL = "Send By Zokys ❤️";
+  var LABEL = "Made by Krishna Gupta";
   var busy = false;
   function scrub() {
     if (busy) return;
