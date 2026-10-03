@@ -9,30 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as HubRouteImport } from './routes/hub'
-import { Route as HubAdminRouteImport } from './routes/hub-admin'
 import { Route as ShopRouteImport } from './routes/shop'
-import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
-import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/license/issue'
-import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
-import { Route as ApiPublicTelegramAvatarRouteImport } from './routes/api/public/telegram/avatar'
+import { Route as HubAdminRouteImport } from './routes/hub-admin'
+import { Route as HubRouteImport } from './routes/hub'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
+import { Route as ApiPublicTelegramAvatarRouteImport } from './routes/api/public/telegram/avatar'
+import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
+import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/license/issue'
+import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HubRoute = HubRouteImport.update({
-  id: '/hub',
-  path: '/hub',
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HubAdminRoute = HubAdminRouteImport.update({
@@ -40,29 +30,19 @@ const HubAdminRoute = HubAdminRouteImport.update({
   path: '/hub-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ShopRoute = ShopRouteImport.update({
-  id: '/shop',
-  path: '/shop',
+const HubRoute = HubRouteImport.update({
+  id: '/hub',
+  path: '/hub',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicExtCoreRoute = ApiPublicExtCoreRouteImport.update({
-  id: '/api/public/ext/core',
-  path: '/api/public/ext/core',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicLicenseIssueRoute = ApiPublicLicenseIssueRouteImport.update({
-  id: '/api/public/license/issue',
-  path: '/api/public/license/issue',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicLicenseVerifyRoute = ApiPublicLicenseVerifyRouteImport.update({
-  id: '/api/public/license/verify',
-  path: '/api/public/license/verify',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicTelegramAvatarRoute = ApiPublicTelegramAvatarRouteImport.update({
-  id: '/api/public/telegram/avatar',
-  path: '/api/public/telegram/avatar',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicTelegramWebhookRoute =
@@ -71,6 +51,26 @@ const ApiPublicTelegramWebhookRoute =
     path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicTelegramAvatarRoute = ApiPublicTelegramAvatarRouteImport.update({
+  id: '/api/public/telegram/avatar',
+  path: '/api/public/telegram/avatar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicLicenseVerifyRoute = ApiPublicLicenseVerifyRouteImport.update({
+  id: '/api/public/license/verify',
+  path: '/api/public/license/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicLicenseIssueRoute = ApiPublicLicenseIssueRouteImport.update({
+  id: '/api/public/license/issue',
+  path: '/api/public/license/issue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicExtCoreRoute = ApiPublicExtCoreRouteImport.update({
+  id: '/api/public/ext/core',
+  path: '/api/public/ext/core',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -163,25 +163,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/hub': {
-      id: '/hub'
-      path: '/hub'
-      fullPath: '/hub'
-      preLoaderRoute: typeof HubRouteImport
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hub-admin': {
@@ -191,32 +177,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HubAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/shop': {
-      id: '/shop'
-      path: '/shop'
-      fullPath: '/shop'
-      preLoaderRoute: typeof ShopRouteImport
+    '/hub': {
+      id: '/hub'
+      path: '/hub'
+      fullPath: '/hub'
+      preLoaderRoute: typeof HubRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/ext/core': {
-      id: '/api/public/ext/core'
-      path: '/api/public/ext/core'
-      fullPath: '/api/public/ext/core'
-      preLoaderRoute: typeof ApiPublicExtCoreRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/license/issue': {
-      id: '/api/public/license/issue'
-      path: '/api/public/license/issue'
-      fullPath: '/api/public/license/issue'
-      preLoaderRoute: typeof ApiPublicLicenseIssueRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/license/verify': {
-      id: '/api/public/license/verify'
-      path: '/api/public/license/verify'
-      fullPath: '/api/public/license/verify'
-      preLoaderRoute: typeof ApiPublicLicenseVerifyRouteImport
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/telegram/avatar': {
@@ -226,11 +212,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramAvatarRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/telegram/webhook': {
-      id: '/api/public/telegram/webhook'
-      path: '/api/public/telegram/webhook'
-      fullPath: '/api/public/telegram/webhook'
-      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+    '/api/public/license/verify': {
+      id: '/api/public/license/verify'
+      path: '/api/public/license/verify'
+      fullPath: '/api/public/license/verify'
+      preLoaderRoute: typeof ApiPublicLicenseVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/license/issue': {
+      id: '/api/public/license/issue'
+      path: '/api/public/license/issue'
+      fullPath: '/api/public/license/issue'
+      preLoaderRoute: typeof ApiPublicLicenseIssueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ext/core': {
+      id: '/api/public/ext/core'
+      path: '/api/public/ext/core'
+      fullPath: '/api/public/ext/core'
+      preLoaderRoute: typeof ApiPublicExtCoreRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
