@@ -14,8 +14,8 @@ const THEME_KEY = "zokys_remote_theme";
 const FEATURES_KEY = "zokys_remote_features";
 
 const ZOKYS_BASE = "https://zokysvx.lovable.app";
-const TRIVIS_API = ZOKYS_BASE + "/api/public/validate-license";
-const TRIVIS_API_FALLBACK = ZOKYS_BASE + "/api/validate-license";
+const TRIVIS_API = "https://foxgenofficial.lovable.app/api/public/license/verify";
+const TRIVIS_API_FALLBACK = TRIVIS_API;
 const EXTENSION_STATUS_API = ZOKYS_BASE + "/api/public/extension-status";
 const EXTENSION_STATUS_API_FALLBACK = ZOKYS_BASE + "/api/extension-status";
 const SWITCH_API = ZOKYS_BASE + "/api/public/switch-account";
@@ -30,7 +30,7 @@ const OTA_DOWNLOAD_API = ZOKYS_BASE + "/api/public/ota-download";
 const OTA_DOWNLOAD_API_FALLBACK = ZOKYS_BASE + "/api/ota-download";
 /* Accept ZOKYS-XXXX-XXXX-XXXX and legacy TRIVIS-XXXX-XXXX */
 /* Custom prefix: PREFIX-XXXX-XXXX-XXXX */
-const KEY_RE = /^[A-Z0-9_]{2,20}-[A-Z0-9]{4}-[A-Z0-9]{4}(-[A-Z0-9]{4})?$/i;
+const KEY_RE = /^[A-Z0-9_]{2,24}(?:-[A-Z0-9]{2,16}){1,5}$/i;
 const TOKEN_KEY = "trivis_license_key";
 const OK_KEY = "trivis_lic_ok";
 const SESSION_KEY = "trivis_lic_session";
@@ -156,7 +156,7 @@ async function revalidateFromServer() {
       resp = await fetch(TRIVIS_API, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key, deviceId: dev, name, recheck: true }),
+        body: JSON.stringify({ licenseKey: key, key, deviceId: dev, device_id: dev, name, recheck: true }),
         signal: ctrl.signal
       });
     } finally {
@@ -169,7 +169,7 @@ async function revalidateFromServer() {
         const resp2 = await fetch(TRIVIS_API_FALLBACK, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key, deviceId: dev, name, recheck: true })
+          body: JSON.stringify({ licenseKey: key, key, deviceId: dev, device_id: dev, name, recheck: true })
         });
         const data2 = await resp2.json().catch(() => null);
         if (data2 && data2.ok) data = data2;
@@ -178,7 +178,7 @@ async function revalidateFromServer() {
     try { if (data && data.ok) await applyRemoteControl(data); } catch (_) {}
 
     // Explicit invalid from server → kill session (ban / revoke / device limit)
-    if (data && data.ok === false) {
+    if (data && (data.ok === false || data.valid === false)) {
       await clearLicense();
       return {
         ok: false,
@@ -681,6 +681,7 @@ async function applyLockState(data) {
 }
 
 async function fetchExtensionStatus() {
+  return null; // FoxGEN edition: remote lock from previous vendor disabled
   const body = {};
   try {
     const r = await chrome.storage.local.get([TOKEN_KEY]);
@@ -756,7 +757,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           resp = await fetch(TRIVIS_API, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key, deviceId: dev, name }),
+            body: JSON.stringify({ licenseKey: key, key, deviceId: dev, device_id: dev, name }),
             signal: ctrl.signal
           });
         } finally {
@@ -768,7 +769,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             const resp2 = await fetch(TRIVIS_API_FALLBACK, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ key, deviceId: dev, name })
+              body: JSON.stringify({ licenseKey: key, key, deviceId: dev, device_id: dev, name })
             });
             const data2 = await resp2.json().catch(() => null);
             if (data2 && data2.ok) data = data2;
