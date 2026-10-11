@@ -341,7 +341,8 @@ export const adminSetWebhook = createServerFn({ method: "POST" })
     const res = await tg("setWebhook", {
       url,
       secret_token: await webhookSecret(),
-      allowed_updates: ["message", "callback_query"],
+      // pre_checkout_query is required for Telegram Stars payments to complete.
+      allowed_updates: ["message", "callback_query", "pre_checkout_query"],
     });
     if (res.ok) await setSetting("site_url", data.baseUrl.replace(/\/$/, ""));
     return { ok: Boolean(res.ok), url, description: res.description ?? "" };
