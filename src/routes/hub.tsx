@@ -395,6 +395,19 @@ function HubPage() {
             </a>
           </div>
 
+          <div className="mx-auto mt-6 max-w-2xl border border-primary/30 bg-background/40 p-5">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-primary">New edition</p>
+            <p className="mt-1 text-lg font-bold">FoxGEN Pro 6.10</p>
+            <p className="mt-1 text-xs text-muted-foreground">Premium design · FoxGEN license activation</p>
+            <a
+              href="/foxgen-pro-6.10.zip"
+              download="FoxGEN-Pro-6.10.zip"
+              className="mt-4 inline-block rounded-xl bg-primary px-6 py-3 text-xs font-black uppercase text-primary-foreground"
+            >
+              📥 Download FoxGEN Pro 6.10
+            </a>
+          </div>
+
           <div className="mx-auto mt-6 max-w-2xl border border-accent/30 bg-background/40 p-5">
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:text-left">
               <img
