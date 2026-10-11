@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import digiExtensionLogo from "@/assets/digiextension-logo.jpeg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -80,6 +81,76 @@ export default function DownloadPage() {
           </div>
         </section>
 
+        <section className="relative overflow-hidden rounded-3xl border border-accent/25 bg-card/70 p-8 backdrop-blur-xl shadow-[0_30px_90px_-40px_var(--color-accent)]">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent" />
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
+                Lovable edition
+              </p>
+              <p className="text-2xl font-bold">FoxGEN Pro 6.3.0</p>
+              <p className="text-sm text-muted-foreground">
+                Reliable activation · stable device binding · direct Approve action
+              </p>
+            </div>
+            <a
+              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent to-primary px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
+              href="/foxgen-pro-lovable-extension.zip"
+              download="FoxGEN-Pro-Lovable-6.3.0.zip"
+            >
+              Download extension
+            </a>
+          </div>
+        </section>
+
+        <section className="relative overflow-hidden rounded-3xl border border-primary/30 bg-card/70 p-8 backdrop-blur-xl">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">New edition</p>
+              <p className="text-2xl font-bold">FoxGEN Pro 6.10</p>
+              <p className="text-sm text-muted-foreground">Premium design · FoxGEN license activation</p>
+            </div>
+            <a
+              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent to-primary px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
+              href="/foxgen-pro-6.10.zip"
+              download="FoxGEN-Pro-6.10.zip"
+            >
+              Download extension
+            </a>
+          </div>
+        </section>
+
+        <section className="relative overflow-hidden rounded-3xl border border-accent/25 bg-card/70 p-8 backdrop-blur-xl shadow-[0_30px_90px_-40px_var(--color-accent)]">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent" />
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <img
+                src={digiExtensionLogo.url}
+                alt="DIGI Extension logo"
+                width={72}
+                height={72}
+                className="h-18 w-18 rounded-2xl border border-accent/30 object-cover"
+              />
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
+                  Reseller 3
+                </p>
+                <p className="text-2xl font-bold">DIGI Extension 5.1.5</p>
+                <p className="text-sm text-muted-foreground">
+                   Light pink edition · Made by Krishna Gupta
+                </p>
+              </div>
+            </div>
+            <a
+              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent to-primary px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
+              href="/digiextension-reseller-3.zip"
+              download="DG-Extension-Reseller-3-5.1.5.zip"
+            >
+              Download extension
+            </a>
+          </div>
+        </section>
 
 
         <section className="flex flex-col gap-5">

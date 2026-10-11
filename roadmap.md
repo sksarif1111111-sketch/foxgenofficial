@@ -20,6 +20,5 @@
 - [x] Release FoxGEN Pro 6.3 with reliable activation retries, consistent device errors, stale status cleanup, and direct Approve support.
 - [x] Remove one-device binding from every current and future license and enable unlimited multiple-device activation.
 - [x] Build DigiExtension Reseller 3 from the 5.1.5 feature set with Krishna Gupta branding, light-pink styling, supplied logo, two requested channels, and separate downloads.
-- [x] Remove the DIGI Extension download from the website.
 - [x] Rename every visible Reseller 3 label to DG Extension, replace legacy startup artwork, and keep Made by Krishna Gupta attribution.
 - [x] Build FoxGEN Pro 6.10 from the uploaded extension with FoxGEN licensing, branding and premium styling; add a separate download.
