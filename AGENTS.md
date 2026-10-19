@@ -10,3 +10,5 @@
 <!-- LOVABLE:END -->
 
 - Keep each downloadable reseller extension in its own source directory so branding changes never overwrite another edition.
+
+- Admin sales CRM tables use the `crm_` prefix and are admin-only via `is_admin(auth.uid())` RLS, with an audit trigger on every table; keeps CRM bookkeeping separate from the live store `products`/`shop_orders` tables.

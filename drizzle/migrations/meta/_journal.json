@@ -71,6 +71,13 @@
       "when": 1791012461103,
       "tag": "0009_drop_redundant_storage_deny_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792453739906,
+      "tag": "0010_create_admin_sales_crm",
+      "breakpoints": true
     }
   ]
 }
