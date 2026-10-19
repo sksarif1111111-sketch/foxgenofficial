@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import digiExtensionLogo from "@/assets/digiextension-logo.jpeg.asset.json";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/extension")({
   head: () => ({
     meta: [
-      { title: "FoxGEN Pro — Download the Licensed Extension" },
+      { title: "FoxGEN Pro Extension — Download" },
       {
         name: "description",
         content:
           "Download the FoxGEN Pro browser extension. A valid FoxGEN license key unlocks the extension on lovable.dev.",
       },
-      { property: "og:title", content: "FoxGEN Pro — Download the Licensed Extension" },
+      { property: "og:title", content: "FoxGEN Pro Extension — Download" },
       {
         property: "og:description",
         content: "Download FoxGEN Pro and activate it with your license key.",
