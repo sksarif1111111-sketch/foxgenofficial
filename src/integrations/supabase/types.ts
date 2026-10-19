@@ -354,6 +354,514 @@ export type Database = {
           },
         ]
       }
+      crm_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
+      crm_customers: {
+        Row: {
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          telegram_username: string | null
+          updated_at: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          telegram_username?: string | null
+          updated_at?: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          telegram_username?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_deliveries: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          details: string | null
+          id: string
+          method: string
+          order_id: string
+          order_item_id: string | null
+          recipient: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          details?: string | null
+          id?: string
+          method?: string
+          order_id: string
+          order_item_id?: string | null
+          recipient?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          details?: string | null
+          id?: string
+          method?: string
+          order_id?: string
+          order_item_id?: string | null
+          recipient?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_deliveries_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "crm_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_deliveries_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "crm_order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_expenses: {
+        Row: {
+          amount: number
+          batch_id: string | null
+          category: string
+          created_at: string
+          currency: string
+          description: string | null
+          expense_date: string
+          id: string
+          order_id: string | null
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          amount: number
+          batch_id?: string | null
+          category: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          order_id?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          batch_id?: string | null
+          category?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          order_id?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_expenses_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "crm_inventory_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_expenses_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "crm_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_inventory_batches: {
+        Row: {
+          batch_code: string | null
+          created_at: string
+          currency: string
+          expires_at: string | null
+          id: string
+          notes: string | null
+          product_id: string
+          purchased_at: string
+          quantity_remaining: number
+          quantity_total: number
+          supplier: string | null
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          batch_code?: string | null
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          product_id: string
+          purchased_at?: string
+          quantity_remaining: number
+          quantity_total: number
+          supplier?: string | null
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          batch_code?: string | null
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string
+          purchased_at?: string
+          quantity_remaining?: number
+          quantity_total?: number
+          supplier?: string | null
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_inventory_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "crm_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_order_items: {
+        Row: {
+          batch_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          line_cost: number | null
+          line_total: number | null
+          order_id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          unit_cost_price: number
+          unit_sale_price: number
+          updated_at: string
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          line_cost?: number | null
+          line_total?: number | null
+          order_id: string
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          unit_cost_price: number
+          unit_sale_price: number
+          updated_at?: string
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          line_cost?: number | null
+          line_total?: number | null
+          order_id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          unit_cost_price?: number
+          unit_sale_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_order_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "crm_inventory_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "crm_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "crm_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_orders: {
+        Row: {
+          created_at: string
+          currency: string
+          customer_id: string | null
+          discount: number
+          id: string
+          notes: string | null
+          order_number: string
+          ordered_at: string
+          payment_status: string
+          source: string | null
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          discount?: number
+          id?: string
+          notes?: string | null
+          order_number?: string
+          ordered_at?: string
+          payment_status?: string
+          source?: string | null
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          discount?: number
+          id?: string
+          notes?: string | null
+          order_number?: string
+          ordered_at?: string
+          payment_status?: string
+          source?: string | null
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          method: string
+          notes: string | null
+          order_id: string
+          paid_at: string | null
+          reference: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          method: string
+          notes?: string | null
+          order_id: string
+          paid_at?: string | null
+          reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          order_id?: string
+          paid_at?: string | null
+          reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "crm_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_products: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          default_cost_price: number
+          default_sale_price: number
+          description: string | null
+          id: string
+          name: string
+          sku: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          default_cost_price?: number
+          default_sale_price?: number
+          description?: string | null
+          id?: string
+          name: string
+          sku?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          default_cost_price?: number
+          default_sale_price?: number
+          description?: string | null
+          id?: string
+          name?: string
+          sku?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_refunds: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          order_id: string
+          payment_id: string | null
+          reason: string | null
+          refunded_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          order_id: string
+          payment_id?: string | null
+          reason?: string | null
+          refunded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          order_id?: string
+          payment_id?: string | null
+          reason?: string | null
+          refunded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_refunds_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "crm_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "crm_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       extension_guide_pages: {
         Row: {
           body: string
