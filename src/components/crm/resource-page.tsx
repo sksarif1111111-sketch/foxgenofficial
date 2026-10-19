@@ -39,6 +39,7 @@ type Props = {
   fields?: Field[];
   csvName: string;
   actions?: ReactNode;
+  beforeInsert?: (payload: Row) => Row;
 };
 
 export function ResourcePage(p: Props) {
@@ -114,7 +115,7 @@ export function ResourcePage(p: Props) {
         </div>
         <div className="flex flex-wrap gap-2">
           {p.actions}
-          {p.fields && <AddDialog title={p.title} table={p.table} fields={p.fields} />}
+          {p.fields && <AddDialog title={p.title} table={p.table} fields={p.fields} beforeInsert={p.beforeInsert} />}
           <Button variant="outline" onClick={exportCsv} disabled={!rows.length}>
             Export CSV
           </Button>
@@ -254,7 +255,7 @@ export function InlineSelect({ value, options, onChange }: { value: string; opti
   );
 }
 
-function AddDialog({ title, table, fields }: { title: string; table: string; fields: Field[] }) {
+function AddDialog({ title, table, fields, beforeInsert }: { title: string; table: string; fields: Field[]; beforeInsert?: (p: Row) => Row }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const initial = () => Object.fromEntries(fields.map((f) => [f.key, f.defaultValue ?? (f.type === "checkbox" ? false : "")]));
@@ -271,7 +272,7 @@ function AddDialog({ title, table, fields }: { title: string; table: string; fie
         else if (f.type === "datetime") payload[f.key] = new Date(String(v)).toISOString();
         else payload[f.key] = typeof v === "string" ? v.trim() : v;
       }
-      const { error } = await db.from(table).insert(payload);
+      const { error } = await db.from(table).insert(beforeInsert ? beforeInsert(payload) : payload);
       if (error) throw error;
     },
     onSuccess: () => {

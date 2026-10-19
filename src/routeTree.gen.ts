@@ -19,6 +19,11 @@ import { Route as HubAdminRouteImport } from './routes/hub-admin'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedCrmIndexRouteImport } from './routes/_authenticated/crm.index'
+import { Route as AuthenticatedCrmCustomersRouteImport } from './routes/_authenticated/crm.customers'
+import { Route as AuthenticatedCrmOrdersRouteImport } from './routes/_authenticated/crm.orders'
+import { Route as AuthenticatedCrmProductsRouteImport } from './routes/_authenticated/crm.products'
+import { Route as AuthenticatedCrmSaleRouteImport } from './routes/_authenticated/crm.sale'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/license/issue'
 import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
@@ -74,6 +79,33 @@ const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   path: '/crm',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCrmIndexRoute = AuthenticatedCrmIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedCrmRoute,
+} as any)
+const AuthenticatedCrmCustomersRoute =
+  AuthenticatedCrmCustomersRouteImport.update({
+    id: '/customers',
+    path: '/customers',
+    getParentRoute: () => AuthenticatedCrmRoute,
+  } as any)
+const AuthenticatedCrmOrdersRoute = AuthenticatedCrmOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AuthenticatedCrmRoute,
+} as any)
+const AuthenticatedCrmProductsRoute =
+  AuthenticatedCrmProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => AuthenticatedCrmRoute,
+  } as any)
+const AuthenticatedCrmSaleRoute = AuthenticatedCrmSaleRouteImport.update({
+  id: '/sale',
+  path: '/sale',
+  getParentRoute: () => AuthenticatedCrmRoute,
+} as any)
 const ApiPublicExtCoreRoute = ApiPublicExtCoreRouteImport.update({
   id: '/api/public/ext/core',
   path: '/api/public/ext/core',
@@ -110,7 +142,12 @@ export interface FileRoutesByFullPath {
   '/hub-admin': typeof HubAdminRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
-  '/crm': typeof AuthenticatedCrmRoute
+  '/crm': typeof AuthenticatedCrmRouteWithChildren
+  '/crm/customers': typeof AuthenticatedCrmCustomersRoute
+  '/crm/orders': typeof AuthenticatedCrmOrdersRoute
+  '/crm/products': typeof AuthenticatedCrmProductsRoute
+  '/crm/sale': typeof AuthenticatedCrmSaleRoute
+  '/crm/': typeof AuthenticatedCrmIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
@@ -126,7 +163,11 @@ export interface FileRoutesByTo {
   '/hub-admin': typeof HubAdminRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
-  '/crm': typeof AuthenticatedCrmRoute
+  '/crm/customers': typeof AuthenticatedCrmCustomersRoute
+  '/crm/orders': typeof AuthenticatedCrmOrdersRoute
+  '/crm/products': typeof AuthenticatedCrmProductsRoute
+  '/crm/sale': typeof AuthenticatedCrmSaleRoute
+  '/crm': typeof AuthenticatedCrmIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
@@ -144,7 +185,12 @@ export interface FileRoutesById {
   '/hub-admin': typeof HubAdminRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
-  '/_authenticated/crm': typeof AuthenticatedCrmRoute
+  '/_authenticated/crm': typeof AuthenticatedCrmRouteWithChildren
+  '/_authenticated/crm/customers': typeof AuthenticatedCrmCustomersRoute
+  '/_authenticated/crm/orders': typeof AuthenticatedCrmOrdersRoute
+  '/_authenticated/crm/products': typeof AuthenticatedCrmProductsRoute
+  '/_authenticated/crm/sale': typeof AuthenticatedCrmSaleRoute
+  '/_authenticated/crm/': typeof AuthenticatedCrmIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
@@ -163,6 +209,11 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/crm'
+    | '/crm/customers'
+    | '/crm/orders'
+    | '/crm/products'
+    | '/crm/sale'
+    | '/crm/'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
@@ -178,6 +229,10 @@ export interface FileRouteTypes {
     | '/hub-admin'
     | '/reset-password'
     | '/shop'
+    | '/crm/customers'
+    | '/crm/orders'
+    | '/crm/products'
+    | '/crm/sale'
     | '/crm'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
@@ -196,6 +251,11 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/_authenticated/crm'
+    | '/_authenticated/crm/customers'
+    | '/_authenticated/crm/orders'
+    | '/_authenticated/crm/products'
+    | '/_authenticated/crm/sale'
+    | '/_authenticated/crm/'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
@@ -292,6 +352,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crm/': {
+      id: '/_authenticated/crm/'
+      path: '/'
+      fullPath: '/crm/'
+      preLoaderRoute: typeof AuthenticatedCrmIndexRouteImport
+      parentRoute: typeof AuthenticatedCrmRoute
+    }
+    '/_authenticated/crm/customers': {
+      id: '/_authenticated/crm/customers'
+      path: '/customers'
+      fullPath: '/crm/customers'
+      preLoaderRoute: typeof AuthenticatedCrmCustomersRouteImport
+      parentRoute: typeof AuthenticatedCrmRoute
+    }
+    '/_authenticated/crm/orders': {
+      id: '/_authenticated/crm/orders'
+      path: '/orders'
+      fullPath: '/crm/orders'
+      preLoaderRoute: typeof AuthenticatedCrmOrdersRouteImport
+      parentRoute: typeof AuthenticatedCrmRoute
+    }
+    '/_authenticated/crm/products': {
+      id: '/_authenticated/crm/products'
+      path: '/products'
+      fullPath: '/crm/products'
+      preLoaderRoute: typeof AuthenticatedCrmProductsRouteImport
+      parentRoute: typeof AuthenticatedCrmRoute
+    }
+    '/_authenticated/crm/sale': {
+      id: '/_authenticated/crm/sale'
+      path: '/sale'
+      fullPath: '/crm/sale'
+      preLoaderRoute: typeof AuthenticatedCrmSaleRouteImport
+      parentRoute: typeof AuthenticatedCrmRoute
+    }
     '/api/public/ext/core': {
       id: '/api/public/ext/core'
       path: '/api/public/ext/core'
@@ -330,12 +425,31 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedCrmRouteChildren {
+  AuthenticatedCrmCustomersRoute: typeof AuthenticatedCrmCustomersRoute
+  AuthenticatedCrmOrdersRoute: typeof AuthenticatedCrmOrdersRoute
+  AuthenticatedCrmProductsRoute: typeof AuthenticatedCrmProductsRoute
+  AuthenticatedCrmSaleRoute: typeof AuthenticatedCrmSaleRoute
+  AuthenticatedCrmIndexRoute: typeof AuthenticatedCrmIndexRoute
+}
+
+const AuthenticatedCrmRouteChildren: AuthenticatedCrmRouteChildren = {
+  AuthenticatedCrmCustomersRoute: AuthenticatedCrmCustomersRoute,
+  AuthenticatedCrmOrdersRoute: AuthenticatedCrmOrdersRoute,
+  AuthenticatedCrmProductsRoute: AuthenticatedCrmProductsRoute,
+  AuthenticatedCrmSaleRoute: AuthenticatedCrmSaleRoute,
+  AuthenticatedCrmIndexRoute: AuthenticatedCrmIndexRoute,
+}
+
+const AuthenticatedCrmRouteWithChildren =
+  AuthenticatedCrmRoute._addFileChildren(AuthenticatedCrmRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
+  AuthenticatedCrmRoute: typeof AuthenticatedCrmRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedCrmRoute: AuthenticatedCrmRoute,
+  AuthenticatedCrmRoute: AuthenticatedCrmRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
