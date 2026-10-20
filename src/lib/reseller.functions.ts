@@ -43,6 +43,56 @@ async function callReseller(action: string) {
   return json;
 }
 
+const DIGIHUP_URL = "https://shorky-new-production.up.railway.app/api/reseller/v1";
+/** DIGIHUP ids are namespaced so they never collide with the first supplier's ids. */
+const DIGIHUP_PREFIX = "digihup:";
+
+type DigihupProduct = {
+  id: string;
+  name: string;
+  description?: string;
+  short_description?: string;
+  emoji?: string | null;
+  price: string;
+  currency?: string;
+  stock: number | null;
+  unlimited_stock?: boolean;
+  public_instructions?: string;
+};
+
+async function fetchDigihupProducts(): Promise<ResellerProduct[]> {
+  const key = process.env["DIGIHUP_API_KEY"];
+  if (!key) throw new Error("DIGIHUP API key is not configured.");
+  const out: ResellerProduct[] = [];
+  for (let page = 0; page < 20; page++) {
+    const res = await fetch(`${DIGIHUP_URL}/products?page=${page}`, {
+      headers: { Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(20000),
+    });
+    const json = (await res.json().catch(() => null)) as
+      | { ok?: boolean; data?: { items?: DigihupProduct[]; has_next?: boolean }; error?: unknown }
+      | null;
+    if (!res.ok || !json?.ok) {
+      console.error("digihup api error", res.status, json?.error);
+      throw new Error("Could not reach DIGIHUP. Try again.");
+    }
+    for (const p of json.data?.items ?? []) {
+      out.push({
+        id: DIGIHUP_PREFIX + p.id,
+        name: p.name,
+        wholesale_price: Number(p.price) || 0,
+        currency: p.currency ?? "USD",
+        stock: p.unlimited_stock ? undefined : (p.stock ?? 0),
+        description: p.description || p.short_description,
+        delivery_instruction: p.public_instructions,
+        emoji: p.emoji ?? undefined,
+      });
+    }
+    if (!json.data?.has_next) break;
+  }
+  return out;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase.rpc("is_admin", { _user_id: userId });
@@ -62,8 +112,26 @@ export const resellerSyncProducts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const json = await callReseller("products");
-    const list = (Array.isArray(json.products) ? json.products : []) as ResellerProduct[];
+    // Fetch every supplier; a failing supplier is skipped (its products are left as-is).
+    const [first, digihup] = await Promise.allSettled([
+      callReseller("products").then(
+        (json) => (Array.isArray(json.products) ? json.products : []) as ResellerProduct[],
+      ),
+      fetchDigihupProducts(),
+    ]);
+    const list: ResellerProduct[] = [];
+    const okPrefixes: string[] = [];
+    if (first.status === "fulfilled") {
+      list.push(...first.value);
+      okPrefixes.push("");
+    } else console.error("reseller sync failed", first.reason);
+    if (digihup.status === "fulfilled") {
+      list.push(...digihup.value);
+      okPrefixes.push(DIGIHUP_PREFIX);
+    } else console.error("digihup sync failed", digihup.reason);
+    if (!okPrefixes.length) throw new Error("Could not reach the reseller services. Try again.");
+    const sourceOk = (rid: string) =>
+      rid.startsWith(DIGIHUP_PREFIX) ? okPrefixes.includes(DIGIHUP_PREFIX) : okPrefixes.includes("");
     const sb = context.supabase;
     const { data: existing, error } = await sb
       .from("crm_products")
