@@ -12,6 +12,7 @@ export type ShopProduct = {
   features: string[];
   terms: string | null;
   image_url: string | null;
+  logo_url: string | null;
   duration_label: string | null;
   credits_per_interval: number | null;
   renewal_interval: string | null;
@@ -91,6 +92,7 @@ export function shapeProduct(row: Record<string, unknown>, channel: ShopChannel)
     features: featureList(row["features"]),
     terms: (row["terms"] as string) ?? null,
     image_url: (row["image_url"] as string) ?? (row["banner_url"] as string) ?? null,
+    logo_url: (row["logo_url"] as string) ?? null,
     duration_label: (row["duration_label"] as string) ?? null,
     credits_per_interval: num(row["credits_per_interval"]),
     renewal_interval: (row["renewal_interval"] as string) ?? null,
