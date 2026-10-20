@@ -155,7 +155,6 @@ export const resellerSyncProducts = createServerFn({ method: "POST" })
           installation_instructions: plainText(p.delivery_instruction),
           product_type: "digital_product",
           delivery_method: "email_manual",
-          requires_buyer_email: false,
           max_per_order: 5,
           status: "active",
           shop_published: true,
