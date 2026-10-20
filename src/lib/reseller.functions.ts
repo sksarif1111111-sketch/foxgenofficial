@@ -11,6 +11,7 @@ type ResellerProduct = {
   stock?: number;
   description?: string;
   delivery_instruction?: string;
+  emoji?: string;
 };
 
 /** Reseller descriptions use Telegram HTML; the store shows plain text. */
@@ -221,6 +222,7 @@ export const resellerSyncProducts = createServerFn({ method: "POST" })
           description: plainText(p.description),
           short_description: plainText(p.description, 160),
           installation_instructions: plainText(p.delivery_instruction),
+          emoji: p.emoji ?? null,
           product_type: "digital_product",
           delivery_method: "email_manual",
           max_per_order: 5,
@@ -234,7 +236,7 @@ export const resellerSyncProducts = createServerFn({ method: "POST" })
     }
     // Products the reseller no longer lists go out of stock (kept for order history).
     for (const [rid, storeId] of inStore) {
-      if (seen.has(rid)) continue;
+      if (seen.has(rid) || !sourceOk(rid)) continue;
       await supabaseAdmin.from("products").update({ availability: "out_of_stock", updated_at: now }).eq("id", storeId);
     }
 
