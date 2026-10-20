@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS shop_orders_telegram_charge_unique ON public.shop_orders (telegram_charge_id) WHERE telegram_charge_id IS NOT NULL;

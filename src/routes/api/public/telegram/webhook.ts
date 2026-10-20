@@ -612,10 +612,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 description: (product.short_description ?? product.name).slice(0, 255),
                 payload: order.id,
                 currency: "XTR",
-                prices: [{ label: `${product.name} x${quantity}`.slice(0, 32), amount: product.price_stars * quantity }],
+                prices: [{ label: `${product.name} x${quantity}`.slice(0, 32), amount: Number(order.stars_total) }],
               });
               await render(
-                `🧾 Order <b>${esc(String(order.order_number))}</b> created.\n${LINE}\n${esc(product.name)} x${quantity}\nTotal: <b>${product.price_stars * quantity} ⭐</b>\n\nComplete the Telegram Stars invoice sent below.`,
+                `🧾 Order <b>${esc(String(order.order_number))}</b> created.\n${LINE}\n${esc(product.name)} x${quantity}\nTotal: <b>${Number(order.stars_total)} ⭐</b>\n\nComplete the Telegram Stars invoice sent below.`,
                 [[{ text: "🧾 My Orders", callback_data: "myorders" }], backRow("shop")],
               );
             } catch (error) {
