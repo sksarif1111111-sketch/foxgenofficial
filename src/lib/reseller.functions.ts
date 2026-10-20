@@ -9,7 +9,25 @@ type ResellerProduct = {
   wholesale_price: number;
   currency?: string;
   stock?: number;
+  description?: string;
+  delivery_instruction?: string;
 };
+
+/** Reseller descriptions use Telegram HTML; the store shows plain text. */
+export function plainText(html: unknown, max = 2000): string | null {
+  if (typeof html !== "string") return null;
+  const text = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return text ? text.slice(0, max) : null;
+}
 
 async function callReseller(action: string) {
   const key = process.env["RESELLER_API_KEY"];
@@ -85,5 +103,72 @@ export const resellerSyncProducts = createServerFn({ method: "POST" })
         added++;
       }
     }
-    return { added, updated, total: list.length };
+
+    // Publish every reseller product to the live store (website + Telegram bot).
+    // Store USDT price follows the admin's CRM selling price; Stars price, emoji,
+    // images and other store edits are never overwritten.
+    const { data: crmRows, error: crmErr } = await sb
+      .from("crm_products")
+      .select("reseller_product_id, default_sale_price")
+      .not("reseller_product_id", "is", null);
+    if (crmErr) throw new Error(crmErr.message);
+    const sellPrice = new Map(
+      (crmRows ?? []).map((r) => [r.reseller_product_id as string, Number(r.default_sale_price)]),
+    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: storeRows, error: storeErr } = await supabaseAdmin
+      .from("products")
+      .select("id, reseller_product_id")
+      .not("reseller_product_id", "is", null);
+    if (storeErr) throw new Error(storeErr.message);
+    const inStore = new Map((storeRows ?? []).map((r) => [r.reseller_product_id as string, r.id]));
+    const seen = new Set<string>();
+    let storeAdded = 0;
+    let storeUpdated = 0;
+    for (const p of list) {
+      if (!p?.id || !p.name) continue;
+      seen.add(p.id);
+      const stock = Number.isFinite(Number(p.stock)) ? Math.max(0, Math.floor(Number(p.stock))) : null;
+      const price = sellPrice.get(p.id) ?? Math.max(0, Number(p.wholesale_price) || 0);
+      const refresh = {
+        name: String(p.name).slice(0, 200),
+        price_usdt: price,
+        price: price,
+        currency: "USD",
+        is_free: false,
+        stock_mode: stock === null ? "manual" : "tracked",
+        stock_quantity: stock,
+        availability: stock === 0 ? "out_of_stock" : "in_stock",
+        updated_at: now,
+      };
+      const storeId = inStore.get(p.id);
+      if (storeId) {
+        const { error: e } = await supabaseAdmin.from("products").update(refresh).eq("id", storeId);
+        if (e) throw new Error(e.message);
+        storeUpdated++;
+      } else {
+        const { error: e } = await supabaseAdmin.from("products").insert({
+          ...refresh,
+          reseller_product_id: p.id,
+          description: plainText(p.description),
+          short_description: plainText(p.description, 160),
+          installation_instructions: plainText(p.delivery_instruction),
+          product_type: "digital_product",
+          delivery_method: "email_manual",
+          max_per_order: 5,
+          status: "active",
+          shop_published: true,
+          shop_order: 100 + storeAdded,
+        });
+        if (e) throw new Error(e.message);
+        storeAdded++;
+      }
+    }
+    // Products the reseller no longer lists go out of stock (kept for order history).
+    for (const [rid, storeId] of inStore) {
+      if (seen.has(rid)) continue;
+      await supabaseAdmin.from("products").update({ availability: "out_of_stock", updated_at: now }).eq("id", storeId);
+    }
+
+    return { added, updated, total: list.length, storeAdded, storeUpdated };
   });

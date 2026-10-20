@@ -30,7 +30,9 @@ function ResellerActions() {
     mutationFn: () => sync(),
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["crm"] });
-      toast.success(`Products synced — ${r.added} new, ${r.updated} updated`);
+      toast.success(
+        `Products synced — ${r.added} new, ${r.updated} updated · Store: ${r.storeAdded} added, ${r.storeUpdated} updated`,
+      );
     },
     onError: (e: Error) => toast.error(e.message),
   });

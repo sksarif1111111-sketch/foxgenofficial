@@ -13,4 +13,4 @@
 
 - Admin sales CRM tables use the `crm_` prefix and are admin-only via `is_admin(auth.uid())` RLS, with an audit trigger on every table; keeps CRM bookkeeping separate from the live store `products`/`shop_orders` tables.
 - The admin sales CRM lives under `src/routes/_authenticated/crm*` and reads/writes `crm_` tables from the browser client (RLS enforces `is_admin`); manual sales go through the `crm_record_sale` SQL function so order, item, stock and payment are written atomically.
-- Reseller API calls go through admin-checked server functions in `src/lib/reseller.functions.ts` (token in the `RESELLER_API_KEY` secret); syncing refreshes wholesale cost/stock on `crm_products` by `reseller_product_id` but never overwrites the admin's selling price.
+- Reseller API calls go through admin-checked server functions in `src/lib/reseller.functions.ts` (token in the `RESELLER_API_KEY` secret); syncing refreshes wholesale cost/stock on `crm_products` and publishes/updates live store `products` by `reseller_product_id` (store USDT price follows the CRM selling price; Stars price and store-only edits are never overwritten).

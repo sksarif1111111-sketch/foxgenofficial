@@ -1332,6 +1332,7 @@ export type Database = {
           referral_required: boolean
           renewal_interval: string | null
           requires_buyer_email: boolean
+          reseller_product_id: string | null
           shop_order: number
           shop_published: boolean
           short_description: string | null
@@ -1381,6 +1382,7 @@ export type Database = {
           referral_required?: boolean
           renewal_interval?: string | null
           requires_buyer_email?: boolean
+          reseller_product_id?: string | null
           shop_order?: number
           shop_published?: boolean
           short_description?: string | null
@@ -1430,6 +1432,7 @@ export type Database = {
           referral_required?: boolean
           renewal_interval?: string | null
           requires_buyer_email?: boolean
+          reseller_product_id?: string | null
           shop_order?: number
           shop_published?: boolean
           short_description?: string | null
