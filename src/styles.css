@@ -143,3 +143,35 @@
     color: var(--color-foreground);
   }
 }
+
+/* Light premium theme for public store pages (Home + Store). */
+.theme-light {
+  --background: oklch(0.985 0.005 230);
+  --foreground: oklch(0.21 0.04 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.04 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.04 265);
+  --primary: oklch(0.66 0.13 215);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0.012 225);
+  --secondary-foreground: oklch(0.21 0.04 265);
+  --muted: oklch(0.96 0.012 225);
+  --muted-foreground: oklch(0.5 0.03 255);
+  --accent: oklch(0.93 0.04 210);
+  --accent-foreground: oklch(0.21 0.04 265);
+  --border: oklch(0.91 0.015 230);
+  --input: oklch(0.89 0.015 230);
+  --ring: oklch(0.66 0.13 215);
+  --shadow-soft: 0 1px 2px oklch(0.21 0.04 265 / 4%), 0 8px 24px -12px oklch(0.21 0.04 265 / 12%);
+  --shadow-lift: 0 2px 4px oklch(0.21 0.04 265 / 5%), 0 18px 40px -16px oklch(0.66 0.13 215 / 30%);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@utility shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+@utility shadow-lift {
+  box-shadow: var(--shadow-lift);
+}

@@ -12,6 +12,7 @@ import {
   type MyOrder,
   type ShopCatalog,
 } from "@/lib/shop.functions";
+import { SiteNav } from "@/components/site/site-nav";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
@@ -77,9 +78,9 @@ function Copy({ value, label }: { value: string; label: string }) {
 function Badge({ tone, children }: { tone: "ok" | "warn" | "off"; children: React.ReactNode }) {
   const styles =
     tone === "ok"
-      ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+      ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-700"
       : tone === "warn"
-        ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
+        ? "border-amber-400/40 bg-amber-400/10 text-amber-700"
         : "border-border bg-muted/40 text-muted-foreground";
   return <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${styles}`}>{children}</span>;
 }
@@ -172,7 +173,22 @@ function ShopPage() {
     method?.provider === "wallet" && total !== null && (wallet?.balance ?? 0) < total;
 
   return (
-    <main className="min-h-screen bg-background px-4 py-10 text-foreground">
+    <main className="theme-light min-h-screen bg-background text-foreground">
+      <SiteNav
+        right={
+          <button
+            type="button"
+            onClick={() => {
+              setStep("orders");
+              void refreshOrders();
+            }}
+            className="rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold shadow-soft transition hover:border-primary/50"
+          >
+            My Orders
+          </button>
+        }
+      />
+      <div className="px-4 py-10">
       <div className="mx-auto w-full max-w-3xl space-y-6">
         <header className="flex items-center justify-between gap-4">
           <div>
@@ -184,17 +200,7 @@ function ShopPage() {
               </p>
             )}
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setStep("orders");
-                void refreshOrders();
-              }}
-              className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted/40"
-            >
-              My Orders
-            </button>
+          {step !== "list" && (
             <button
               type="button"
               onClick={() => {
@@ -202,11 +208,11 @@ function ShopPage() {
                 setProduct(null);
                 setDraft(null);
               }}
-              className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted/40"
+              className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold shadow-soft transition hover:border-primary/50"
             >
-              Home
+              ← All products
             </button>
-          </div>
+          )}
         </header>
 
         {error && (
@@ -216,7 +222,7 @@ function ShopPage() {
         )}
 
         {!token && step !== "list" && step !== "detail" && (
-          <p className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-300">
+          <p className="rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-700">
             Open “My account” in the Telegram bot and use its link to sign in before ordering.
           </p>
         )}
@@ -235,7 +241,7 @@ function ShopPage() {
                   setQuantity(1);
                   setStep("detail");
                 }}
-                className="flex w-full items-center justify-between gap-4 rounded-2xl border border-border bg-card/60 p-5 text-left transition hover:border-primary/60"
+                className="flex w-full items-center justify-between gap-4 rounded-2xl border border-border bg-card shadow-soft p-5 text-left transition hover:border-primary/60"
               >
                 <span className="space-y-1">
                   <span className="block text-lg font-bold">
@@ -263,7 +269,7 @@ function ShopPage() {
         )}
 
         {step === "detail" && product && (
-          <section className="space-y-4 rounded-2xl border border-border bg-card/60 p-6">
+          <section className="space-y-4 rounded-2xl border border-border bg-card shadow-soft p-6">
             {product.image_url && (
               <img
                 src={product.image_url}
@@ -326,7 +332,7 @@ function ShopPage() {
         )}
 
         {step === "quantity" && product && (
-          <section className="space-y-4 rounded-2xl border border-border bg-card/60 p-6">
+          <section className="space-y-4 rounded-2xl border border-border bg-card shadow-soft p-6">
             <h2 className="text-xl font-black">How many units?</h2>
             <div className="flex flex-wrap gap-2">
               {[1, 2, 3, 4]
@@ -378,7 +384,7 @@ function ShopPage() {
         )}
 
         {step === "review" && product && (
-          <section className="space-y-4 rounded-2xl border border-border bg-card/60 p-6">
+          <section className="space-y-4 rounded-2xl border border-border bg-card shadow-soft p-6">
             <h2 className="text-xl font-black">Review Your Purchase</h2>
             <dl className="space-y-1 text-sm">
               <div className="flex justify-between">
@@ -487,7 +493,7 @@ function ShopPage() {
         )}
 
         {step === "pay" && draft && (
-          <section className="space-y-4 rounded-2xl border border-border bg-card/60 p-6">
+          <section className="space-y-4 rounded-2xl border border-border bg-card shadow-soft p-6">
             <h2 className="text-xl font-black">Payment details</h2>
             <p className="text-sm text-muted-foreground">Order {draft.order_number}</p>
             <dl className="space-y-2 text-sm">
@@ -569,7 +575,7 @@ function ShopPage() {
         )}
 
         {step === "email" && draft && (
-          <section className="space-y-4 rounded-2xl border border-border bg-card/60 p-6">
+          <section className="space-y-4 rounded-2xl border border-border bg-card shadow-soft p-6">
             <h2 className="text-xl font-black">Delivery email</h2>
             <p className="text-sm text-muted-foreground">
               Please enter the email address where you want to receive your activation link or product access.
@@ -604,7 +610,7 @@ function ShopPage() {
         )}
 
         {step === "done" && draft && (
-          <section className="space-y-3 rounded-2xl border border-border bg-card/60 p-6">
+          <section className="space-y-3 rounded-2xl border border-border bg-card shadow-soft p-6">
             <h2 className="text-xl font-black">Please wait. My owner is checking your payment.</h2>
             <p className="text-sm">Your delivery email: {emailSummary}</p>
             <p className="text-sm text-muted-foreground">
@@ -630,7 +636,7 @@ function ShopPage() {
             <h2 className="text-xl font-black">My Orders</h2>
             {orders.length === 0 && <p className="text-sm text-muted-foreground">No orders yet.</p>}
             {orders.map((order) => (
-              <article key={order.id} className="space-y-2 rounded-2xl border border-border bg-card/60 p-5">
+              <article key={order.id} className="space-y-2 rounded-2xl border border-border bg-card shadow-soft p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-bold">{order.order_number}</span>
                   <Badge tone={order.status === "delivered" ? "ok" : order.status === "rejected" ? "off" : "warn"}>
@@ -647,7 +653,7 @@ function ShopPage() {
                   · {order.payment_method_name ?? "—"}
                 </p>
                 {order.delivery_emails && <p className="text-xs text-muted-foreground">Email: {order.delivery_emails}</p>}
-                {order.info_request && <p className="text-xs text-amber-300">More info needed: {order.info_request}</p>}
+                {order.info_request && <p className="text-xs text-amber-700">More info needed: {order.info_request}</p>}
                 {order.reject_reason && <p className="text-xs text-destructive">Reason: {order.reject_reason}</p>}
                 {order.fulfillment.map((content) => (
                   <p key={content} className="whitespace-pre-line rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
@@ -658,6 +664,7 @@ function ShopPage() {
             ))}
           </section>
         )}
+      </div>
       </div>
     </main>
   );
