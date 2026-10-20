@@ -78,6 +78,13 @@
       "when": 1792453739906,
       "tag": "0010_create_admin_sales_crm",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792454186631,
+      "tag": "0011_crm_dashboard_fees_and_sale",
+      "breakpoints": true
     }
   ]
 }

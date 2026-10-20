@@ -724,6 +724,7 @@ export type Database = {
           amount: number
           created_at: string
           currency: string
+          fee: number
           id: string
           method: string
           notes: string | null
@@ -737,6 +738,7 @@ export type Database = {
           amount: number
           created_at?: string
           currency?: string
+          fee?: number
           id?: string
           method: string
           notes?: string | null
@@ -750,6 +752,7 @@ export type Database = {
           amount?: number
           created_at?: string
           currency?: string
+          fee?: number
           id?: string
           method?: string
           notes?: string | null
@@ -2081,6 +2084,22 @@ export type Database = {
         }[]
       }
       award_referral: { Args: { _referred_user_id: string }; Returns: boolean }
+      crm_record_sale: {
+        Args: {
+          _currency: string
+          _customer_id: string
+          _new_customer_name: string
+          _notes: string
+          _paid: boolean
+          _payment_fee: number
+          _payment_method: string
+          _product_id: string
+          _quantity: number
+          _source: string
+          _unit_price: number
+        }
+        Returns: string
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       redeem_reward: {
         Args: { _generated_key: string; _reward_id: string; _user_id: string }
