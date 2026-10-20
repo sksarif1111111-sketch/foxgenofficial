@@ -13,6 +13,7 @@ import {
   type ShopCatalog,
 } from "@/lib/shop.functions";
 import { SiteNav } from "@/components/site/site-nav";
+import { ProductLogo } from "@/components/site/product-logo";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
@@ -243,12 +244,12 @@ function ShopPage() {
                 }}
                 className="flex w-full items-center justify-between gap-4 rounded-2xl border border-border bg-card shadow-soft p-5 text-left transition hover:border-primary/60"
               >
-                <span className="space-y-1">
-                  <span className="block text-lg font-bold">
-                    {item.emoji ? `${item.emoji} ` : ""}
-                    {item.name}
+                <span className="flex min-w-0 items-center gap-4">
+                  <ProductLogo name={item.name} logoUrl={item.logo_url} emoji={item.emoji} />
+                  <span className="min-w-0 space-y-1">
+                    <span className="block text-lg font-bold tracking-tight">{item.name}</span>
+                    <span className="line-clamp-2 block text-sm text-muted-foreground">{item.short_description}</span>
                   </span>
-                  <span className="block text-sm text-muted-foreground">{item.short_description}</span>
                 </span>
                 <span className="shrink-0 space-y-2 text-right">
                   <span className="block text-base font-black text-primary">{item.price_label}</span>
@@ -278,10 +279,10 @@ function ShopPage() {
                 className="h-48 w-full rounded-xl object-cover"
               />
             )}
-            <h2 className="text-2xl font-black">
-              {product.emoji ? `${product.emoji} ` : ""}
-              {product.name}
-            </h2>
+            <div className="flex items-center gap-4">
+              <ProductLogo name={product.name} logoUrl={product.logo_url} emoji={product.emoji} size="lg" />
+              <h2 className="text-2xl font-black tracking-tight">{product.name}</h2>
+            </div>
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-xl font-black text-primary">{product.price_label}</span>
               <Badge tone={product.purchasable ? "ok" : product.availability === "coming_soon" ? "warn" : "off"}>

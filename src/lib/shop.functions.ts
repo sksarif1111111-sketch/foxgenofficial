@@ -13,6 +13,7 @@ export type ShopCatalog = {
     features: string[];
     terms: string | null;
     image_url: string | null;
+    logo_url: string | null;
     duration_label: string | null;
     credits_per_interval: number | null;
     renewal_interval: string | null;
@@ -59,6 +60,7 @@ export const shopCatalog = createServerFn({ method: "POST" }).handler(async (): 
       features: p.features,
       terms: p.terms,
       image_url: p.image_url,
+      logo_url: p.logo_url,
       duration_label: p.duration_label,
       credits_per_interval: p.credits_per_interval,
       renewal_interval: p.renewal_interval,
