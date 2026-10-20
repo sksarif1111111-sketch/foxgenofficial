@@ -781,9 +781,14 @@ export type Database = {
           default_sale_price: number
           description: string | null
           id: string
+          last_synced_at: string | null
           name: string
+          reseller_currency: string | null
+          reseller_product_id: string | null
+          reseller_stock: number | null
           sku: string | null
           updated_at: string
+          wholesale_price: number | null
         }
         Insert: {
           active?: boolean
@@ -793,9 +798,14 @@ export type Database = {
           default_sale_price?: number
           description?: string | null
           id?: string
+          last_synced_at?: string | null
           name: string
+          reseller_currency?: string | null
+          reseller_product_id?: string | null
+          reseller_stock?: number | null
           sku?: string | null
           updated_at?: string
+          wholesale_price?: number | null
         }
         Update: {
           active?: boolean
@@ -805,9 +815,14 @@ export type Database = {
           default_sale_price?: number
           description?: string | null
           id?: string
+          last_synced_at?: string | null
           name?: string
+          reseller_currency?: string | null
+          reseller_product_id?: string | null
+          reseller_stock?: number | null
           sku?: string | null
           updated_at?: string
+          wholesale_price?: number | null
         }
         Relationships: []
       }

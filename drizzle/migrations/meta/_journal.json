@@ -92,6 +92,13 @@
       "when": 1792454977809,
       "tag": "0012_shop_orders_unique_charge",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792456016579,
+      "tag": "0013_crm_products_reseller_sync",
+      "breakpoints": true
     }
   ]
 }

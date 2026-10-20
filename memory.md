@@ -6,10 +6,12 @@
 - CRM pages at `/crm`: dashboard, manual sale, orders, customers, products, inventory, payments, expenses, refunds, reports, filters, CSV export.
 - Telegram bot store with server-side pricing, idempotent updates, Telegram Stars payments.
 
+## Completed (reseller)
+- Reseller API key saved as a server secret.
+- Products page: Sync products (wholesale cost + reseller stock, keeps my selling price), wallet balance, inline selling price, profit per unit.
+
 ## Pending
-- Receive Reseller API key and endpoint details.
-- Wholesale price sync (`action=products`) into CRM products.
-- Wallet balance card (`action=balance`).
+- Selling prices for the 30 synced products (currently equal to wholesale cost).
 - Purchase through API (`action=order`) + status (`action=order_status`).
 - Bot → CRM sale logging endpoint (source = Bot).
 - Profit/loss charts on dashboard.
