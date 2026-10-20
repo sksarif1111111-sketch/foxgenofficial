@@ -9,7 +9,25 @@ type ResellerProduct = {
   wholesale_price: number;
   currency?: string;
   stock?: number;
+  description?: string;
+  delivery_instruction?: string;
 };
+
+/** Reseller descriptions use Telegram HTML; the store shows plain text. */
+export function plainText(html: unknown, max = 2000): string | null {
+  if (typeof html !== "string") return null;
+  const text = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return text ? text.slice(0, max) : null;
+}
 
 async function callReseller(action: string) {
   const key = process.env["RESELLER_API_KEY"];
