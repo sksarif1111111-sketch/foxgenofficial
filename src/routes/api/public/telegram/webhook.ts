@@ -127,6 +127,28 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (update.message?.successful_payment) {
           const sp = update.message.successful_payment;
           const now = new Date().toISOString();
+          // Match currency and amount against the order before accepting the payment.
+          const { data: pending } = await db
+            .from("shop_orders")
+            .select("id, status, stars_total, telegram_charge_id")
+            .eq("id", sp.invoice_payload)
+            .maybeSingle();
+          const amountOk =
+            !!pending && sp.currency === "XTR" && Number(pending.stars_total) === Number(sp.total_amount);
+          if (!pending || pending.telegram_charge_id) {
+            // Unknown order or this payment was already processed: never confirm twice.
+            return Response.json({ ok: true, duplicate: !!pending });
+          }
+          if (!amountOk) {
+            await db.from("shop_order_events").insert({
+              order_id: pending.id,
+              event: "stars_payment_mismatch",
+              actor: "telegram",
+              details: `${sp.total_amount} ${sp.currency} vs ${pending.stars_total} XTR (${sp.telegram_payment_charge_id})`,
+            });
+            await logBotError("payment", "Stars amount/currency mismatch", update.message.from?.id ?? null, pending.id);
+            return Response.json({ ok: true });
+          }
           const { data: updated } = await db
             .from("shop_orders")
             .update({
@@ -139,8 +161,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             })
             .eq("id", sp.invoice_payload)
             .eq("status", "awaiting_payment")
+            .is("telegram_charge_id", null)
             .select("order_number")
             .maybeSingle();
+          if (!updated) return Response.json({ ok: true, duplicate: true });
           await db.from("shop_order_events").insert({
             order_id: sp.invoice_payload,
             event: "stars_payment_received",
@@ -150,7 +174,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await tg("sendMessage", {
             chat_id: update.message.chat.id,
             text:
-              `⭐ Payment received for order <b>${updated?.order_number ?? ""}</b>.\n\n` +
+              `⭐ Payment received for order <b>${updated.order_number}</b>.\n\n` +
               `Please enter the email address where you want to receive your activation link or product access.`,
             parse_mode: "HTML",
           });
