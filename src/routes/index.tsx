@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { shopCatalog } from "@/lib/shop.functions";
 import { SiteNav } from "@/components/site/site-nav";
+import { ProductLogo } from "@/components/site/product-logo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -79,10 +80,8 @@ function StoreHome() {
                 key={p.id}
                 className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-6 shadow-soft transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lift"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-2xl">
-                  {p.emoji ?? "📦"}
-                </div>
-                <h3 className="text-lg font-bold">{p.name}</h3>
+                <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} />
+                <h3 className="text-lg font-bold tracking-tight">{p.name}</h3>
                 {p.short_description && (
                   <p className="line-clamp-2 text-sm text-muted-foreground">{p.short_description}</p>
                 )}
