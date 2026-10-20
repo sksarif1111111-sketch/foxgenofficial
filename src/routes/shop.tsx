@@ -12,6 +12,7 @@ import {
   type MyOrder,
   type ShopCatalog,
 } from "@/lib/shop.functions";
+import { SiteNav } from "@/components/site/site-nav";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
@@ -199,17 +200,7 @@ function ShopPage() {
               </p>
             )}
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setStep("orders");
-                void refreshOrders();
-              }}
-              className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted/40"
-            >
-              My Orders
-            </button>
+          {step !== "list" && (
             <button
               type="button"
               onClick={() => {
@@ -217,11 +208,11 @@ function ShopPage() {
                 setProduct(null);
                 setDraft(null);
               }}
-              className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted/40"
+              className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-semibold shadow-soft transition hover:border-primary/50"
             >
-              Home
+              ← All products
             </button>
-          </div>
+          )}
         </header>
 
         {error && (
@@ -673,6 +664,7 @@ function ShopPage() {
             ))}
           </section>
         )}
+      </div>
       </div>
     </main>
   );
