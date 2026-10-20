@@ -27,6 +27,7 @@ import { Route as AuthenticatedCrmOrdersRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCrmPaymentsRouteImport } from './routes/_authenticated/crm.payments'
 import { Route as AuthenticatedCrmProductsRouteImport } from './routes/_authenticated/crm.products'
 import { Route as AuthenticatedCrmRefundsRouteImport } from './routes/_authenticated/crm.refunds'
+import { Route as AuthenticatedCrmReportsRouteImport } from './routes/_authenticated/crm.reports'
 import { Route as AuthenticatedCrmSaleRouteImport } from './routes/_authenticated/crm.sale'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/license/issue'
@@ -128,6 +129,11 @@ const AuthenticatedCrmRefundsRoute = AuthenticatedCrmRefundsRouteImport.update({
   path: '/refunds',
   getParentRoute: () => AuthenticatedCrmRoute,
 } as any)
+const AuthenticatedCrmReportsRoute = AuthenticatedCrmReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedCrmRoute,
+} as any)
 const AuthenticatedCrmSaleRoute = AuthenticatedCrmSaleRouteImport.update({
   id: '/sale',
   path: '/sale',
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/crm/payments': typeof AuthenticatedCrmPaymentsRoute
   '/crm/products': typeof AuthenticatedCrmProductsRoute
   '/crm/refunds': typeof AuthenticatedCrmRefundsRoute
+  '/crm/reports': typeof AuthenticatedCrmReportsRoute
   '/crm/sale': typeof AuthenticatedCrmSaleRoute
   '/crm/': typeof AuthenticatedCrmIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/crm/payments': typeof AuthenticatedCrmPaymentsRoute
   '/crm/products': typeof AuthenticatedCrmProductsRoute
   '/crm/refunds': typeof AuthenticatedCrmRefundsRoute
+  '/crm/reports': typeof AuthenticatedCrmReportsRoute
   '/crm/sale': typeof AuthenticatedCrmSaleRoute
   '/crm': typeof AuthenticatedCrmIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/_authenticated/crm/payments': typeof AuthenticatedCrmPaymentsRoute
   '/_authenticated/crm/products': typeof AuthenticatedCrmProductsRoute
   '/_authenticated/crm/refunds': typeof AuthenticatedCrmRefundsRoute
+  '/_authenticated/crm/reports': typeof AuthenticatedCrmReportsRoute
   '/_authenticated/crm/sale': typeof AuthenticatedCrmSaleRoute
   '/_authenticated/crm/': typeof AuthenticatedCrmIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
     | '/crm/payments'
     | '/crm/products'
     | '/crm/refunds'
+    | '/crm/reports'
     | '/crm/sale'
     | '/crm/'
     | '/api/public/ext/core'
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/crm/payments'
     | '/crm/products'
     | '/crm/refunds'
+    | '/crm/reports'
     | '/crm/sale'
     | '/crm'
     | '/api/public/ext/core'
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/_authenticated/crm/payments'
     | '/_authenticated/crm/products'
     | '/_authenticated/crm/refunds'
+    | '/_authenticated/crm/reports'
     | '/_authenticated/crm/sale'
     | '/_authenticated/crm/'
     | '/api/public/ext/core'
@@ -459,6 +471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmRefundsRouteImport
       parentRoute: typeof AuthenticatedCrmRoute
     }
+    '/_authenticated/crm/reports': {
+      id: '/_authenticated/crm/reports'
+      path: '/reports'
+      fullPath: '/crm/reports'
+      preLoaderRoute: typeof AuthenticatedCrmReportsRouteImport
+      parentRoute: typeof AuthenticatedCrmRoute
+    }
     '/_authenticated/crm/sale': {
       id: '/_authenticated/crm/sale'
       path: '/sale'
@@ -512,6 +531,7 @@ interface AuthenticatedCrmRouteChildren {
   AuthenticatedCrmPaymentsRoute: typeof AuthenticatedCrmPaymentsRoute
   AuthenticatedCrmProductsRoute: typeof AuthenticatedCrmProductsRoute
   AuthenticatedCrmRefundsRoute: typeof AuthenticatedCrmRefundsRoute
+  AuthenticatedCrmReportsRoute: typeof AuthenticatedCrmReportsRoute
   AuthenticatedCrmSaleRoute: typeof AuthenticatedCrmSaleRoute
   AuthenticatedCrmIndexRoute: typeof AuthenticatedCrmIndexRoute
 }
@@ -524,6 +544,7 @@ const AuthenticatedCrmRouteChildren: AuthenticatedCrmRouteChildren = {
   AuthenticatedCrmPaymentsRoute: AuthenticatedCrmPaymentsRoute,
   AuthenticatedCrmProductsRoute: AuthenticatedCrmProductsRoute,
   AuthenticatedCrmRefundsRoute: AuthenticatedCrmRefundsRoute,
+  AuthenticatedCrmReportsRoute: AuthenticatedCrmReportsRoute,
   AuthenticatedCrmSaleRoute: AuthenticatedCrmSaleRoute,
   AuthenticatedCrmIndexRoute: AuthenticatedCrmIndexRoute,
 }
