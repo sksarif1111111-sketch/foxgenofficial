@@ -107,14 +107,14 @@ export default function DownloadPage() {
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">New edition</p>
-              <p className="text-2xl font-bold">FoxGEN Pro 6.10</p>
-              <p className="text-sm text-muted-foreground">Premium design · FoxGEN license activation</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Latest · Smooth send fix</p>
+              <p className="text-2xl font-bold">FoxGEN Pro 6.20</p>
+              <p className="text-sm text-muted-foreground">No screen shaking · No send cooldown · Premium design</p>
             </div>
             <a
               className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent to-primary px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
-              href="/foxgen-pro-6.10.zip"
-              download="FoxGEN-Pro-6.10.zip"
+              href="/foxgen-pro-6.20.zip"
+              download="FoxGEN-Pro-6.20.zip"
             >
               Download extension
             </a>
