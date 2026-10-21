@@ -75,7 +75,6 @@
         "scripts/content/zokys-native-lock.js",
         "scripts/content/zokys-remote-theme.js",
         "scripts/content/zokys-label-main.js",
-        "scripts/content/zokys-force-stop.js",
         "scripts/content/zokys-hide-hub-prompt-ui.js"
       ],
       "run_at": "document_idle",
