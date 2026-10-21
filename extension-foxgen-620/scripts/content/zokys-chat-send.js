@@ -11,7 +11,7 @@
   var SHORT = "prompt.intxt";
   var sendingLock = false;
 
-  function scrubDuplicateUserBubbles() {
+  function scrubDuplicateUserBubbles() { return; /* disabled in 6.20: caused screen shaking */
     try {
       var nodes = document.querySelectorAll(
         '[data-message],[class*="message"],[class*="Message"],article,[role="log"] > div, [class*="chat"] [class*="group"], [class*="bubble"]'
@@ -723,23 +723,4 @@
     }
     return !!ok;
   };
-  /* Continuous dummy/duplicate hide */
-  try {
-    if (!window.__zokysDedupeObs) {
-      window.__zokysDedupeObs = true;
-      var mo = new MutationObserver(function () {
-        try { scrubDuplicateUserBubbles(); } catch (_) {}
-      });
-      if (document.body) {
-        mo.observe(document.body, { childList: true, subtree: true });
-      } else {
-        document.addEventListener("DOMContentLoaded", function () {
-          try { mo.observe(document.body, { childList: true, subtree: true }); } catch (_) {}
-        });
-      }
-      setInterval(function () {
-        try { scrubDuplicateUserBubbles(); } catch (_) {}
-      }, 2500);
-    }
-  } catch (_) {}
 })();
