@@ -3212,8 +3212,8 @@
     );
     bodyEl.querySelectorAll(".zk-buy").forEach(function (btn) {
       btn.onclick = function () {
-        window.open(LINKS.telegram || "https://t.me/foxgenofficial", "_blank", "noopener");
-        toast("Telegram · " + btn.getAttribute("data-id"));
+        window.open("https://wa.me/917699355860", "_blank", "noopener");
+        toast("WhatsApp · " + btn.getAttribute("data-id"));
       };
     });
   }
