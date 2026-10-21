@@ -16,7 +16,7 @@
     { price: "$5", label: "10 days", id: "10d", devices: "3 devices", tag: "POPULAR", feats: ["Fix path active", "3 max devices", "Priority support"], hot: true },
     { price: "$9", label: "25 days", id: "25d", devices: "5 devices", tag: "PRO", feats: ["Fix path active", "5 max devices", "Fast support"] },
     { price: "$14", label: "40 days", id: "40d", devices: "Custom devices", tag: "MAX", feats: ["Fix path active", "Custom max devices", "VIP support"] },
-    { price: "$25", label: "3 months", id: "pres", devices: "Pro Reseller", tag: "PRO RESELLER", feats: ["VIP admin panel", "Unlimited license keys", "Full source + setup", "Commission 0%"] }
+    { price: "$30", label: "3 months", id: "pres", devices: "Pro Reseller", tag: "PRO RESELLER", feats: ["VIP admin panel", "Unlimited license keys", "Full source + setup", "Commission 0%"] }
   ];
   const LANGS = [
     { id: "en", label: "English", sub: "Global · Standard" },
@@ -3205,7 +3205,7 @@
             '<div class="zk-price">' + p.price + '</div>' +
             '<div class="zk-dur">' + p.label + " · " + (p.devices || "") + "</div>" +
             '<ul class="zk-feats">' + feats + "</ul>" +
-            '<button class="zk-buy" data-id="' + p.id + '"><span>Get plan</span>' + svg("arrowRight") + '</button>' +
+            '<button class="zk-buy" data-id="' + p.id + '"><span>Get plan · FoxGEN Contact</span>' + svg("arrowRight") + '</button>' +
           "</div>"
         );
       }).join("")
