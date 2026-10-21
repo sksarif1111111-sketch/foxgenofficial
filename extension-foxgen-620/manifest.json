@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "FoxGEN Pro",
   "version": "6.20.0",
-  "description": "FoxGEN Pro 6.20 — premium Lovable assistant with FoxGEN license activation.",
+  "description": "FoxGEN Pro 6.20 \u2014 premium Lovable assistant with FoxGEN license activation.",
   "author": "FoxGEN",
   "permissions": [
     "storage",
@@ -47,6 +47,7 @@
         "https://lovable.dev/*"
       ],
       "js": [
+        "scripts/content/foxgen-join-gate.js",
         "scripts/w8r1qt.js",
         "scripts/content/zokys-native-lock.js"
       ],
