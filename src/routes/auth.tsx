@@ -107,16 +107,6 @@ function AuthPage() {
         <Button type="submit" className="w-full" disabled={busy}>
           {busy ? "Please wait…" : "Sign in"}
         </Button>
-        <div className="flex justify-between text-sm">
-          <button type="button" onClick={forgot} className="text-muted-foreground hover:text-foreground">
-            Create / reset password
-          </button>
-          {unconfirmed && (
-            <button type="button" onClick={resend} className="text-primary hover:underline">
-              Resend confirmation
-            </button>
-          )}
-        </div>
       </form>
     </main>
   );
