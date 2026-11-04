@@ -396,6 +396,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          telegram_user_id: number | null
           telegram_username: string | null
           updated_at: string
         }
@@ -407,6 +408,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          telegram_user_id?: number | null
           telegram_username?: string | null
           updated_at?: string
         }
@@ -418,6 +420,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          telegram_user_id?: number | null
           telegram_username?: string | null
           updated_at?: string
         }
@@ -666,6 +669,7 @@ export type Database = {
           currency: string
           customer_id: string | null
           discount: number
+          external_order_id: string | null
           id: string
           notes: string | null
           order_number: string
@@ -682,6 +686,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           discount?: number
+          external_order_id?: string | null
           id?: string
           notes?: string | null
           order_number?: string
@@ -698,6 +703,7 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           discount?: number
+          external_order_id?: string | null
           id?: string
           notes?: string | null
           order_number?: string
