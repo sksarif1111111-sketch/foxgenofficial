@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { prepareOwnerLogin } from "@/lib/owner-login.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +47,18 @@ function AuthPage() {
     setBusy(true);
     setMsg(null);
     setUnconfirmed(false);
+    try {
+      const prep = await prepareOwnerLogin({ data: { password } });
+      if (!prep.ok) {
+        setBusy(false);
+        setMsg("Wrong password. Try again.");
+        return;
+      }
+    } catch {
+      setBusy(false);
+      setMsg("Sign-in is temporarily unavailable. Please try again.");
+      return;
+    }
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
     if (error) {
