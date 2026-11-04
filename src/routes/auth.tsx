@@ -23,10 +23,13 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+const OWNER_EMAIL = "mirzawebsolution@gmail.com";
+
 function AuthPage() {
   const { redirect } = Route.useSearch();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  // Only the owner can open the CRM, so the email is fixed and only the password is asked.
+  const email = OWNER_EMAIL;
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -48,8 +51,8 @@ function AuthPage() {
     if (error) {
       if (/confirm/i.test(error.message)) {
         setUnconfirmed(true);
-        setMsg("This email is not confirmed yet. Send a new confirmation link, open it, then sign in.");
-      } else setMsg(error.message);
+        setMsg("First-time setup: tap \"Create / reset password\" below. A link goes to your Gmail; open it and choose your password.");
+      } else setMsg("Wrong password. Try again or tap \"Create / reset password\".");
       return;
     }
     navigate({ to: redirect, replace: true });
@@ -67,13 +70,12 @@ function AuthPage() {
   }
 
   async function forgot() {
-    if (!email.trim()) return setMsg("Enter your email first.");
     setBusy(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setBusy(false);
-    setMsg(error ? error.message : "Password reset link sent to your email.");
+    setMsg(error ? error.message : "Link sent to your Gmail (check spam too). Open it and set your CRM password.");
   }
 
   return (
@@ -81,12 +83,9 @@ function AuthPage() {
       <form onSubmit={signIn} className="w-full max-w-sm space-y-5 rounded-2xl border border-border bg-card p-8 shadow-xl">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">FoxGEN CRM</p>
-          <h1 className="mt-2 text-2xl font-bold text-foreground">Admin sign in</h1>
+          <h1 className="mt-2 text-2xl font-bold text-foreground">Enter CRM password</h1>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
+        <input type="hidden" name="username" autoComplete="username" value={email} readOnly />
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <Input id="password" type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -97,7 +96,7 @@ function AuthPage() {
         </Button>
         <div className="flex justify-between text-sm">
           <button type="button" onClick={forgot} className="text-muted-foreground hover:text-foreground">
-            Forgot password?
+            Create / reset password
           </button>
           {unconfirmed && (
             <button type="button" onClick={resend} className="text-primary hover:underline">
