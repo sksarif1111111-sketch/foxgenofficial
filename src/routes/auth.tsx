@@ -34,7 +34,6 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [unconfirmed, setUnconfirmed] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -46,7 +45,6 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
-    setUnconfirmed(false);
     try {
       const prep = await prepareOwnerLogin({ data: { password } });
       if (!prep.ok) {
@@ -63,32 +61,11 @@ function AuthPage() {
     setBusy(false);
     if (error) {
       if (/confirm/i.test(error.message)) {
-        setUnconfirmed(true);
         setMsg("First-time setup: tap \"Create / reset password\" below. A link goes to your Gmail; open it and choose your password.");
       } else setMsg("Wrong password. Try again or tap \"Create / reset password\".");
       return;
     }
     navigate({ to: redirect, replace: true });
-  }
-
-  async function resend() {
-    setBusy(true);
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/auth` },
-    });
-    setBusy(false);
-    setMsg(error ? error.message : "Confirmation link sent. Check your inbox (and spam folder).");
-  }
-
-  async function forgot() {
-    setBusy(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setBusy(false);
-    setMsg(error ? error.message : "Link sent to your Gmail (check spam too). Open it and set your CRM password.");
   }
 
   return (
