@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminAccessRouteImport } from './routes/admin-access'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -17,8 +18,11 @@ import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ExtensionRouteImport } from './routes/extension'
 import { Route as HubRouteImport } from './routes/hub'
 import { Route as HubAdminRouteImport } from './routes/hub-admin'
+import { Route as OffersRouteImport } from './routes/offers'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as TutorialsRouteImport } from './routes/tutorials'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ChatIndexRouteImport } from './routes/chat.index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
@@ -35,6 +39,11 @@ import { Route as ApiPublicShopV1ResourceRouteImport } from './routes/api/public
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -72,6 +81,11 @@ const HubAdminRoute = HubAdminRouteImport.update({
   path: '/hub-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OffersRoute = OffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -80,6 +94,16 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorialsRoute = TutorialsRouteImport.update({
+  id: '/tutorials',
+  path: '/tutorials',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -147,6 +171,7 @@ const ApiPublicShopV1ResourceRoute = ApiPublicShopV1ResourceRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
@@ -154,8 +179,11 @@ export interface FileRoutesByFullPath {
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/offers': typeof OffersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
+  '/support': typeof SupportRoute
+  '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/product/$productId': typeof ProductProductIdRoute
@@ -171,14 +199,18 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/offers': typeof OffersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
+  '/support': typeof SupportRoute
+  '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/product/$productId': typeof ProductProductIdRoute
@@ -195,6 +227,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
@@ -202,8 +235,11 @@ export interface FileRoutesById {
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/offers': typeof OffersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
+  '/support': typeof SupportRoute
+  '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
   '/product/$productId': typeof ProductProductIdRoute
@@ -221,6 +257,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/admin'
     | '/admin-access'
     | '/auth'
@@ -228,8 +265,11 @@ export interface FileRouteTypes {
     | '/extension'
     | '/hub'
     | '/hub-admin'
+    | '/offers'
     | '/reset-password'
     | '/shop'
+    | '/support'
+    | '/tutorials'
     | '/api/chat'
     | '/chat/$threadId'
     | '/product/$productId'
@@ -245,14 +285,18 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/admin'
     | '/admin-access'
     | '/auth'
     | '/extension'
     | '/hub'
     | '/hub-admin'
+    | '/offers'
     | '/reset-password'
     | '/shop'
+    | '/support'
+    | '/tutorials'
     | '/api/chat'
     | '/chat/$threadId'
     | '/product/$productId'
@@ -268,6 +312,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/admin'
     | '/admin-access'
     | '/auth'
@@ -275,8 +320,11 @@ export interface FileRouteTypes {
     | '/extension'
     | '/hub'
     | '/hub-admin'
+    | '/offers'
     | '/reset-password'
     | '/shop'
+    | '/support'
+    | '/tutorials'
     | '/api/chat'
     | '/chat/$threadId'
     | '/product/$productId'
@@ -293,6 +341,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
   AdminAccessRoute: typeof AdminAccessRoute
   AuthRoute: typeof AuthRoute
@@ -300,8 +349,11 @@ export interface RootRouteChildren {
   ExtensionRoute: typeof ExtensionRoute
   HubRoute: typeof HubRoute
   HubAdminRoute: typeof HubAdminRoute
+  OffersRoute: typeof OffersRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRoute
+  SupportRoute: typeof SupportRoute
+  TutorialsRoute: typeof TutorialsRoute
   ApiChatRoute: typeof ApiChatRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
   ApiPublicCronSupplierSyncRoute: typeof ApiPublicCronSupplierSyncRoute
@@ -321,6 +373,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -372,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HubAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/offers': {
+      id: '/offers'
+      path: '/offers'
+      fullPath: '/offers'
+      preLoaderRoute: typeof OffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -384,6 +450,20 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutorials': {
+      id: '/tutorials'
+      path: '/tutorials'
+      fullPath: '/tutorials'
+      preLoaderRoute: typeof TutorialsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -487,6 +567,7 @@ const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   AdminAccessRoute: AdminAccessRoute,
   AuthRoute: AuthRoute,
@@ -494,8 +575,11 @@ const rootRouteChildren: RootRouteChildren = {
   ExtensionRoute: ExtensionRoute,
   HubRoute: HubRoute,
   HubAdminRoute: HubAdminRoute,
+  OffersRoute: OffersRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRoute,
+  SupportRoute: SupportRoute,
+  TutorialsRoute: TutorialsRoute,
   ApiChatRoute: ApiChatRoute,
   ProductProductIdRoute: ProductProductIdRoute,
   ApiPublicCronSupplierSyncRoute: ApiPublicCronSupplierSyncRoute,

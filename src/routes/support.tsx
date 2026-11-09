@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Bot, ExternalLink, Facebook, MessageCircle, Send, Sparkles, Users, Youtube } from "lucide-react";
+import { Bot, ExternalLink, Globe, MessageCircle, PlayCircle, Send, Sparkles, Users } from "lucide-react";
 import { publicSiteInfo } from "@/lib/site.functions";
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -44,8 +44,8 @@ function SupportPage() {
     l.telegram_channel_2 && { href: l.telegram_channel_2, icon: Send, title: l.telegram_channel_2_name ?? "Telegram channel" },
     l.whatsapp_url && { href: l.whatsapp_url, icon: MessageCircle, title: "WhatsApp channel" },
     l.community_url && { href: l.community_url, icon: Users, title: "Community group" },
-    l.youtube_url && { href: l.youtube_url, icon: Youtube, title: "YouTube" },
-    l.facebook_url && { href: l.facebook_url, icon: Facebook, title: "Facebook" },
+    l.youtube_url && { href: l.youtube_url, icon: PlayCircle, title: "YouTube" },
+    l.facebook_url && { href: l.facebook_url, icon: Globe, title: "Facebook" },
   ].filter(Boolean) as Array<{ href: string; icon: typeof Send; title: string }>;
 
   return (
