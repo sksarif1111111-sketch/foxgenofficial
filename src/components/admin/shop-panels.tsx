@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ImageUpload } from "@/components/admin/image-upload";
 import { useServerFn } from "@tanstack/react-start";
 import {
   shopAddFulfillment,
@@ -16,6 +17,7 @@ import {
   shopSaveProduct,
   shopSendDelivery,
   shopSetProductState,
+  shopDeleteProduct,
   shopSummary,
   shopWalletAccounts,
   shopWalletTopUp,
@@ -490,7 +492,10 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
   const fSave = useServerFn(shopSaveProduct);
   const fDuplicate = useServerFn(shopDuplicateProduct);
   const fState = useServerFn(shopSetProductState);
+  const fDeleteProduct = useServerFn(shopDeleteProduct);
   const fMethods = useServerFn(shopPaymentMethods);
+  const [query, setQuery] = useState("");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "manual" | "api" | "unpublished" | "featured">("all");
   const fSaveMethod = useServerFn(shopSavePaymentMethod);
 
   const [rows, setRows] = useState<Row[]>([]);
@@ -518,6 +523,9 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
       features: Array.isArray(row["features"]) ? (row["features"] as string[]).join("\n") : "",
       terms: String(row["terms"] ?? ""),
       image_url: String(row["image_url"] ?? ""),
+      logo_url: String(row["logo_url"] ?? ""),
+      featured: row["featured"] === true,
+      reseller_product_id: row["reseller_product_id"] ? String(row["reseller_product_id"]) : "",
       duration_label: String(row["duration_label"] ?? ""),
       credits_per_interval: row["credits_per_interval"] === null ? "" : String(row["credits_per_interval"]),
       renewal_interval: String(row["renewal_interval"] ?? ""),
