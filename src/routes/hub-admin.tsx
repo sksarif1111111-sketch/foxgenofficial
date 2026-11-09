@@ -35,6 +35,11 @@ import {
 } from "@/lib/hubadmin.functions";
 import { ActivityPanel, CatalogPanel, ProductFilesPanel, ProductsPanel } from "@/components/admin/catalog-panels";
 import { BuyingPanel, ShopProductsPanel, WalletPanel } from "@/components/admin/shop-panels";
+import { ManagementDashboard } from "@/components/admin/management-dashboard";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "@tanstack/react-router";
+import { Bot, ShoppingBag, Puzzle, KeyRound } from "lucide-react";
 
 export const Route = createFileRoute("/hub-admin")({
   beforeLoad: async () => {
@@ -43,12 +48,12 @@ export const Route = createFileRoute("/hub-admin")({
   },
   head: () => ({
     meta: [
-      { title: "Rewards Hub Admin — FoxGEN PRO" },
+      { title: "Shop & Bot Management — FoxGEN Admin" },
       {
         name: "description",
         content: "Manage members, referrals, credits, generated licenses, tasks, rewards and the Telegram bot.",
       },
-      { property: "og:title", content: "Rewards Hub Admin — FoxGEN PRO" },
+      { property: "og:title", content: "Shop & Bot Management — FoxGEN Admin" },
       { property: "og:description", content: "Full control panel for the FoxGEN PRO Rewards Hub." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -78,6 +83,12 @@ const SECTIONS = [
   "Logs",
 ] as const;
 type Section = (typeof SECTIONS)[number];
+
+const ADMIN_GROUPS = {
+  shop: ["Overview", "Shop", "Buying", "Products", "Catalog", "Activity"],
+  bot: ["Bot", "Users", "Referrals", "Rewards", "Tasks", "Branding", "Links", "Logs"],
+  extension: ["Extension", "Instructions", "Licenses"],
+} satisfies Record<string, Section[]>;
 
 const EXTENSION_FIELDS = [
   "extension_name",
@@ -197,6 +208,13 @@ function HubAdmin() {
   const [guidePreview, setGuidePreview] = useState(false);
 
   const [section, setSection] = useState<Section>("Overview");
+  const [group, setGroup] = useState<keyof typeof ADMIN_GROUPS>("shop");
+  function openSection(next: Section) {
+    if (ADMIN_GROUPS.extension.some(s => s === next)) setGroup("extension");
+    else if (ADMIN_GROUPS.bot.some(s => s === next)) setGroup("bot");
+    else setGroup("shop");
+    setSection(next);
+  }
   const [flash, setFlash] = useState<string | null>(null);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -254,31 +272,39 @@ function HubAdmin() {
   }, [section, loadSection]);
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-10">
-      <h1 className="text-3xl font-black">🦊 Rewards Hub Admin</h1>
-      <p className="mb-6 text-sm text-muted-foreground">
-        Everything below is live data. Changes apply to the website and the Telegram bot instantly.
-      </p>
-
-      <nav className="mb-6 flex flex-wrap gap-2">
-        {SECTIONS.map((s) => (
-          <button
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
+      <header className="mb-7 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3"><img src="/foxgen-logo.png" alt="FoxGEN" width={48} height={48} className="size-12 rounded-lg"/><div><p className="text-xs font-medium text-primary">ADMIN WORKSPACE</p><h1 className="mt-1 text-2xl font-bold sm:text-3xl">FoxGEN Management</h1></div></div>
+        <Button variant="outline" onClick={() => openSection("Extension")}><Puzzle/>Extension</Button>
+      </header>
+      <Tabs value={group} onValueChange={(value) => {
+        if(value === "shop" || value === "bot" || value === "extension") {
+          setGroup(value); setSection(value === "shop" ? "Overview" : value === "bot" ? "Bot" : "Extension");
+        }
+      }} className="mb-4">
+        <TabsList className="grid h-auto w-full grid-cols-3 gap-1 p-1 sm:w-fit">
+          <TabsTrigger value="shop" className="gap-2 py-3 sm:px-6"><ShoppingBag/>Shop</TabsTrigger>
+          <TabsTrigger value="bot" className="gap-2 py-3 sm:px-6"><Bot/>Bot Management</TabsTrigger>
+          <TabsTrigger value="extension" className="gap-2 py-3 sm:px-6"><Puzzle/>Extension</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      <nav aria-label="Management sections" className="mb-8 flex flex-wrap gap-2 border-b border-border pb-5">
+        {ADMIN_GROUPS[group].map((s) => (
+          <Button
             key={s}
             onClick={() => setSection(s)}
-            className={`rounded-full border px-4 py-2 text-xs font-bold ${
-              section === s ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"
-            }`}
+            size="sm" variant={section === s ? "secondary" : "ghost"}
+            className={section === s ? "text-primary" : "text-muted-foreground"}
           >
             {s}
-          </button>
+          </Button>
         ))}
-        <a href="/admin" className="rounded-full border border-border px-4 py-2 text-xs font-bold text-muted-foreground">
-          License generator
-        </a>
+        {group === "extension" && <Button asChild size="sm" variant="outline"><Link to="/admin"><KeyRound/>License generator</Link></Button>}
       </nav>
 
       {flash && <p className="mb-4 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm">{flash}</p>}
 
+      {(section === "Overview" || section === "Bot") && <div className="mb-10"><ManagementDashboard onOpen={openSection}/></div>}
       {section === "Overview" && overview && (
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Total users" value={overview.totalUsers} />
