@@ -118,7 +118,7 @@ export function OfferHero({ slides, loading }: { slides: HeroSlide[]; loading: b
                 )}
               </div>
               <h1 className="mt-4 text-[34px] font-bold leading-[1.06] sm:text-5xl lg:text-[56px]">{slide.title}</h1>
-              {slide.description && <p className="mt-4 max-w-lg text-base text-muted-foreground sm:text-lg">{slide.description}</p>}
+              {slide.description && <p className="mt-4 line-clamp-3 max-w-lg text-base text-muted-foreground sm:text-lg">{slide.description}</p>}
               {slide.product && (
                 <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
                   <span className="text-sm text-muted-foreground">{slide.product.name}</span>
