@@ -1,4 +1,5 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
+import { MessageCircle } from "lucide-react";
 import type { ReactNode } from "react";
 
 const LINKS = [
@@ -9,6 +10,7 @@ const LINKS = [
 
 /** Sticky top menu shared by the public store pages. */
 export function SiteNav({ right }: { right?: ReactNode }) {
+  const onChat = useLocation({ select: (l) => l.pathname.startsWith("/chat") });
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
@@ -34,6 +36,14 @@ export function SiteNav({ right }: { right?: ReactNode }) {
           <Link to="/admin-access" search={{ redirect: "/hub-admin" }} className="text-xs font-semibold text-muted-foreground hover:text-foreground">Admin access</Link>
         </div>
       </div>
+      {!onChat && (
+        <Link
+          to="/chat"
+          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-lg"
+        >
+          <MessageCircle className="h-5 w-5" /> Ask FoxGEN AI
+        </Link>
+      )}
     </header>
   );
 }

@@ -13,11 +13,15 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminAccessRouteImport } from './routes/admin-access'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ExtensionRouteImport } from './routes/extension'
 import { Route as HubRouteImport } from './routes/hub'
 import { Route as HubAdminRouteImport } from './routes/hub-admin'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ChatIndexRouteImport } from './routes/chat.index'
+import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/license/issue'
 import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
@@ -45,6 +49,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExtensionRoute = ExtensionRouteImport.update({
   id: '/extension',
   path: '/extension',
@@ -69,6 +78,21 @@ const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatIndexRoute = ChatIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ChatRoute,
+} as any)
+const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
+  id: '/$threadId',
+  path: '/$threadId',
+  getParentRoute: () => ChatRoute,
 } as any)
 const ApiPublicExtCoreRoute = ApiPublicExtCoreRouteImport.update({
   id: '/api/public/ext/core',
@@ -107,11 +131,15 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
+  '/chat': typeof ChatRouteWithChildren
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
+  '/api/chat': typeof ApiChatRoute
+  '/chat/$threadId': typeof ChatThreadIdRoute
+  '/chat/': typeof ChatIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
@@ -129,6 +157,9 @@ export interface FileRoutesByTo {
   '/hub-admin': typeof HubAdminRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
+  '/api/chat': typeof ApiChatRoute
+  '/chat/$threadId': typeof ChatThreadIdRoute
+  '/chat': typeof ChatIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
@@ -142,11 +173,15 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
+  '/chat': typeof ChatRouteWithChildren
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
+  '/api/chat': typeof ApiChatRoute
+  '/chat/$threadId': typeof ChatThreadIdRoute
+  '/chat/': typeof ChatIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
@@ -161,11 +196,15 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-access'
     | '/auth'
+    | '/chat'
     | '/extension'
     | '/hub'
     | '/hub-admin'
     | '/reset-password'
     | '/shop'
+    | '/api/chat'
+    | '/chat/$threadId'
+    | '/chat/'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
@@ -183,6 +222,9 @@ export interface FileRouteTypes {
     | '/hub-admin'
     | '/reset-password'
     | '/shop'
+    | '/api/chat'
+    | '/chat/$threadId'
+    | '/chat'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
@@ -195,11 +237,15 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-access'
     | '/auth'
+    | '/chat'
     | '/extension'
     | '/hub'
     | '/hub-admin'
     | '/reset-password'
     | '/shop'
+    | '/api/chat'
+    | '/chat/$threadId'
+    | '/chat/'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
@@ -213,11 +259,13 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AdminAccessRoute: typeof AdminAccessRoute
   AuthRoute: typeof AuthRoute
+  ChatRoute: typeof ChatRouteWithChildren
   ExtensionRoute: typeof ExtensionRoute
   HubRoute: typeof HubRoute
   HubAdminRoute: typeof HubAdminRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRoute
+  ApiChatRoute: typeof ApiChatRoute
   ApiPublicExtCoreRoute: typeof ApiPublicExtCoreRoute
   ApiPublicLicenseIssueRoute: typeof ApiPublicLicenseIssueRoute
   ApiPublicLicenseVerifyRoute: typeof ApiPublicLicenseVerifyRoute
@@ -256,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/extension': {
       id: '/extension'
       path: '/extension'
@@ -290,6 +345,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop'
       preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/': {
+      id: '/chat/'
+      path: '/'
+      fullPath: '/chat/'
+      preLoaderRoute: typeof ChatIndexRouteImport
+      parentRoute: typeof ChatRoute
+    }
+    '/chat/$threadId': {
+      id: '/chat/$threadId'
+      path: '/$threadId'
+      fullPath: '/chat/$threadId'
+      preLoaderRoute: typeof ChatThreadIdRouteImport
+      parentRoute: typeof ChatRoute
     }
     '/api/public/ext/core': {
       id: '/api/public/ext/core'
@@ -336,16 +412,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ChatRouteChildren {
+  ChatThreadIdRoute: typeof ChatThreadIdRoute
+  ChatIndexRoute: typeof ChatIndexRoute
+}
+
+const ChatRouteChildren: ChatRouteChildren = {
+  ChatThreadIdRoute: ChatThreadIdRoute,
+  ChatIndexRoute: ChatIndexRoute,
+}
+
+const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AdminAccessRoute: AdminAccessRoute,
   AuthRoute: AuthRoute,
+  ChatRoute: ChatRouteWithChildren,
   ExtensionRoute: ExtensionRoute,
   HubRoute: HubRoute,
   HubAdminRoute: HubAdminRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRoute,
+  ApiChatRoute: ApiChatRoute,
   ApiPublicExtCoreRoute: ApiPublicExtCoreRoute,
   ApiPublicLicenseIssueRoute: ApiPublicLicenseIssueRoute,
   ApiPublicLicenseVerifyRoute: ApiPublicLicenseVerifyRoute,
