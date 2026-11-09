@@ -283,9 +283,9 @@ function HubAdmin() {
         }
       }} className="mb-4">
         <TabsList className="grid h-auto w-full grid-cols-3 gap-1 p-1 sm:w-fit">
-          <TabsTrigger value="shop" className="gap-2 py-3 sm:px-6"><ShoppingBag/>Shop</TabsTrigger>
-          <TabsTrigger value="bot" className="gap-2 py-3 sm:px-6"><Bot/>Bot Management</TabsTrigger>
-          <TabsTrigger value="extension" className="gap-2 py-3 sm:px-6"><Puzzle/>Extension</TabsTrigger>
+          <TabsTrigger value="shop" className="min-w-0 gap-2 px-2 py-3 text-xs sm:px-6 sm:text-sm"><ShoppingBag className="hidden size-4 sm:block"/>Shop</TabsTrigger>
+          <TabsTrigger value="bot" className="min-w-0 gap-2 px-2 py-3 text-xs sm:px-6 sm:text-sm"><Bot className="hidden size-4 sm:block"/>Bot Management</TabsTrigger>
+          <TabsTrigger value="extension" className="min-w-0 gap-2 px-2 py-3 text-xs sm:px-6 sm:text-sm"><Puzzle className="hidden size-4 sm:block"/>Extension</TabsTrigger>
         </TabsList>
       </Tabs>
       <nav aria-label="Management sections" className="mb-8 flex flex-wrap gap-2 border-b border-border pb-5">
