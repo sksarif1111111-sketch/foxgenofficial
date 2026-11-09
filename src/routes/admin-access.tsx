@@ -7,10 +7,10 @@ export const Route = createFileRoute("/admin-access")({
   validateSearch: (s: Record<string, unknown>) => ({ redirect: adminDestination(s.redirect) }),
   head: () => ({
     meta: [
-      { title: "Admin Access — FOXGEN Control Center" },
-      { name: "description", content: "Secure password access to the FOXGEN store, bot and extension control center." },
-      { property: "og:title", content: "Admin Access — FOXGEN Control Center" },
-      { property: "og:description", content: "FOXGEN administrator sign-in." },
+      { title: "Admin Access — Foxgen AI Store" },
+      { name: "description", content: "Secure password access to the Foxgen AI Store control center." },
+      { property: "og:title", content: "Admin Access — Foxgen AI Store" },
+      { property: "og:description", content: "Foxgen AI Store administrator sign-in." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },

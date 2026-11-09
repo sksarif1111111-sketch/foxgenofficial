@@ -313,7 +313,7 @@ function HubPage() {
           {unlocked && (
             <div className="border border-primary bg-primary/10 p-6">
               <h2 className="text-2xl font-black">🎉 Congratulations!</h2>
-              <p className="mt-1 text-sm">Your FOXGEN license was generated instantly.</p>
+              <p className="mt-1 text-sm">Your FoxGEN licence was generated instantly.</p>
               <p className="mt-5 text-xs font-bold uppercase text-muted-foreground">Your Lovable Unlimited License</p>
               <p className="mt-2 break-all font-mono text-xl font-black text-primary">{unlocked.license_key}</p>
               <p className="mt-3 text-sm">📅 {unlocked.duration_days} Days · 💰 {unlocked.credits_used} Credits Used</p>
