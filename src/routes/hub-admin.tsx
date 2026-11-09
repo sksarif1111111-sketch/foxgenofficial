@@ -3,34 +3,25 @@ import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  adminAdjustCredits,
   adminApproveReferral,
   adminBotStatus,
   adminBroadcast,
   adminClearLogs,
   adminDeleteReward,
-  adminDeleteTask,
   adminLicenseDurations,
   adminLogs,
   adminRedemptions,
-  adminOverview,
   adminReferrals,
   adminRejectReferral,
   adminRewards,
   adminSaveReward,
   adminSaveSettings,
-  adminResetUserTasks,
-  adminSaveTask,
-  adminSetUserStatus,
   adminSetWebhook,
   adminSettings,
   adminGuidePages,
   adminSaveGuidePage,
   adminDeleteGuidePage,
-  adminTasks,
   adminTestTelegramChannels,
-  adminUsers,
-  type AdminOverview,
 } from "@/lib/hubadmin.functions";
 import { ActivityPanel, CatalogPanel, ProductFilesPanel, ProductsPanel } from "@/components/admin/catalog-panels";
 import { BotDashboardPanel, IntegrationsPanel, LeaderboardPanel, OffersPanel, SecurityPanel, SyncHistoryPanel } from "@/components/admin/control-panels";
@@ -164,9 +155,7 @@ const EMOJI_FIELDS = [
 
 
 
-type UserRow = Awaited<ReturnType<typeof adminUsers>>[number];
 type RewardRow = Awaited<ReturnType<typeof adminRewards>>[number];
-type TaskRow = Awaited<ReturnType<typeof adminTasks>>[number];
 type RedemptionRow = Awaited<ReturnType<typeof adminRedemptions>>[number];
 type RefRow = Awaited<ReturnType<typeof adminReferrals>>[number];
 type BotInfo = Awaited<ReturnType<typeof adminBotStatus>>;
@@ -175,19 +164,11 @@ type LogRow = Awaited<ReturnType<typeof adminLogs>>[number];
 
 
 function HubAdmin() {
-  const fOverview = useServerFn(adminOverview);
-  const fUsers = useServerFn(adminUsers);
-  const fStatus = useServerFn(adminSetUserStatus);
-  const fCredits = useServerFn(adminAdjustCredits);
   const fRewards = useServerFn(adminRewards);
   const fSaveReward = useServerFn(adminSaveReward);
   const fDeleteReward = useServerFn(adminDeleteReward);
   const fDurations = useServerFn(adminLicenseDurations);
-  const fTasks = useServerFn(adminTasks);
-  const fSaveTask = useServerFn(adminSaveTask);
-  const fDeleteTask = useServerFn(adminDeleteTask);
   const fTestChannels = useServerFn(adminTestTelegramChannels);
-  const fResetTasks = useServerFn(adminResetUserTasks);
   const fRedemptions = useServerFn(adminRedemptions);
   const fSettings = useServerFn(adminSettings);
   const fSaveSettings = useServerFn(adminSaveSettings);
@@ -221,12 +202,7 @@ function HubAdmin() {
     }
   }
   const [flash, setFlash] = useState<string | null>(null);
-  const [overview, setOverview] = useState<AdminOverview | null>(null);
-  const [users, setUsers] = useState<UserRow[]>([]);
-  const [search, setSearch] = useState("");
   const [rewards, setRewards] = useState<RewardRow[]>([]);
-  const [tasks, setTasks] = useState<TaskRow[]>([]);
-  const [newTask, setNewTask] = useState({ name: "", platform: "youtube", url: "", description: "", telegram_chat_id: "", verification_type: "manual_confirmation" as "manual_confirmation" | "telegram_auto_verification", required: true, enabled: true, display_order: 10 });
   const [channelTests, setChannelTests] = useState<Awaited<ReturnType<typeof adminTestTelegramChannels>> | null>(null);
   const [redemptions, setRedemptions] = useState<RedemptionRow[]>([]);
   const [durations, setDurations] = useState<number[]>([15, 30, 60]);
@@ -265,7 +241,7 @@ function HubAdmin() {
         setFlash(err instanceof Error ? err.message : "Could not load data.");
       }
     },
-    [fOverview, fUsers, fReferrals, fRedemptions, fRewards, fDurations, fTasks, fSettings, fBot, fLogs, fGuidePages, logCategory, search, referralSearch, referralStatus],
+    [fReferrals, fRedemptions, fRewards, fDurations, fSettings, fBot, fLogs, fGuidePages, logCategory, referralSearch, referralStatus],
   );
 
 
@@ -819,21 +795,6 @@ function HubAdmin() {
       )}
     </AdminShell>
   );
-}
-
-function toTaskInput(t: TaskRow) {
-  return {
-    id: t.id,
-    name: t.name,
-    platform: t.platform,
-    description: t.description ?? "",
-    url: t.url ?? "",
-    telegram_chat_id: t.telegram_chat_id ?? "",
-    verification_type: t.verification_type as "manual_confirmation" | "telegram_auto_verification",
-    display_order: t.display_order,
-    required: t.required,
-    enabled: t.enabled,
-  };
 }
 
 function relatedProfile(value: unknown) {
