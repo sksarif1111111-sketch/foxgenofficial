@@ -379,13 +379,13 @@ function StoreHome() {
               title="Professional plans & yearly workspaces"
               description="Our highest-tier tools for builders and teams."
             />
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {view.premium.map((p) => (
                 <Link
                   key={p.id}
                   to="/shop"
                   search={{ product: p.id }}
-                  className="group flex items-center gap-5 rounded-2xl border border-border bg-card p-5 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lift"
+                  className="group flex min-w-0 items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-soft sm:gap-5 sm:p-5 transition hover:-translate-y-0.5 hover:shadow-lift"
                 >
                   <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} size="lg" />
                   <span className="min-w-0 flex-1">
