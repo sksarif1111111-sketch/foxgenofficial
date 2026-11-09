@@ -1,5 +1,19 @@
 # Roadmap
 
+## Foxgen AI Store premium redesign (Nov 2026)
+- [x] Rename to Foxgen AI Store with the new fox logo; soft white / navy / blue design; whole site in English.
+- [x] Header: Home, Shop, Latest Offers, Free Rewards, Tutorials, Support, search, Account; mobile menu.
+- [x] Home: admin-managed promotional banner (falls back to real products), brands, featured offers, trending (real sales only), latest, premium, exclusive, free rewards, recently updated.
+- [x] Product detail page, Latest Offers, Tutorials, Support and My Account pages.
+- [x] Offer manager (title, product, image upload, dates, featured, priority, source, status) with live-window rule tests.
+- [x] Control Center: grouped collapsible sidebar, bot dashboard from real data, leaderboard + credit history, task manager showing bot visibility, member credit tools, product table (feature, publish, archive, delete, image/logo upload).
+- [x] Integration center: Telegram, Reseller API, DIGIHUP, email, AI health; manual supplier sync with history; sync never overwrites store prices.
+- [x] Extension Admin: separate server-checked unlock pop-up; licence center with expired/blocked counts, filters, pages, safe delete, logged actions.
+- [ ] DIGIHUP supplier sync — blocked: DIGIHUP rejects the saved API key; owner must provide a new key.
+- [ ] Automatic scheduled supplier sync — route ready; needs publishing and a scheduler secret set up.
+- [ ] Order email delivery — needs an email API key and verified sender (orders can still be delivered manually).
+- [ ] Bot welcome message / commands editor and per-task reward credits — not in the current bot; adding them changes bot behaviour, so waiting for owner's go-ahead.
+
 - [x] Complete FOXGEN OFFICIAL visual redesign: new Home, Store, product details, Extension downloads, Rewards hub, Admin password pop-up and dark-sidebar control center (Store, Bot, Extension); desktop/mobile browser-checked with real catalogue and Admin login.
 
 - [x] Expand Shop Admin with top-level Shop, Bot Management and Extension tabs, live daily/monthly financial summaries and CRM reconciliation; password login, real member/order counts, month selection and Extension controls verified on desktop/mobile. No live paid orders exist to exercise financial records end-to-end; formula tests passed.
