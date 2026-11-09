@@ -42,7 +42,7 @@ export const listLicenses = createServerFn({ method: "POST" }).middleware([requi
     .from("licenses")
     .select(SELECT)
     .order("created_at", { ascending: false })
-    .limit(2000);
+    .limit(1000);
   return (data ?? []) as LicenseRow[];
 });
 
