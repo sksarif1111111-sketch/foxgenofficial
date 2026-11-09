@@ -22,6 +22,7 @@ import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ChatIndexRouteImport } from './routes/chat.index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
+import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
 import { Route as ApiPublicCronSupplierSyncRouteImport } from './routes/api/public/cron/supplier-sync'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/license/issue'
@@ -96,6 +97,11 @@ const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
   path: '/$threadId',
   getParentRoute: () => ChatRoute,
 } as any)
+const ProductProductIdRoute = ProductProductIdRouteImport.update({
+  id: '/product/$productId',
+  path: '/product/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronSupplierSyncRoute =
   ApiPublicCronSupplierSyncRouteImport.update({
     id: '/api/public/cron/supplier-sync',
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/shop': typeof ShopRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
+  '/product/$productId': typeof ProductProductIdRoute
   '/chat/': typeof ChatIndexRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/shop': typeof ShopRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
+  '/product/$productId': typeof ProductProductIdRoute
   '/chat': typeof ChatIndexRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/shop': typeof ShopRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
+  '/product/$productId': typeof ProductProductIdRoute
   '/chat/': typeof ChatIndexRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/api/chat'
     | '/chat/$threadId'
+    | '/product/$productId'
     | '/chat/'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/api/chat'
     | '/chat/$threadId'
+    | '/product/$productId'
     | '/chat'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
@@ -268,6 +279,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/api/chat'
     | '/chat/$threadId'
+    | '/product/$productId'
     | '/chat/'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
@@ -291,6 +303,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRoute
   ApiChatRoute: typeof ApiChatRoute
+  ProductProductIdRoute: typeof ProductProductIdRoute
   ApiPublicCronSupplierSyncRoute: typeof ApiPublicCronSupplierSyncRoute
   ApiPublicExtCoreRoute: typeof ApiPublicExtCoreRoute
   ApiPublicLicenseIssueRoute: typeof ApiPublicLicenseIssueRoute
@@ -394,6 +407,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatThreadIdRouteImport
       parentRoute: typeof ChatRoute
     }
+    '/product/$productId': {
+      id: '/product/$productId'
+      path: '/product/$productId'
+      fullPath: '/product/$productId'
+      preLoaderRoute: typeof ProductProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/supplier-sync': {
       id: '/api/public/cron/supplier-sync'
       path: '/api/public/cron/supplier-sync'
@@ -477,6 +497,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRoute,
   ApiChatRoute: ApiChatRoute,
+  ProductProductIdRoute: ProductProductIdRoute,
   ApiPublicCronSupplierSyncRoute: ApiPublicCronSupplierSyncRoute,
   ApiPublicExtCoreRoute: ApiPublicExtCoreRoute,
   ApiPublicLicenseIssueRoute: ApiPublicLicenseIssueRoute,
