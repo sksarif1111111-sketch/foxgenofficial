@@ -17,6 +17,7 @@ import {
   Puzzle,
   ShieldCheck,
   Sparkles,
+  Lock,
   Wallet,
 } from "lucide-react";
 import { shopCatalog } from "@/lib/shop.functions";
@@ -51,6 +52,7 @@ const CATEGORY_ICONS: Record<StoreCategoryId, typeof Sparkles> = {
   creative: Palette,
   learning: GraduationCap,
   entertainment: Film,
+  security: Lock,
   more: Layers,
 };
 
@@ -139,6 +141,7 @@ function StoreHome() {
   }, [products, data?.trending]);
 
   const methods = data?.methods ?? [];
+  const payNames = methods.filter((m) => m.provider !== "wallet").map((m) => m.name.replace(/\s*\(.*?\)\s*/g, " ").trim());
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -256,14 +259,14 @@ function StoreHome() {
 
       {/* TRUST STRIP */}
       <section className="container-page mt-6">
-        <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: Wallet, title: methods.length ? methods.map((m) => m.name).slice(0, 3).join(" · ") : "Crypto & UPI", text: "Website payment options" },
+            { icon: Wallet, title: payNames.length ? payNames.slice(0, 3).join(" · ") : "Crypto & UPI", text: "Website payment options" },
             { icon: Bot, title: "Telegram bot checkout", text: "Same catalogue, pay with Stars" },
             { icon: ShieldCheck, title: "Owner-verified payments", text: "Every order is checked by hand" },
             { icon: Clock3, title: `About ${data?.reviewMinutes ?? 10} minute review`, text: "Access details arrive by email" },
           ].map((item) => (
-            <div key={item.text} className="flex items-center gap-3 bg-card px-5 py-4">
+            <div key={item.text} className="flex min-w-0 items-center gap-3 bg-card px-5 py-4">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
                 <item.icon className="size-4" />
               </span>
@@ -281,7 +284,7 @@ function StoreHome() {
         {view.categories.length > 0 && (
           <section>
             <SectionHeader eyebrow="Popular categories" title="Find the right tool, fast." />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
               {view.categories.map((c) => {
                 const Icon = CATEGORY_ICONS[c.id];
                 return (
