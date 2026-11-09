@@ -499,7 +499,7 @@ function ShopPage() {
 
         {/* DETAIL */}
         {step === "detail" && product && (
-          <div className="grid gap-8 lg:grid-cols-[1.25fr_1fr]">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.25fr_1fr]">
             <div className="space-y-6">
               <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-3xl border border-border bg-muted">
                 {product.image_url ? (
@@ -580,7 +580,7 @@ function ShopPage() {
 
         {/* CHECKOUT */}
         {inCheckout && product && (
-          <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.4fr_1fr]">
             <div>
               <Stepper step={step} />
 

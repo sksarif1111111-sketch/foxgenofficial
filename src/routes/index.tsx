@@ -405,7 +405,7 @@ function StoreHome() {
         )}
 
         {/* FREE REWARDS */}
-        <section className="grid gap-6 rounded-3xl border border-border bg-accent/60 p-8 sm:p-12 lg:grid-cols-[auto_1fr_auto] lg:items-center">
+        <section className="grid grid-cols-1 gap-6 rounded-3xl border border-border bg-accent/60 p-8 sm:p-12 lg:grid-cols-[auto_1fr_auto] lg:items-center">
           <span className="flex size-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-ember">
             <Gift className="size-7" />
           </span>
