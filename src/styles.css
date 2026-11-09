@@ -64,7 +64,8 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-:root {
+:root,
+.surface-light {
   --radius: 0.75rem;
   --background: oklch(0.982 0.004 80);
   --foreground: oklch(0.19 0.014 265);

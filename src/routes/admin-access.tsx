@@ -30,7 +30,7 @@ function AdminAccess() {
           <ArrowLeft className="size-4" /> Back to store
         </Link>
         {/* Light dialog card on the ink backdrop */}
-        <div className="rounded-2xl border border-border bg-background p-6 text-foreground shadow-lift [--background:oklch(0.982_0.004_80)] [--foreground:oklch(0.19_0.014_265)] [--muted-foreground:oklch(0.47_0.014_265)] [--border:oklch(0.905_0.006_80)] [--input:oklch(0.89_0.007_80)] [--card:oklch(1_0_0)] [--primary:oklch(0.62_0.19_41)] [--primary-foreground:oklch(0.99_0.004_80)] sm:p-7">
+        <div className="rounded-2xl border border-border surface-light bg-background p-6 text-foreground shadow-lift sm:p-7">
           <AdminAccessHeader title={redirect === "/admin" ? "Licence Center" : "Control Center"} />
           <p className="mt-3 text-sm text-muted-foreground">Store, Telegram bot and extension licences are managed here.</p>
           <div className="mt-6">
