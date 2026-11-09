@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 const LINKS = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "Store" },
-  { to: "/extension", label: "Extension" },
 ] as const;
 
 /** Sticky top menu shared by the public store pages. */
@@ -29,7 +28,15 @@ export function SiteNav({ right }: { right?: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">{right}</div>
+        <div className="flex items-center gap-2">
+          {right}
+          <Link
+            to="/crm/bot"
+            className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-primary/50 hover:text-foreground"
+          >
+            Admin access
+          </Link>
+        </div>
       </div>
     </header>
   );

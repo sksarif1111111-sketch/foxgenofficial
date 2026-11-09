@@ -11,7 +11,7 @@ export const Route = createFileRoute("/")({
       { title: "FoxGEN Store — Extensions, Licences & Digital Products" },
       {
         name: "description",
-        content: "Shop FoxGEN Pro extension licences and digital products on the website or in our Telegram bot.",
+        content: "Shop FoxGEN Pro extension licences and digital products.",
       },
       { property: "og:title", content: "FoxGEN Store — Extensions, Licences & Digital Products" },
       { property: "og:description", content: "FoxGEN Pro licences and digital products, in one store." },
@@ -41,14 +41,11 @@ function StoreHome() {
       />
       <div className="mx-auto flex max-w-6xl flex-col gap-14 px-4 py-14 sm:px-6">
         <header className="flex flex-col items-start gap-5">
-          <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
-            Website + Telegram bot
-          </span>
           <h1 className="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">
             Everything FoxGEN, <span className="text-primary">one store.</span>
           </h1>
           <p className="max-w-2xl text-lg text-muted-foreground">
-            Extension licences and digital products. Buy here or in our Telegram bot — same stock, same orders.
+            Premium digital products and licences, delivered fast.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -56,12 +53,6 @@ function StoreHome() {
               className="rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-lift transition hover:-translate-y-0.5"
             >
               Browse store
-            </Link>
-            <Link
-              to="/extension"
-              className="rounded-xl border border-border bg-card px-6 py-3 text-sm font-bold shadow-soft transition hover:border-primary/50"
-            >
-              Get the extension
             </Link>
           </div>
         </header>
@@ -104,7 +95,6 @@ function StoreHome() {
 
         <footer className="flex justify-between border-t border-border pt-6 text-sm text-muted-foreground">
           <span>© FoxGEN</span>
-          <a href="/admin" className="font-semibold text-primary hover:underline">Admin panel</a>
         </footer>
       </div>
     </main>
