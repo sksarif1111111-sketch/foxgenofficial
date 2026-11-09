@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Complete FOXGEN OFFICIAL visual redesign: new Home, Store, product details, Extension downloads, Rewards hub, Admin password pop-up and dark-sidebar control center (Store, Bot, Extension); desktop/mobile browser-checked with real catalogue and Admin login.
+
 - [x] Expand Shop Admin with top-level Shop, Bot Management and Extension tabs, live daily/monthly financial summaries and CRM reconciliation; password login, real member/order counts, month selection and Extension controls verified on desktop/mobile. No live paid orders exist to exercise financial records end-to-end; formula tests passed.
 
 - [x] Configure Admin password, protect Admin pages and all their server actions, and verify login/logout (wrong password, correct password, refresh and both protected pages checked).
