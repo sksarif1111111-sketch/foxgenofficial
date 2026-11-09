@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Build and verify authenticated Store/Bot export API for external CRM sync.
+- [ ] Configure shared CRM API key and connect the external CRM (requires its connection details).
+
 - [x] Verify and resolve the reported `use-mobile.tsx` TypeScript error.
 - [x] Rebrand the latest uploaded extension’s visible design to FoxGEN Pro while preserving licensing and functionality.
 - [x] Repackage the extension and update the existing download section.
