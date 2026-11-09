@@ -43,10 +43,13 @@ export function ProductCard({
   product,
   onOpen,
   ribbon,
+  footnote,
 }: {
   product: CatalogProduct;
   onOpen?: () => void;
   ribbon?: string;
+  /** Small line under the price, e.g. "Updated 2h ago · Supplier API". */
+  footnote?: string;
 }) {
   const body = (
     <>
@@ -62,7 +65,7 @@ export function ProductCard({
           </>
         )}
         {ribbon && (
-          <span className="eyebrow absolute left-3 top-3 rounded-md bg-ink px-2 py-1 text-[10px] text-ink-foreground">{ribbon}</span>
+          <span className="eyebrow absolute left-3 top-3 rounded-md bg-primary px-2 py-1 text-[10px] text-primary-foreground">{ribbon}</span>
         )}
         <span className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-card/90 text-foreground opacity-0 shadow-soft transition group-hover:opacity-100">
           <ArrowUpRight className="size-4" />
@@ -81,6 +84,7 @@ export function ProductCard({
           <PriceTag product={product} />
           {product.duration_label && <span className="text-xs text-muted-foreground">{product.duration_label}</span>}
         </div>
+        {footnote && <p className="border-t border-border pt-2 text-[11px] text-muted-foreground">{footnote}</p>}
       </div>
     </>
   );
@@ -94,7 +98,7 @@ export function ProductCard({
     );
   }
   return (
-    <Link to="/shop" search={{ product: product.id }} className={cls}>
+    <Link to="/product/$productId" params={{ productId: product.id }} className={cls}>
       {body}
     </Link>
   );

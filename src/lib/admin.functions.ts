@@ -1,4 +1,4 @@
-import { requireAdminPassword } from "@/lib/admin-access.middleware";
+import { requireExtensionPassword } from "@/lib/admin-access.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -36,17 +36,17 @@ function makeKey(name?: string) {
   return `${cleanPrefix(name)}-${block(3)}-${block(3)}`;
 }
 
-export const listLicenses = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async (): Promise<LicenseRow[]> => {
+export const listLicenses = createServerFn({ method: "POST" }).middleware([requireExtensionPassword]).handler(async (): Promise<LicenseRow[]> => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("licenses")
     .select(SELECT)
     .order("created_at", { ascending: false })
-    .limit(500);
+    .limit(1000);
   return (data ?? []) as LicenseRow[];
 });
 
-export const generateLicense = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
+export const generateLicense = createServerFn({ method: "POST" }).middleware([requireExtensionPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -70,25 +70,35 @@ export const generateLicense = createServerFn({ method: "POST" }).middleware([re
         })
         .select(SELECT)
         .single();
-      if (!error && row) return row as LicenseRow;
+      if (!error && row) {
+        const { logActivity } = await import("@/lib/hub.server");
+        await logActivity("extension", "Licence generated", "success", `${row.license_key} · ${planDays}d`);
+        return row as LicenseRow;
+      }
     }
     throw new Error("Could not generate a license key. Please try again.");
   });
 
-export const setLicenseStatus = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
+export const setLicenseStatus = createServerFn({ method: "POST" }).middleware([requireExtensionPassword])
   .inputValidator((input: unknown) =>
     z.object({ id: z.string().uuid(), status: z.enum(["active", "blocked"]) }).parse(input),
   )
   .handler(async ({ data }): Promise<{ ok: true }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("licenses").update({ status: data.status }).eq("id", data.id);
+    const { data: row, error } = await supabaseAdmin.from("licenses").update({ status: data.status }).eq("id", data.id).select("license_key").single();
+    if (error || !row) throw new Error("Could not update this licence.");
+    const { logActivity } = await import("@/lib/hub.server");
+    await logActivity("extension", data.status === "active" ? "Licence activated" : "Licence blocked", "success", row.license_key);
     return { ok: true };
   });
 
-export const deleteLicense = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
+export const deleteLicense = createServerFn({ method: "POST" }).middleware([requireExtensionPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }): Promise<{ ok: true }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("licenses").delete().eq("id", data.id);
+    const { data: row, error } = await supabaseAdmin.from("licenses").delete().eq("id", data.id).select("license_key").single();
+    if (error || !row) throw new Error("Could not delete this licence.");
+    const { logActivity } = await import("@/lib/hub.server");
+    await logActivity("extension", "Licence deleted", "warning", row.license_key);
     return { ok: true };
   });

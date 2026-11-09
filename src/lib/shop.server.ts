@@ -31,6 +31,9 @@ export type ShopProduct = {
   shop_order: number;
   featured: boolean;
   created_at: string | null;
+  updated_at: string | null;
+  /** "manual" for owner-managed products, otherwise the supplier API that manages price and stock. */
+  source: "manual" | "reseller" | "digihup";
   purchasable: boolean;
   stock_label: string;
   price_label: string;
@@ -88,6 +91,12 @@ export function shapeProduct(row: Record<string, unknown>, channel: ShopChannel)
     id: String(row["id"]),
     featured: row["featured"] === true,
     created_at: (row["created_at"] as string) ?? null,
+    updated_at: (row["updated_at"] as string) ?? null,
+    source: !row["reseller_product_id"]
+      ? "manual"
+      : String(row["reseller_product_id"]).startsWith("digihup:")
+        ? "digihup"
+        : "reseller",
     slug: (row["slug"] as string) ?? null,
     name: String(row["name"]),
     emoji: (row["emoji"] as string) ?? null,
@@ -128,6 +137,49 @@ export async function shopProductRows(channel: ShopChannel): Promise<ShopProduct
     .order("shop_order")
     .order("created_at");
   return (data ?? []).map((row) => shapeProduct(row as Record<string, unknown>, channel));
+}
+
+/** Public-safe product projection used by the storefront catalogue and product pages. */
+export function toCatalogProduct(p: ShopProduct) {
+  return {
+    id: p.id,
+    name: p.name,
+    emoji: p.emoji,
+    short_description: p.short_description,
+    description: p.description,
+    features: p.features,
+    terms: p.terms,
+    image_url: p.image_url,
+    logo_url: p.logo_url,
+    duration_label: p.duration_label,
+    credits_per_interval: p.credits_per_interval,
+    renewal_interval: p.renewal_interval,
+    price_usdt: p.price_usdt,
+    price_inr: p.price_inr,
+    price_label: p.price_label,
+    stock_label: p.stock_label,
+    availability: p.availability,
+    purchasable: p.purchasable,
+    max_units: maxUnits(p),
+    delivery_method: p.delivery_method,
+    featured: p.featured,
+    created_at: p.created_at,
+    updated_at: p.updated_at,
+    source: p.source,
+  };
+}
+
+/** Most recent successful supplier sync (null when suppliers have never synced). */
+export async function lastSupplierSync(): Promise<string | null> {
+  const [runs, crm] = await Promise.all([
+    db.from("integration_sync_runs").select("finished_at").eq("status", "success").order("started_at", { ascending: false }).limit(1).maybeSingle(),
+    db.from("crm_products").select("last_synced_at").not("last_synced_at", "is", null).order("last_synced_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  const a = runs.data?.finished_at ?? null;
+  const b = crm.data?.last_synced_at ?? null;
+  if (!a) return b;
+  if (!b) return a;
+  return a > b ? a : b;
 }
 
 export async function shopProductById(id: string, channel: ShopChannel): Promise<ShopProduct | null> {

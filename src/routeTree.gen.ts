@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminAccessRouteImport } from './routes/admin-access'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -17,14 +18,20 @@ import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ExtensionRouteImport } from './routes/extension'
 import { Route as HubRouteImport } from './routes/hub'
 import { Route as HubAdminRouteImport } from './routes/hub-admin'
+import { Route as OffersRouteImport } from './routes/offers'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as TutorialsRouteImport } from './routes/tutorials'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ChatIndexRouteImport } from './routes/chat.index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
+import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
+import { Route as ApiPublicCronSupplierSyncRouteImport } from './routes/api/public/cron/supplier-sync'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/license/issue'
 import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
+import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media/$'
 import { Route as ApiPublicTelegramAvatarRouteImport } from './routes/api/public/telegram/avatar'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicShopV1ResourceRouteImport } from './routes/api/public/shop/v1/$resource'
@@ -32,6 +39,11 @@ import { Route as ApiPublicShopV1ResourceRouteImport } from './routes/api/public
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -69,6 +81,11 @@ const HubAdminRoute = HubAdminRouteImport.update({
   path: '/hub-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OffersRoute = OffersRouteImport.update({
+  id: '/offers',
+  path: '/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -77,6 +94,16 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorialsRoute = TutorialsRouteImport.update({
+  id: '/tutorials',
+  path: '/tutorials',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -94,6 +121,17 @@ const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
   path: '/$threadId',
   getParentRoute: () => ChatRoute,
 } as any)
+const ProductProductIdRoute = ProductProductIdRouteImport.update({
+  id: '/product/$productId',
+  path: '/product/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCronSupplierSyncRoute =
+  ApiPublicCronSupplierSyncRouteImport.update({
+    id: '/api/public/cron/supplier-sync',
+    path: '/api/public/cron/supplier-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicExtCoreRoute = ApiPublicExtCoreRouteImport.update({
   id: '/api/public/ext/core',
   path: '/api/public/ext/core',
@@ -107,6 +145,11 @@ const ApiPublicLicenseIssueRoute = ApiPublicLicenseIssueRouteImport.update({
 const ApiPublicLicenseVerifyRoute = ApiPublicLicenseVerifyRouteImport.update({
   id: '/api/public/license/verify',
   path: '/api/public/license/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMediaSplatRoute = ApiPublicMediaSplatRouteImport.update({
+  id: '/api/public/media/$',
+  path: '/api/public/media/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicTelegramAvatarRoute = ApiPublicTelegramAvatarRouteImport.update({
@@ -128,6 +171,7 @@ const ApiPublicShopV1ResourceRoute = ApiPublicShopV1ResourceRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
@@ -135,34 +179,47 @@ export interface FileRoutesByFullPath {
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/offers': typeof OffersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
+  '/support': typeof SupportRoute
+  '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
+  '/product/$productId': typeof ProductProductIdRoute
   '/chat/': typeof ChatIndexRoute
+  '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
+  '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/offers': typeof OffersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
+  '/support': typeof SupportRoute
+  '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
+  '/product/$productId': typeof ProductProductIdRoute
   '/chat': typeof ChatIndexRoute
+  '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
+  '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
@@ -170,6 +227,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
@@ -177,14 +235,20 @@ export interface FileRoutesById {
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/offers': typeof OffersRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
+  '/support': typeof SupportRoute
+  '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
+  '/product/$productId': typeof ProductProductIdRoute
   '/chat/': typeof ChatIndexRoute
+  '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
+  '/api/public/media/$': typeof ApiPublicMediaSplatRoute
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
@@ -193,6 +257,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/admin'
     | '/admin-access'
     | '/auth'
@@ -200,40 +265,54 @@ export interface FileRouteTypes {
     | '/extension'
     | '/hub'
     | '/hub-admin'
+    | '/offers'
     | '/reset-password'
     | '/shop'
+    | '/support'
+    | '/tutorials'
     | '/api/chat'
     | '/chat/$threadId'
+    | '/product/$productId'
     | '/chat/'
+    | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
+    | '/api/public/media/$'
     | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
     | '/api/public/shop/v1/$resource'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/admin'
     | '/admin-access'
     | '/auth'
     | '/extension'
     | '/hub'
     | '/hub-admin'
+    | '/offers'
     | '/reset-password'
     | '/shop'
+    | '/support'
+    | '/tutorials'
     | '/api/chat'
     | '/chat/$threadId'
+    | '/product/$productId'
     | '/chat'
+    | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
+    | '/api/public/media/$'
     | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
     | '/api/public/shop/v1/$resource'
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/admin'
     | '/admin-access'
     | '/auth'
@@ -241,14 +320,20 @@ export interface FileRouteTypes {
     | '/extension'
     | '/hub'
     | '/hub-admin'
+    | '/offers'
     | '/reset-password'
     | '/shop'
+    | '/support'
+    | '/tutorials'
     | '/api/chat'
     | '/chat/$threadId'
+    | '/product/$productId'
     | '/chat/'
+    | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
+    | '/api/public/media/$'
     | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
     | '/api/public/shop/v1/$resource'
@@ -256,6 +341,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
   AdminAccessRoute: typeof AdminAccessRoute
   AuthRoute: typeof AuthRoute
@@ -263,12 +349,18 @@ export interface RootRouteChildren {
   ExtensionRoute: typeof ExtensionRoute
   HubRoute: typeof HubRoute
   HubAdminRoute: typeof HubAdminRoute
+  OffersRoute: typeof OffersRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRoute
+  SupportRoute: typeof SupportRoute
+  TutorialsRoute: typeof TutorialsRoute
   ApiChatRoute: typeof ApiChatRoute
+  ProductProductIdRoute: typeof ProductProductIdRoute
+  ApiPublicCronSupplierSyncRoute: typeof ApiPublicCronSupplierSyncRoute
   ApiPublicExtCoreRoute: typeof ApiPublicExtCoreRoute
   ApiPublicLicenseIssueRoute: typeof ApiPublicLicenseIssueRoute
   ApiPublicLicenseVerifyRoute: typeof ApiPublicLicenseVerifyRoute
+  ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
   ApiPublicTelegramAvatarRoute: typeof ApiPublicTelegramAvatarRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   ApiPublicShopV1ResourceRoute: typeof ApiPublicShopV1ResourceRoute
@@ -281,6 +373,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -332,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HubAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/offers': {
+      id: '/offers'
+      path: '/offers'
+      fullPath: '/offers'
+      preLoaderRoute: typeof OffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -344,6 +450,20 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutorials': {
+      id: '/tutorials'
+      path: '/tutorials'
+      fullPath: '/tutorials'
+      preLoaderRoute: typeof TutorialsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -367,6 +487,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatThreadIdRouteImport
       parentRoute: typeof ChatRoute
     }
+    '/product/$productId': {
+      id: '/product/$productId'
+      path: '/product/$productId'
+      fullPath: '/product/$productId'
+      preLoaderRoute: typeof ProductProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/supplier-sync': {
+      id: '/api/public/cron/supplier-sync'
+      path: '/api/public/cron/supplier-sync'
+      fullPath: '/api/public/cron/supplier-sync'
+      preLoaderRoute: typeof ApiPublicCronSupplierSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ext/core': {
       id: '/api/public/ext/core'
       path: '/api/public/ext/core'
@@ -386,6 +520,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/license/verify'
       fullPath: '/api/public/license/verify'
       preLoaderRoute: typeof ApiPublicLicenseVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/media/$': {
+      id: '/api/public/media/$'
+      path: '/api/public/media/$'
+      fullPath: '/api/public/media/$'
+      preLoaderRoute: typeof ApiPublicMediaSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/telegram/avatar': {
@@ -426,6 +567,7 @@ const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   AdminAccessRoute: AdminAccessRoute,
   AuthRoute: AuthRoute,
@@ -433,12 +575,18 @@ const rootRouteChildren: RootRouteChildren = {
   ExtensionRoute: ExtensionRoute,
   HubRoute: HubRoute,
   HubAdminRoute: HubAdminRoute,
+  OffersRoute: OffersRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRoute,
+  SupportRoute: SupportRoute,
+  TutorialsRoute: TutorialsRoute,
   ApiChatRoute: ApiChatRoute,
+  ProductProductIdRoute: ProductProductIdRoute,
+  ApiPublicCronSupplierSyncRoute: ApiPublicCronSupplierSyncRoute,
   ApiPublicExtCoreRoute: ApiPublicExtCoreRoute,
   ApiPublicLicenseIssueRoute: ApiPublicLicenseIssueRoute,
   ApiPublicLicenseVerifyRoute: ApiPublicLicenseVerifyRoute,
+  ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,
   ApiPublicTelegramAvatarRoute: ApiPublicTelegramAvatarRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   ApiPublicShopV1ResourceRoute: ApiPublicShopV1ResourceRoute,
