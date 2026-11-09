@@ -951,6 +951,45 @@ export type Database = {
           },
         ]
       }
+      integration_sync_runs: {
+        Row: {
+          added: number
+          finished_at: string | null
+          id: string
+          message: string | null
+          provider: string
+          started_at: string
+          status: string
+          total: number
+          trigger: string
+          updated: number
+        }
+        Insert: {
+          added?: number
+          finished_at?: string | null
+          id?: string
+          message?: string | null
+          provider: string
+          started_at?: string
+          status: string
+          total?: number
+          trigger?: string
+          updated?: number
+        }
+        Update: {
+          added?: number
+          finished_at?: string | null
+          id?: string
+          message?: string | null
+          provider?: string
+          started_at?: string
+          status?: string
+          total?: number
+          trigger?: string
+          updated?: number
+        }
+        Relationships: []
+      }
       license_inventory: {
         Row: {
           added_at: string
@@ -1951,6 +1990,74 @@ export type Database = {
           verification_type?: string
         }
         Relationships: []
+      }
+      store_offers: {
+        Row: {
+          badge: string | null
+          created_at: string
+          cta_text: string
+          cta_url: string | null
+          description: string | null
+          ends_at: string | null
+          featured: boolean
+          headline: string | null
+          id: string
+          image_url: string | null
+          priority: number
+          product_id: string | null
+          source: string
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          created_at?: string
+          cta_text?: string
+          cta_url?: string | null
+          description?: string | null
+          ends_at?: string | null
+          featured?: boolean
+          headline?: string | null
+          id?: string
+          image_url?: string | null
+          priority?: number
+          product_id?: string | null
+          source?: string
+          starts_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          created_at?: string
+          cta_text?: string
+          cta_url?: string | null
+          description?: string | null
+          ends_at?: string | null
+          featured?: boolean
+          headline?: string | null
+          id?: string
+          image_url?: string | null
+          priority?: number
+          product_id?: string | null
+          source?: string
+          starts_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_completions: {
         Row: {
