@@ -94,7 +94,7 @@ export function ProductCard({
     );
   }
   return (
-    <Link to="/shop" search={{ product: product.id }} className={cls}>
+    <Link to="/product/$productId" params={{ productId: product.id }} className={cls}>
       {body}
     </Link>
   );
