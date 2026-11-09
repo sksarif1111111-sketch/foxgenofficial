@@ -12,6 +12,7 @@ const LINKS = [
 export function SiteNav({ right }: { right?: ReactNode }) {
   const onChat = useLocation({ select: (l) => l.pathname.startsWith("/chat") });
   return (
+    <>
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2.5">
@@ -36,6 +37,7 @@ export function SiteNav({ right }: { right?: ReactNode }) {
           <Link to="/admin-access" search={{ redirect: "/hub-admin" }} className="text-xs font-semibold text-muted-foreground hover:text-foreground">Admin access</Link>
         </div>
       </div>
+    </header>
       {!onChat && (
         <Link
           to="/chat"
@@ -44,6 +46,6 @@ export function SiteNav({ right }: { right?: ReactNode }) {
           <MessageCircle className="h-5 w-5" /> Ask FoxGEN AI
         </Link>
       )}
-    </header>
+    </>
   );
 }
