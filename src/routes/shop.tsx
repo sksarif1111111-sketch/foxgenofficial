@@ -298,13 +298,6 @@ function ShopPage() {
     if (search.product) void navigate({ search: (prev) => ({ ...prev, product: undefined }) });
   };
 
-  const openProduct = (item: Product) => {
-    setProduct(item);
-    setQuantity(1);
-    setStep("detail");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   const unitPrice = method?.currency === "INR" ? (product?.price_inr ?? null) : (product?.price_usdt ?? null);
   const totalCurrency = method?.currency === "INR" ? "INR" : "USDT";
   const total = unitPrice === null ? null : unitPrice * quantity;
@@ -377,7 +370,7 @@ function ShopPage() {
           <div>
             <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <button type="button" onClick={goToList} className="hover:text-foreground">
-                Store
+                Shop
               </button>
               {step !== "list" && (
                 <>
