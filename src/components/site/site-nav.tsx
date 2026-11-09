@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 const LINKS = [
   { to: "/", label: "Home" },
   { to: "/shop", label: "Store" },
+  { to: "/chat", label: "AI Help" },
 ] as const;
 
 /** Sticky top menu shared by the public store pages. */
