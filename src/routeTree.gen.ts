@@ -35,6 +35,7 @@ import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/l
 import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
 import { Route as ApiPublicTelegramAvatarRouteImport } from './routes/api/public/telegram/avatar'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
+import { Route as ApiPublicShopV1ResourceRouteImport } from './routes/api/public/shop/v1/$resource'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -171,6 +172,11 @@ const ApiPublicTelegramWebhookRoute =
     path: '/api/public/telegram/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicShopV1ResourceRoute = ApiPublicShopV1ResourceRouteImport.update({
+  id: '/api/public/shop/v1/$resource',
+  path: '/api/public/shop/v1/$resource',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
+  '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
+  '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
+  '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -282,6 +291,7 @@ export interface FileRouteTypes {
     | '/api/public/license/verify'
     | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
+    | '/api/public/shop/v1/$resource'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/api/public/license/verify'
     | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
+    | '/api/public/shop/v1/$resource'
   id:
     | '__root__'
     | '/'
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/api/public/license/verify'
     | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
+    | '/api/public/shop/v1/$resource'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -353,6 +365,7 @@ export interface RootRouteChildren {
   ApiPublicLicenseVerifyRoute: typeof ApiPublicLicenseVerifyRoute
   ApiPublicTelegramAvatarRoute: typeof ApiPublicTelegramAvatarRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
+  ApiPublicShopV1ResourceRoute: typeof ApiPublicShopV1ResourceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -539,6 +552,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/shop/v1/$resource': {
+      id: '/api/public/shop/v1/$resource'
+      path: '/api/public/shop/v1/$resource'
+      fullPath: '/api/public/shop/v1/$resource'
+      preLoaderRoute: typeof ApiPublicShopV1ResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -599,6 +619,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLicenseVerifyRoute: ApiPublicLicenseVerifyRoute,
   ApiPublicTelegramAvatarRoute: ApiPublicTelegramAvatarRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
+  ApiPublicShopV1ResourceRoute: ApiPublicShopV1ResourceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
