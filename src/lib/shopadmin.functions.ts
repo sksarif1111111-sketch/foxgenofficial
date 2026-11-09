@@ -1,3 +1,4 @@
+import { requireAdminPassword } from "@/lib/admin-access.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -14,7 +15,7 @@ export type BuyingSummary = {
   revenue: Array<{ currency: string; total: number }>;
 };
 
-export const shopSummary = createServerFn({ method: "POST" }).handler(async (): Promise<BuyingSummary> => {
+export const shopSummary = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async (): Promise<BuyingSummary> => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("shop_orders").select("status, currency, total, stars_total");
   const rows = data ?? [];
@@ -37,7 +38,7 @@ export const shopSummary = createServerFn({ method: "POST" }).handler(async (): 
   };
 });
 
-export const shopOrders = createServerFn({ method: "POST" })
+export const shopOrders = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -83,7 +84,7 @@ export const shopOrders = createServerFn({ method: "POST" })
     }));
   });
 
-export const shopOrderDetail = createServerFn({ method: "POST" })
+export const shopOrderDetail = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => idInput.parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -116,7 +117,7 @@ export const shopOrderDetail = createServerFn({ method: "POST" })
     };
   });
 
-export const shopApproveOrder = createServerFn({ method: "POST" })
+export const shopApproveOrder = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z.object({ id: z.string().uuid(), notes: z.string().max(600).optional(), send: z.boolean().optional() }).parse(input),
   )
@@ -162,7 +163,7 @@ export const shopApproveOrder = createServerFn({ method: "POST" })
     return { ok: true, delivery: "pending" };
   });
 
-export const shopRejectOrder = createServerFn({ method: "POST" })
+export const shopRejectOrder = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid(), reason: z.string().trim().min(3).max(600) }).parse(input))
   .handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");
@@ -191,7 +192,7 @@ export const shopRejectOrder = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const shopRequestInfo = createServerFn({ method: "POST" })
+export const shopRequestInfo = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid(), message: z.string().trim().min(3).max(600) }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -210,7 +211,7 @@ export const shopRequestInfo = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const shopAddFulfillment = createServerFn({ method: "POST" })
+export const shopAddFulfillment = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -228,7 +229,7 @@ export const shopAddFulfillment = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const shopSendDelivery = createServerFn({ method: "POST" })
+export const shopSendDelivery = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => idInput.parse(input))
   .handler(async ({ data }) => {
     const { sendFulfillmentEmail } = await import("@/lib/shop.server");
@@ -278,13 +279,13 @@ const blank = (value: string | undefined | null) => {
   return trimmed ? trimmed : null;
 };
 
-export const shopAdminProducts = createServerFn({ method: "POST" }).handler(async () => {
+export const shopAdminProducts = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("products").select("*").order("shop_order").order("created_at");
   return data ?? [];
 });
 
-export const shopSaveProduct = createServerFn({ method: "POST" })
+export const shopSaveProduct = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => productShopSchema.parse(input))
   .handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");
@@ -321,7 +322,7 @@ export const shopSaveProduct = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const shopDuplicateProduct = createServerFn({ method: "POST" })
+export const shopDuplicateProduct = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => idInput.parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -339,7 +340,7 @@ export const shopDuplicateProduct = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const shopSetProductState = createServerFn({ method: "POST" })
+export const shopSetProductState = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -360,13 +361,13 @@ export const shopSetProductState = createServerFn({ method: "POST" })
 
 /* --------------------------- Payment methods ------------------------------ */
 
-export const shopPaymentMethods = createServerFn({ method: "POST" }).handler(async () => {
+export const shopPaymentMethods = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("payment_methods").select("*").order("display_order");
   return data ?? [];
 });
 
-export const shopSavePaymentMethod = createServerFn({ method: "POST" })
+export const shopSavePaymentMethod = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -409,14 +410,14 @@ export const shopSavePaymentMethod = createServerFn({ method: "POST" })
 
 /* --------------------- AI fulfillment email draft (admin) ------------------ */
 
-export const shopDraftEmail = createServerFn({ method: "POST" })
+export const shopDraftEmail = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => idInput.parse(input))
   .handler(async ({ data }) => {
     const { draftFulfillmentEmail } = await import("@/lib/shop.server");
     return await draftFulfillmentEmail(data.id);
   });
 
-export const shopSaveEmailDraft = createServerFn({ method: "POST" })
+export const shopSaveEmailDraft = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -431,7 +432,7 @@ export const shopSaveEmailDraft = createServerFn({ method: "POST" })
     return await saveFulfillmentEmailDraft(data.id, data.subject, data.body);
   });
 
-export const shopWalletAccounts = createServerFn({ method: "POST" })
+export const shopWalletAccounts = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ search: z.string().trim().max(120).optional() }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -462,7 +463,7 @@ export const shopWalletAccounts = createServerFn({ method: "POST" })
     }));
   });
 
-export const shopWalletTopUp = createServerFn({ method: "POST" })
+export const shopWalletTopUp = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({

@@ -1,5 +1,7 @@
+import { adminAccessStatus } from "@/lib/admin-access.functions";
+import { AdminSessionBar } from "@/components/admin/admin-session-bar";
 import { useCallback, useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   adminAdjustCredits,
@@ -35,6 +37,10 @@ import { ActivityPanel, CatalogPanel, ProductFilesPanel, ProductsPanel } from "@
 import { BuyingPanel, ShopProductsPanel, WalletPanel } from "@/components/admin/shop-panels";
 
 export const Route = createFileRoute("/hub-admin")({
+  beforeLoad: async () => {
+    const status = await adminAccessStatus();
+    if (!status.unlocked) throw redirect({ to: "/admin-access", search: { redirect: "/hub-admin" } });
+  },
   head: () => ({
     meta: [
       { title: "Rewards Hub Admin — FoxGEN PRO" },
@@ -48,7 +54,7 @@ export const Route = createFileRoute("/hub-admin")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: HubAdmin,
+  component: () => <><AdminSessionBar /><HubAdmin /></>,
 });
 
 const SECTIONS = [

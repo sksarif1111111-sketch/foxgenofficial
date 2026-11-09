@@ -1,3 +1,4 @@
+import { requireAdminPassword } from "@/lib/admin-access.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -35,7 +36,7 @@ function makeKey(name?: string) {
   return `${cleanPrefix(name)}-${block(3)}-${block(3)}`;
 }
 
-export const listLicenses = createServerFn({ method: "POST" }).handler(async (): Promise<LicenseRow[]> => {
+export const listLicenses = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async (): Promise<LicenseRow[]> => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("licenses")
@@ -45,7 +46,7 @@ export const listLicenses = createServerFn({ method: "POST" }).handler(async ():
   return (data ?? []) as LicenseRow[];
 });
 
-export const generateLicense = createServerFn({ method: "POST" })
+export const generateLicense = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -74,7 +75,7 @@ export const generateLicense = createServerFn({ method: "POST" })
     throw new Error("Could not generate a license key. Please try again.");
   });
 
-export const setLicenseStatus = createServerFn({ method: "POST" })
+export const setLicenseStatus = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z.object({ id: z.string().uuid(), status: z.enum(["active", "blocked"]) }).parse(input),
   )
@@ -84,7 +85,7 @@ export const setLicenseStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const deleteLicense = createServerFn({ method: "POST" })
+export const deleteLicense = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }): Promise<{ ok: true }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

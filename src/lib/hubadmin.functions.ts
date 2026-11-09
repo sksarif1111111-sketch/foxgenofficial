@@ -1,3 +1,4 @@
+import { requireAdminPassword } from "@/lib/admin-access.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -17,7 +18,7 @@ export type AdminOverview = {
   generatedByDuration: Array<{ duration_days: number; total: number }>;
 };
 
-export const adminOverview = createServerFn({ method: "POST" }).handler(async (): Promise<AdminOverview> => {
+export const adminOverview = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async (): Promise<AdminOverview> => {
   const { db } = await import("@/lib/hub.server");
   const [profiles, refs, txs, redemptions] = await Promise.all([
     db.from("profiles").select("status, created_at"),
@@ -50,7 +51,7 @@ export const adminOverview = createServerFn({ method: "POST" }).handler(async ()
   };
 });
 
-export const adminUsers = createServerFn({ method: "POST" })
+export const adminUsers = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ search: z.string().max(100).optional() }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -67,7 +68,7 @@ export const adminUsers = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
-export const adminSetUserStatus = createServerFn({ method: "POST" })
+export const adminSetUserStatus = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({ id: z.string().uuid(), status: z.enum(["pending", "active", "banned", "suspicious"]) })
@@ -79,7 +80,7 @@ export const adminSetUserStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminAdjustCredits = createServerFn({ method: "POST" })
+export const adminAdjustCredits = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -116,13 +117,13 @@ export const adminAdjustCredits = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminRewards = createServerFn({ method: "POST" }).handler(async () => {
+export const adminRewards = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("rewards").select("*").order("display_order");
   return data ?? [];
 });
 
-export const adminSaveReward = createServerFn({ method: "POST" })
+export const adminSaveReward = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -166,7 +167,7 @@ export const adminSaveReward = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminDeleteReward = createServerFn({ method: "POST" })
+export const adminDeleteReward = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -175,13 +176,13 @@ export const adminDeleteReward = createServerFn({ method: "POST" })
   });
 
 
-export const adminTasks = createServerFn({ method: "POST" }).handler(async () => {
+export const adminTasks = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("social_tasks").select("*").order("display_order");
   return data ?? [];
 });
 
-export const adminSaveTask = createServerFn({ method: "POST" })
+export const adminSaveTask = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -215,7 +216,7 @@ export const adminSaveTask = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminDeleteTask = createServerFn({ method: "POST" })
+export const adminDeleteTask = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -224,7 +225,7 @@ export const adminDeleteTask = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminTestTelegramChannels = createServerFn({ method: "POST" }).handler(async () => {
+export const adminTestTelegramChannels = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { activeTasks, normalizeTelegramChat, tg } = await import("@/lib/hub.server");
   const me = await tg<{ id: number; username?: string }>("getMe");
   if (!me.ok || !me.result) {
@@ -253,7 +254,7 @@ export const adminTestTelegramChannels = createServerFn({ method: "POST" }).hand
   return { botOk: true, botUsername: me.result.username ?? null, channels, error: null };
 });
 
-export const adminResetUserTasks = createServerFn({ method: "POST" })
+export const adminResetUserTasks = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -263,7 +264,7 @@ export const adminResetUserTasks = createServerFn({ method: "POST" })
   });
 
 
-export const adminRedemptions = createServerFn({ method: "POST" }).handler(async () => {
+export const adminRedemptions = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db
     .from("license_redemptions")
@@ -273,12 +274,12 @@ export const adminRedemptions = createServerFn({ method: "POST" }).handler(async
   return data ?? [];
 });
 
-export const adminSettings = createServerFn({ method: "POST" }).handler(async () => {
+export const adminSettings = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { getSettings } = await import("@/lib/hub.server");
   return await getSettings();
 });
 
-export const adminSaveSettings = createServerFn({ method: "POST" })
+export const adminSaveSettings = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ values: z.record(z.string(), z.string()) }).parse(input))
   .handler(async ({ data }) => {
     const { setSetting } = await import("@/lib/hub.server");
@@ -286,7 +287,7 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminLogs = createServerFn({ method: "POST" })
+export const adminLogs = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z.object({ category: z.string().max(40).optional() }).parse(input ?? {}),
   )
@@ -302,13 +303,13 @@ export const adminLogs = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
-export const adminClearLogs = createServerFn({ method: "POST" }).handler(async () => {
+export const adminClearLogs = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   await db.from("bot_error_logs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   return { ok: true };
 });
 
-export const adminBotStatus = createServerFn({ method: "POST" }).handler(async () => {
+export const adminBotStatus = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
 
   const { tg, setSetting } = await import("@/lib/hub.server");
   try {
@@ -333,7 +334,7 @@ export const adminBotStatus = createServerFn({ method: "POST" }).handler(async (
   }
 });
 
-export const adminSetWebhook = createServerFn({ method: "POST" })
+export const adminSetWebhook = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ baseUrl: z.string().trim().url() }).parse(input))
   .handler(async ({ data }) => {
     const { tg, webhookSecret, setSetting } = await import("@/lib/hub.server");
@@ -348,7 +349,7 @@ export const adminSetWebhook = createServerFn({ method: "POST" })
     return { ok: Boolean(res.ok), url, description: res.description ?? "" };
   });
 
-export const adminBroadcast = createServerFn({ method: "POST" })
+export const adminBroadcast = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ message: z.string().trim().min(1).max(3000) }).parse(input))
   .handler(async ({ data }) => {
     const { db, tg } = await import("@/lib/hub.server");
@@ -366,7 +367,7 @@ export const adminBroadcast = createServerFn({ method: "POST" })
     return { sent, total: (rows ?? []).length };
   });
 
-export const adminReferrals = createServerFn({ method: "POST" })
+export const adminReferrals = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z.object({ search: z.string().max(100).optional(), status: z.enum(["all", "pending", "verified", "rejected", "suspicious"]).optional() }).parse(input),
   )
@@ -392,7 +393,7 @@ export const adminReferrals = createServerFn({ method: "POST" })
   return filtered.filter((row) => flagged.has(row.referred_user_id));
 });
 
-export const adminApproveReferral = createServerFn({ method: "POST" })
+export const adminApproveReferral = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db, notifyReferralReward } = await import("@/lib/hub.server");
@@ -405,7 +406,7 @@ export const adminApproveReferral = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminRejectReferral = createServerFn({ method: "POST" })
+export const adminRejectReferral = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -416,7 +417,7 @@ export const adminRejectReferral = createServerFn({ method: "POST" })
   });
 
 /** Every configured reward duration, for dynamic reward controls. */
-export const adminLicenseDurations = createServerFn({ method: "POST" }).handler(async () => {
+export const adminLicenseDurations = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data: rewards } = await db.from("rewards").select("duration_days");
   const set = new Set<number>();
@@ -425,13 +426,13 @@ export const adminLicenseDurations = createServerFn({ method: "POST" }).handler(
 });
 
 // ---------- Extension Instructions (setup & usage guide shown in the bot) ----------
-export const adminGuidePages = createServerFn({ method: "POST" }).handler(async () => {
+export const adminGuidePages = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("extension_guide_pages").select("*").order("display_order");
   return data ?? [];
 });
 
-export const adminSaveGuidePage = createServerFn({ method: "POST" })
+export const adminSaveGuidePage = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -456,7 +457,7 @@ export const adminSaveGuidePage = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const adminDeleteGuidePage = createServerFn({ method: "POST" })
+export const adminDeleteGuidePage = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");

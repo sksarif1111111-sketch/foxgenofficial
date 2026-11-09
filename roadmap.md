@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Configure Admin password, protect Admin pages and all their server actions, and verify login/logout (wrong password, correct password, refresh and both protected pages checked).
+
 - [x] Deliver a clean complete source ZIP containing the CRM before removing its pages.
 - [x] Remove only CRM pages and entry links; preserve stored data, Store, Bot and export API, then verify.
 
