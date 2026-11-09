@@ -30,6 +30,7 @@ export function SiteNav({ right }: { right?: ReactNode }) {
         </nav>
         <div className="flex items-center gap-2">
           {right}
+          <Link to="/admin-access" search={{ redirect: "/hub-admin" }} className="text-xs font-semibold text-muted-foreground hover:text-foreground">Admin access</Link>
         </div>
       </div>
     </header>

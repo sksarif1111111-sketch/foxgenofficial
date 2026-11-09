@@ -1,3 +1,4 @@
+import { requireAdminPassword } from "@/lib/admin-access.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -36,13 +37,13 @@ const emptyToNull = (value: string | null | undefined) => {
   return trimmed ? trimmed : null;
 };
 
-export const catalogProducts = createServerFn({ method: "POST" }).handler(async () => {
+export const catalogProducts = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("products").select("*").order("display_order").order("created_at");
   return data ?? [];
 });
 
-export const catalogSaveProduct = createServerFn({ method: "POST" })
+export const catalogSaveProduct = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => productSchema.parse(input))
   .handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");
@@ -73,7 +74,7 @@ export const catalogSaveProduct = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const catalogDeleteProduct = createServerFn({ method: "POST" })
+export const catalogDeleteProduct = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");
@@ -84,13 +85,13 @@ export const catalogDeleteProduct = createServerFn({ method: "POST" })
 
 /* ------------------------------- Categories -------------------------------- */
 
-export const catalogCategories = createServerFn({ method: "POST" }).handler(async () => {
+export const catalogCategories = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("product_categories").select("*").order("display_order");
   return data ?? [];
 });
 
-export const catalogSaveCategory = createServerFn({ method: "POST" })
+export const catalogSaveCategory = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -115,7 +116,7 @@ export const catalogSaveCategory = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const catalogDeleteCategory = createServerFn({ method: "POST" })
+export const catalogDeleteCategory = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -125,13 +126,13 @@ export const catalogDeleteCategory = createServerFn({ method: "POST" })
 
 /* ------------------------------- Communities -------------------------------- */
 
-export const catalogCommunities = createServerFn({ method: "POST" }).handler(async () => {
+export const catalogCommunities = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("communities").select("*").order("display_order");
   return data ?? [];
 });
 
-export const catalogSaveCommunity = createServerFn({ method: "POST" })
+export const catalogSaveCommunity = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -163,7 +164,7 @@ export const catalogSaveCommunity = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const catalogDeleteCommunity = createServerFn({ method: "POST" })
+export const catalogDeleteCommunity = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -173,13 +174,13 @@ export const catalogDeleteCommunity = createServerFn({ method: "POST" })
 
 /* ----------------------------- Payment methods ------------------------------ */
 
-export const catalogPaymentMethods = createServerFn({ method: "POST" }).handler(async () => {
+export const catalogPaymentMethods = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("payment_methods").select("*").order("display_order");
   return data ?? [];
 });
 
-export const catalogSavePaymentMethod = createServerFn({ method: "POST" })
+export const catalogSavePaymentMethod = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -205,7 +206,7 @@ export const catalogSavePaymentMethod = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const catalogDeletePaymentMethod = createServerFn({ method: "POST" })
+export const catalogDeletePaymentMethod = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
@@ -215,7 +216,7 @@ export const catalogDeletePaymentMethod = createServerFn({ method: "POST" })
 
 /* ------------------------------ Activity logs ------------------------------- */
 
-export const catalogActivity = createServerFn({ method: "POST" })
+export const catalogActivity = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -244,7 +245,7 @@ export const catalogActivity = createServerFn({ method: "POST" })
     return (rows ?? []).filter((row) => JSON.stringify(row).toLowerCase().includes(search));
   });
 
-export const catalogClearActivity = createServerFn({ method: "POST" }).handler(async () => {
+export const catalogClearActivity = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   await db.from("activity_logs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   return { ok: true };
@@ -263,13 +264,13 @@ const productFileSchema = z.object({
   display_order: z.number().int().min(0).max(9999),
 });
 
-export const catalogProductFiles = createServerFn({ method: "POST" }).handler(async () => {
+export const catalogProductFiles = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
   const { db } = await import("@/lib/hub.server");
   const { data } = await db.from("product_files").select("*").order("display_order").order("created_at");
   return data ?? [];
 });
 
-export const catalogSaveProductFile = createServerFn({ method: "POST" })
+export const catalogSaveProductFile = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => productFileSchema.parse(input))
   .handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");
@@ -287,7 +288,7 @@ export const catalogSaveProductFile = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const catalogDeleteProductFile = createServerFn({ method: "POST" })
+export const catalogDeleteProductFile = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");

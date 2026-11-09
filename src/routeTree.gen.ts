@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdminAccessRouteImport } from './routes/admin-access'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ExtensionRouteImport } from './routes/extension'
 import { Route as HubRouteImport } from './routes/hub'
@@ -32,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAccessRoute = AdminAccessRouteImport.update({
+  id: '/admin-access',
+  path: '/admin-access',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -99,6 +105,7 @@ const ApiPublicShopV1ResourceRoute = ApiPublicShopV1ResourceRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/admin-access'
     | '/auth'
     | '/extension'
     | '/hub'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/admin-access'
     | '/auth'
     | '/extension'
     | '/hub'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/admin-access'
     | '/auth'
     | '/extension'
     | '/hub'
@@ -199,6 +211,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AdminAccessRoute: typeof AdminAccessRoute
   AuthRoute: typeof AuthRoute
   ExtensionRoute: typeof ExtensionRoute
   HubRoute: typeof HubRoute
@@ -227,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-access': {
+      id: '/admin-access'
+      path: '/admin-access'
+      fullPath: '/admin-access'
+      preLoaderRoute: typeof AdminAccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -319,6 +339,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AdminAccessRoute: AdminAccessRoute,
   AuthRoute: AuthRoute,
   ExtensionRoute: ExtensionRoute,
   HubRoute: HubRoute,
