@@ -34,22 +34,25 @@ import { ProductLogo } from "@/components/site/product-logo";
 import { PriceTag, ProductCard, StockPill } from "@/components/site/product-card";
 import { MORE_CATEGORY, STORE_CATEGORIES, categoryLabel, categoryOf } from "@/lib/store-categories";
 
-type ShopSearch = { product?: string; category?: string };
+type ShopSearch = { product?: string; category?: string; q?: string; buy?: boolean; view?: "orders" };
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (s: Record<string, unknown>): ShopSearch => ({
     product: typeof s.product === "string" ? s.product : undefined,
     category: typeof s.category === "string" ? s.category : undefined,
+    q: typeof s.q === "string" && s.q.trim() ? s.q.trim().slice(0, 80) : undefined,
+    buy: s.buy === true || s.buy === "1" || s.buy === 1 ? true : undefined,
+    view: s.view === "orders" ? "orders" : undefined,
   }),
   head: () => ({
     meta: [
-      { title: "Store — FOXGEN OFFICIAL Software Marketplace" },
+      { title: "Shop — Foxgen AI Store" },
       {
         name: "description",
         content:
-          "Browse every FOXGEN OFFICIAL product: AI assistants, builder tools, Office and creator software. Pay with USDT, Binance or UPI; access arrives by email after review.",
+          "Browse every Foxgen AI Store product: AI assistants, builder tools, Office and creator software. Pay with USDT, Binance or UPI; access arrives by email after review.",
       },
-      { property: "og:title", content: "Store — FOXGEN OFFICIAL" },
+      { property: "og:title", content: "Shop — Foxgen AI Store" },
       { property: "og:description", content: "Premium software and AI tools with owner-reviewed payments and email delivery." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -185,7 +188,10 @@ function ShopPage() {
   const [wallet, setWallet] = useState<{ balance: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(search.q ?? "");
+  useEffect(() => {
+    setQuery(search.q ?? "");
+  }, [search.q]);
   const [sort, setSort] = useState<keyof typeof SORTS>("recommended");
   const category = search.category ?? "all";
 
@@ -209,9 +215,13 @@ function ShopPage() {
     if (match) {
       setProduct(match);
       setQuantity(1);
-      setStep("detail");
+      setStep(search.buy && match.purchasable ? "quantity" : "detail");
     }
-  }, [catalog, search.product]);
+  }, [catalog, search.product, search.buy]);
+
+  useEffect(() => {
+    if (search.view === "orders") setStep("orders");
+  }, [search.view]);
 
   const refreshOrders = useCallback(async () => {
     if (!token) return;
@@ -490,7 +500,7 @@ function ShopPage() {
             ) : (
               <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {visible.map((item) => (
-                  <ProductCard key={item.id} product={item} onOpen={() => openProduct(item)} />
+                  <ProductCard key={item.id} product={item} />
                 ))}
               </div>
             )}
