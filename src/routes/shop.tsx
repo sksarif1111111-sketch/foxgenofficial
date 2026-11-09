@@ -501,7 +501,7 @@ function ShopPage() {
         {step === "detail" && product && (
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.25fr_1fr]">
             <div className="space-y-6">
-              <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-3xl border border-border bg-muted">
+              <div className="relative hidden aspect-[16/10] items-center justify-center overflow-hidden rounded-3xl border border-border bg-muted sm:flex">
                 {product.image_url ? (
                   <img src={product.image_url} alt={`${product.name} product image`} className="absolute inset-0 h-full w-full object-cover" />
                 ) : (
@@ -528,7 +528,7 @@ function ShopPage() {
                 </Panel>
               )}
             </div>
-            <aside className="lg:sticky lg:top-24 lg:self-start">
+            <aside className="order-first lg:order-none lg:sticky lg:top-24 lg:self-start">
               <Panel>
                 <div className="flex items-center justify-between gap-3">
                   <span className="eyebrow text-muted-foreground">{categoryLabel(categoryOf(product.name))}</span>
