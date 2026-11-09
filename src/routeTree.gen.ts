@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ExtensionRouteImport } from './routes/extension'
@@ -18,18 +17,6 @@ import { Route as HubRouteImport } from './routes/hub'
 import { Route as HubAdminRouteImport } from './routes/hub-admin'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ShopRouteImport } from './routes/shop'
-import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
-import { Route as AuthenticatedCrmIndexRouteImport } from './routes/_authenticated/crm.index'
-import { Route as AuthenticatedCrmBotRouteImport } from './routes/_authenticated/crm.bot'
-import { Route as AuthenticatedCrmCustomersRouteImport } from './routes/_authenticated/crm.customers'
-import { Route as AuthenticatedCrmExpensesRouteImport } from './routes/_authenticated/crm.expenses'
-import { Route as AuthenticatedCrmInventoryRouteImport } from './routes/_authenticated/crm.inventory'
-import { Route as AuthenticatedCrmOrdersRouteImport } from './routes/_authenticated/crm.orders'
-import { Route as AuthenticatedCrmPaymentsRouteImport } from './routes/_authenticated/crm.payments'
-import { Route as AuthenticatedCrmProductsRouteImport } from './routes/_authenticated/crm.products'
-import { Route as AuthenticatedCrmRefundsRouteImport } from './routes/_authenticated/crm.refunds'
-import { Route as AuthenticatedCrmReportsRouteImport } from './routes/_authenticated/crm.reports'
-import { Route as AuthenticatedCrmSaleRouteImport } from './routes/_authenticated/crm.sale'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/license/issue'
 import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
@@ -40,10 +27,6 @@ import { Route as ApiPublicShopV1ResourceRouteImport } from './routes/api/public
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -80,71 +63,6 @@ const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
-  id: '/crm',
-  path: '/crm',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCrmIndexRoute = AuthenticatedCrmIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedCrmRoute,
-} as any)
-const AuthenticatedCrmBotRoute = AuthenticatedCrmBotRouteImport.update({
-  id: '/bot',
-  path: '/bot',
-  getParentRoute: () => AuthenticatedCrmRoute,
-} as any)
-const AuthenticatedCrmCustomersRoute =
-  AuthenticatedCrmCustomersRouteImport.update({
-    id: '/customers',
-    path: '/customers',
-    getParentRoute: () => AuthenticatedCrmRoute,
-  } as any)
-const AuthenticatedCrmExpensesRoute =
-  AuthenticatedCrmExpensesRouteImport.update({
-    id: '/expenses',
-    path: '/expenses',
-    getParentRoute: () => AuthenticatedCrmRoute,
-  } as any)
-const AuthenticatedCrmInventoryRoute =
-  AuthenticatedCrmInventoryRouteImport.update({
-    id: '/inventory',
-    path: '/inventory',
-    getParentRoute: () => AuthenticatedCrmRoute,
-  } as any)
-const AuthenticatedCrmOrdersRoute = AuthenticatedCrmOrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => AuthenticatedCrmRoute,
-} as any)
-const AuthenticatedCrmPaymentsRoute =
-  AuthenticatedCrmPaymentsRouteImport.update({
-    id: '/payments',
-    path: '/payments',
-    getParentRoute: () => AuthenticatedCrmRoute,
-  } as any)
-const AuthenticatedCrmProductsRoute =
-  AuthenticatedCrmProductsRouteImport.update({
-    id: '/products',
-    path: '/products',
-    getParentRoute: () => AuthenticatedCrmRoute,
-  } as any)
-const AuthenticatedCrmRefundsRoute = AuthenticatedCrmRefundsRouteImport.update({
-  id: '/refunds',
-  path: '/refunds',
-  getParentRoute: () => AuthenticatedCrmRoute,
-} as any)
-const AuthenticatedCrmReportsRoute = AuthenticatedCrmReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AuthenticatedCrmRoute,
-} as any)
-const AuthenticatedCrmSaleRoute = AuthenticatedCrmSaleRouteImport.update({
-  id: '/sale',
-  path: '/sale',
-  getParentRoute: () => AuthenticatedCrmRoute,
 } as any)
 const ApiPublicExtCoreRoute = ApiPublicExtCoreRouteImport.update({
   id: '/api/public/ext/core',
@@ -187,18 +105,6 @@ export interface FileRoutesByFullPath {
   '/hub-admin': typeof HubAdminRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
-  '/crm': typeof AuthenticatedCrmRouteWithChildren
-  '/crm/bot': typeof AuthenticatedCrmBotRoute
-  '/crm/customers': typeof AuthenticatedCrmCustomersRoute
-  '/crm/expenses': typeof AuthenticatedCrmExpensesRoute
-  '/crm/inventory': typeof AuthenticatedCrmInventoryRoute
-  '/crm/orders': typeof AuthenticatedCrmOrdersRoute
-  '/crm/payments': typeof AuthenticatedCrmPaymentsRoute
-  '/crm/products': typeof AuthenticatedCrmProductsRoute
-  '/crm/refunds': typeof AuthenticatedCrmRefundsRoute
-  '/crm/reports': typeof AuthenticatedCrmReportsRoute
-  '/crm/sale': typeof AuthenticatedCrmSaleRoute
-  '/crm/': typeof AuthenticatedCrmIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
@@ -215,17 +121,6 @@ export interface FileRoutesByTo {
   '/hub-admin': typeof HubAdminRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
-  '/crm/bot': typeof AuthenticatedCrmBotRoute
-  '/crm/customers': typeof AuthenticatedCrmCustomersRoute
-  '/crm/expenses': typeof AuthenticatedCrmExpensesRoute
-  '/crm/inventory': typeof AuthenticatedCrmInventoryRoute
-  '/crm/orders': typeof AuthenticatedCrmOrdersRoute
-  '/crm/payments': typeof AuthenticatedCrmPaymentsRoute
-  '/crm/products': typeof AuthenticatedCrmProductsRoute
-  '/crm/refunds': typeof AuthenticatedCrmRefundsRoute
-  '/crm/reports': typeof AuthenticatedCrmReportsRoute
-  '/crm/sale': typeof AuthenticatedCrmSaleRoute
-  '/crm': typeof AuthenticatedCrmIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
@@ -236,7 +131,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/extension': typeof ExtensionRoute
@@ -244,18 +138,6 @@ export interface FileRoutesById {
   '/hub-admin': typeof HubAdminRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
-  '/_authenticated/crm': typeof AuthenticatedCrmRouteWithChildren
-  '/_authenticated/crm/bot': typeof AuthenticatedCrmBotRoute
-  '/_authenticated/crm/customers': typeof AuthenticatedCrmCustomersRoute
-  '/_authenticated/crm/expenses': typeof AuthenticatedCrmExpensesRoute
-  '/_authenticated/crm/inventory': typeof AuthenticatedCrmInventoryRoute
-  '/_authenticated/crm/orders': typeof AuthenticatedCrmOrdersRoute
-  '/_authenticated/crm/payments': typeof AuthenticatedCrmPaymentsRoute
-  '/_authenticated/crm/products': typeof AuthenticatedCrmProductsRoute
-  '/_authenticated/crm/refunds': typeof AuthenticatedCrmRefundsRoute
-  '/_authenticated/crm/reports': typeof AuthenticatedCrmReportsRoute
-  '/_authenticated/crm/sale': typeof AuthenticatedCrmSaleRoute
-  '/_authenticated/crm/': typeof AuthenticatedCrmIndexRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
@@ -274,18 +156,6 @@ export interface FileRouteTypes {
     | '/hub-admin'
     | '/reset-password'
     | '/shop'
-    | '/crm'
-    | '/crm/bot'
-    | '/crm/customers'
-    | '/crm/expenses'
-    | '/crm/inventory'
-    | '/crm/orders'
-    | '/crm/payments'
-    | '/crm/products'
-    | '/crm/refunds'
-    | '/crm/reports'
-    | '/crm/sale'
-    | '/crm/'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
@@ -302,17 +172,6 @@ export interface FileRouteTypes {
     | '/hub-admin'
     | '/reset-password'
     | '/shop'
-    | '/crm/bot'
-    | '/crm/customers'
-    | '/crm/expenses'
-    | '/crm/inventory'
-    | '/crm/orders'
-    | '/crm/payments'
-    | '/crm/products'
-    | '/crm/refunds'
-    | '/crm/reports'
-    | '/crm/sale'
-    | '/crm'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
@@ -322,7 +181,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/_authenticated'
     | '/admin'
     | '/auth'
     | '/extension'
@@ -330,18 +188,6 @@ export interface FileRouteTypes {
     | '/hub-admin'
     | '/reset-password'
     | '/shop'
-    | '/_authenticated/crm'
-    | '/_authenticated/crm/bot'
-    | '/_authenticated/crm/customers'
-    | '/_authenticated/crm/expenses'
-    | '/_authenticated/crm/inventory'
-    | '/_authenticated/crm/orders'
-    | '/_authenticated/crm/payments'
-    | '/_authenticated/crm/products'
-    | '/_authenticated/crm/refunds'
-    | '/_authenticated/crm/reports'
-    | '/_authenticated/crm/sale'
-    | '/_authenticated/crm/'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
@@ -352,7 +198,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   ExtensionRoute: typeof ExtensionRoute
@@ -375,13 +220,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -433,90 +271,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/crm': {
-      id: '/_authenticated/crm'
-      path: '/crm'
-      fullPath: '/crm'
-      preLoaderRoute: typeof AuthenticatedCrmRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/crm/': {
-      id: '/_authenticated/crm/'
-      path: '/'
-      fullPath: '/crm/'
-      preLoaderRoute: typeof AuthenticatedCrmIndexRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
-    '/_authenticated/crm/bot': {
-      id: '/_authenticated/crm/bot'
-      path: '/bot'
-      fullPath: '/crm/bot'
-      preLoaderRoute: typeof AuthenticatedCrmBotRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
-    '/_authenticated/crm/customers': {
-      id: '/_authenticated/crm/customers'
-      path: '/customers'
-      fullPath: '/crm/customers'
-      preLoaderRoute: typeof AuthenticatedCrmCustomersRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
-    '/_authenticated/crm/expenses': {
-      id: '/_authenticated/crm/expenses'
-      path: '/expenses'
-      fullPath: '/crm/expenses'
-      preLoaderRoute: typeof AuthenticatedCrmExpensesRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
-    '/_authenticated/crm/inventory': {
-      id: '/_authenticated/crm/inventory'
-      path: '/inventory'
-      fullPath: '/crm/inventory'
-      preLoaderRoute: typeof AuthenticatedCrmInventoryRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
-    '/_authenticated/crm/orders': {
-      id: '/_authenticated/crm/orders'
-      path: '/orders'
-      fullPath: '/crm/orders'
-      preLoaderRoute: typeof AuthenticatedCrmOrdersRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
-    '/_authenticated/crm/payments': {
-      id: '/_authenticated/crm/payments'
-      path: '/payments'
-      fullPath: '/crm/payments'
-      preLoaderRoute: typeof AuthenticatedCrmPaymentsRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
-    '/_authenticated/crm/products': {
-      id: '/_authenticated/crm/products'
-      path: '/products'
-      fullPath: '/crm/products'
-      preLoaderRoute: typeof AuthenticatedCrmProductsRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
-    '/_authenticated/crm/refunds': {
-      id: '/_authenticated/crm/refunds'
-      path: '/refunds'
-      fullPath: '/crm/refunds'
-      preLoaderRoute: typeof AuthenticatedCrmRefundsRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
-    '/_authenticated/crm/reports': {
-      id: '/_authenticated/crm/reports'
-      path: '/reports'
-      fullPath: '/crm/reports'
-      preLoaderRoute: typeof AuthenticatedCrmReportsRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
-    '/_authenticated/crm/sale': {
-      id: '/_authenticated/crm/sale'
-      path: '/sale'
-      fullPath: '/crm/sale'
-      preLoaderRoute: typeof AuthenticatedCrmSaleRouteImport
-      parentRoute: typeof AuthenticatedCrmRoute
-    }
     '/api/public/ext/core': {
       id: '/api/public/ext/core'
       path: '/api/public/ext/core'
@@ -562,51 +316,8 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedCrmRouteChildren {
-  AuthenticatedCrmBotRoute: typeof AuthenticatedCrmBotRoute
-  AuthenticatedCrmCustomersRoute: typeof AuthenticatedCrmCustomersRoute
-  AuthenticatedCrmExpensesRoute: typeof AuthenticatedCrmExpensesRoute
-  AuthenticatedCrmInventoryRoute: typeof AuthenticatedCrmInventoryRoute
-  AuthenticatedCrmOrdersRoute: typeof AuthenticatedCrmOrdersRoute
-  AuthenticatedCrmPaymentsRoute: typeof AuthenticatedCrmPaymentsRoute
-  AuthenticatedCrmProductsRoute: typeof AuthenticatedCrmProductsRoute
-  AuthenticatedCrmRefundsRoute: typeof AuthenticatedCrmRefundsRoute
-  AuthenticatedCrmReportsRoute: typeof AuthenticatedCrmReportsRoute
-  AuthenticatedCrmSaleRoute: typeof AuthenticatedCrmSaleRoute
-  AuthenticatedCrmIndexRoute: typeof AuthenticatedCrmIndexRoute
-}
-
-const AuthenticatedCrmRouteChildren: AuthenticatedCrmRouteChildren = {
-  AuthenticatedCrmBotRoute: AuthenticatedCrmBotRoute,
-  AuthenticatedCrmCustomersRoute: AuthenticatedCrmCustomersRoute,
-  AuthenticatedCrmExpensesRoute: AuthenticatedCrmExpensesRoute,
-  AuthenticatedCrmInventoryRoute: AuthenticatedCrmInventoryRoute,
-  AuthenticatedCrmOrdersRoute: AuthenticatedCrmOrdersRoute,
-  AuthenticatedCrmPaymentsRoute: AuthenticatedCrmPaymentsRoute,
-  AuthenticatedCrmProductsRoute: AuthenticatedCrmProductsRoute,
-  AuthenticatedCrmRefundsRoute: AuthenticatedCrmRefundsRoute,
-  AuthenticatedCrmReportsRoute: AuthenticatedCrmReportsRoute,
-  AuthenticatedCrmSaleRoute: AuthenticatedCrmSaleRoute,
-  AuthenticatedCrmIndexRoute: AuthenticatedCrmIndexRoute,
-}
-
-const AuthenticatedCrmRouteWithChildren =
-  AuthenticatedCrmRoute._addFileChildren(AuthenticatedCrmRouteChildren)
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedCrmRoute: typeof AuthenticatedCrmRouteWithChildren
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedCrmRoute: AuthenticatedCrmRouteWithChildren,
-}
-
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   ExtensionRoute: ExtensionRoute,
