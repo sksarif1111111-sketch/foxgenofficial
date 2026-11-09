@@ -1,160 +1,186 @@
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Menu, Search, Shield, Sparkles, UserRound } from "lucide-react";
-import { useState, type FormEvent, type ReactNode } from "react";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Link, useLocation } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
+import { ShoppingBagOpen, Sparkle, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import { AdminAccessDialog } from "@/components/admin/admin-access-form";
 import { BRAND } from "@/lib/brand";
 
 const LINKS = [
   { to: "/", label: "Home" },
-  { to: "/shop", label: "Shop" },
-  { to: "/offers", label: "Latest Offers" },
-  { to: "/hub", label: "Free Rewards" },
+  { to: "/shop", label: "Explore offers" },
+  { to: "/hub", label: "Free rewards" },
   { to: "/tutorials", label: "Tutorials" },
   { to: "/support", label: "Support" },
 ] as const;
 
+const MORE = [
+  { to: "/offers", label: "Latest offers" },
+  { to: "/account", label: "My account" },
+  { to: "/extension", label: "FoxGEN Pro extension" },
+  { to: "/chat", label: "Ask Foxgen AI" },
+] as const;
+
+const ease = "ease-[cubic-bezier(0.22,1,0.36,1)]";
+
 export function BrandMark({ compact = false, tone = "default" }: { compact?: boolean; tone?: "default" | "inverse" }) {
   return (
-    <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label={`${BRAND.name} home`}>
-      <img src={BRAND.mark} alt="" width={36} height={36} className="size-9 rounded-[10px] bg-ink object-cover ring-1 ring-border" />
+    <Link to="/" className="flex shrink-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${BRAND.name} home`}>
+      <img src={BRAND.mark} alt="" width={32} height={32} className="size-8 rounded-lg bg-ink object-cover" />
       {!compact && (
-        <span className="flex flex-col leading-none">
-          <span className="font-display text-[15px] font-bold tracking-tight">{BRAND.short}</span>
-          <span className={`eyebrow mt-1 text-[9px] ${tone === "inverse" ? "text-muted-foreground" : "text-primary"}`}>{BRAND.suffix}</span>
+        <span className="flex flex-col">
+          <span className="title-4 font-semibold tracking-tight">{BRAND.short}</span>
+          <span className={`caption-5 ${tone === "inverse" ? "text-muted-foreground" : "text-muted-foreground"}`}>{BRAND.suffix}</span>
         </span>
       )}
     </Link>
   );
 }
 
-function NavSearch({ onDone, className = "" }: { onDone?: () => void; className?: string }) {
-  const navigate = useNavigate();
-  const [q, setQ] = useState("");
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    const term = q.trim();
-    void navigate({ to: "/shop", search: term ? { q: term } : {} });
-    onDone?.();
-  };
+/** Primary call to action used everywhere: jumps to the live offers on Home. */
+export function BuyNowLink({ className = "", children = "Buy now", onClick }: { className?: string; children?: ReactNode; onClick?: () => void }) {
   return (
-    <form role="search" onSubmit={submit} className={`relative ${className}`}>
-      <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search products"
-        aria-label="Search products"
-        maxLength={80}
-        className="h-10 w-full rounded-full border border-input bg-muted/60 pl-9 pr-3 text-sm outline-none transition focus:border-primary focus:bg-card focus:ring-2 focus:ring-ring/15"
-      />
-    </form>
+    <Link
+      to="/"
+      hash="offers"
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-2 rounded-full bg-primary px-3 py-2 text-primary-foreground transition duration-300 ${ease} hover:bg-primary/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${className}`}
+    >
+      {children}
+    </Link>
   );
 }
 
-/** Sticky storefront header with a slide-in menu on mobile. */
+function MenuToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={open ? "Close menu" : "Open menu"}
+      aria-expanded={open}
+      aria-controls="mobile-menu"
+      className="relative inline-flex size-10 items-center justify-center rounded-full transition duration-300 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+    >
+      <span className={`absolute h-0.5 w-4 rounded-full bg-foreground transition-transform duration-500 ${ease} ${open ? "rotate-45" : "-translate-y-1"}`} />
+      <span className={`absolute h-0.5 w-4 rounded-full bg-foreground transition-transform duration-500 ${ease} ${open ? "-rotate-45" : "translate-y-1"}`} />
+    </button>
+  );
+}
+
+/** Compact floating navigation (skill B7) with a full height mobile panel. */
 export function SiteNav({ right }: { right?: ReactNode }) {
   const pathname = useLocation({ select: (l) => l.pathname });
   const [open, setOpen] = useState(false);
   const onChat = pathname.startsWith("/chat");
   const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
 
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const mobileItems = [...LINKS, ...MORE];
+
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur-xl">
-        <div className="container-page flex h-16 items-center gap-4">
+      <a href="#main" className="sr-only z-[60] rounded-lg bg-primary px-3 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
+        Skip to content
+      </a>
+      <header className="pointer-events-none fixed inset-x-0 top-4 z-50 flex justify-center px-4">
+        <nav
+          aria-label="Main"
+          className="pointer-events-auto flex w-full max-w-full items-center gap-2 rounded-full border border-border bg-background/75 py-2 pl-4 pr-2 shadow-soft backdrop-blur-xl sm:w-fit sm:gap-4"
+        >
           <BrandMark />
-          <nav aria-label="Main" className="ml-4 hidden items-center gap-0.5 xl:flex">
+          <ul className="hidden items-center gap-1 lg:flex">
             {LINKS.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className={`relative rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive(l.to) ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {l.label}
-                {isActive(l.to) && <span className="absolute inset-x-3 -bottom-[13px] h-0.5 rounded-full bg-primary" />}
-              </Link>
+              <li key={l.to}>
+                <Link
+                  to={l.to}
+                  aria-current={isActive(l.to) ? "page" : undefined}
+                  className={`title-4 rounded-full px-3 py-2 transition duration-300 ${ease} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    isActive(l.to) ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                  }`}
+                >
+                  {l.label}
+                </Link>
+              </li>
             ))}
-          </nav>
-          <div className="ml-auto flex items-center gap-2">
-            <NavSearch className="hidden w-56 md:block 2xl:w-64" />
+          </ul>
+          <div className="ml-auto flex items-center gap-1 sm:ml-0">
             {right}
             <Link
               to="/account"
-              className="hidden h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-ink-foreground transition hover:opacity-90 sm:inline-flex"
+              aria-label="My account"
+              title="My account"
+              className="hidden size-10 items-center justify-center rounded-full text-muted-foreground transition duration-300 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
             >
-              <UserRound className="size-4" /> Account
+              <UserCircle size={22} />
             </Link>
+            <BuyNowLink className="button-sm">
+              <ShoppingBagOpen size={16} weight="bold" /> Buy now
+            </BuyNowLink>
+            <MenuToggle open={open} onClick={() => setOpen((v) => !v)} />
+          </div>
+        </nav>
+      </header>
+      <div aria-hidden="true" className="h-20" />
+
+      {/* Full height mobile panel */}
+      <div
+        id="mobile-menu"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        className={`fixed inset-0 z-40 bg-background/95 backdrop-blur-2xl transition-opacity duration-300 ${ease} lg:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+      >
+        <div className="flex h-full flex-col overflow-y-auto px-6 pb-8 pt-24">
+          <ul className="flex flex-col gap-1">
+            {mobileItems.map((l, i) => (
+              <li
+                key={l.to}
+                className={`transition duration-500 ${ease} ${open ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+                style={{ transitionDelay: open ? `${Math.min(i * 60, 400)}ms` : "0ms" }}
+              >
+                <Link
+                  to={l.to}
+                  tabIndex={open ? 0 : -1}
+                  aria-current={isActive(l.to) ? "page" : undefined}
+                  className={`heading-5 flex items-center justify-between rounded-xl px-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isActive(l.to) ? "bg-muted" : "hover:bg-muted/70"}`}
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-auto flex flex-col gap-3 pt-8">
+            <BuyNowLink className="button-md w-full py-3" onClick={() => setOpen(false)}>
+              <ShoppingBagOpen size={18} weight="bold" /> Buy now
+            </BuyNowLink>
             <AdminAccessDialog
               trigger={
-                <button
-                  type="button"
-                  aria-label="Admin access"
-                  title="Admin access"
-                  className="hidden size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
-                >
-                  <Shield className="size-4" />
+                <button type="button" tabIndex={open ? 0 : -1} className="caption-1 rounded-full px-3 py-2 text-muted-foreground hover:bg-muted">
+                  Admin access
                 </button>
               }
             />
-            <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Open menu"
-                  className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-card xl:hidden"
-                >
-                  <Menu className="size-5" />
-                </button>
-              </SheetTrigger>
-              <SheetContent side="right" className="flex w-[86vw] max-w-xs flex-col gap-5 overflow-y-auto p-6">
-                <SheetTitle className="sr-only">Menu</SheetTitle>
-                <BrandMark />
-                <NavSearch onDone={() => setOpen(false)} />
-                <nav aria-label="Mobile" className="flex flex-col gap-1">
-                  {LINKS.map((l) => (
-                    <Link
-                      key={l.to}
-                      to={l.to}
-                      onClick={() => setOpen(false)}
-                      className={`flex h-12 items-center rounded-xl px-4 text-base font-medium ${
-                        isActive(l.to) ? "bg-accent text-accent-foreground" : "text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {l.label}
-                    </Link>
-                  ))}
-                </nav>
-                <div className="mt-auto space-y-1 border-t border-border pt-4">
-                  <Link
-                    to="/account"
-                    onClick={() => setOpen(false)}
-                    className="flex h-12 items-center gap-2 rounded-xl bg-ink px-4 text-sm font-semibold text-ink-foreground"
-                  >
-                    <UserRound className="size-4" /> My account
-                  </Link>
-                  <AdminAccessDialog
-                    trigger={
-                      <button type="button" className="flex h-12 w-full items-center gap-2 rounded-xl px-4 text-sm font-medium text-muted-foreground hover:bg-muted">
-                        <Shield className="size-4" /> Admin access
-                      </button>
-                    }
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
           </div>
         </div>
-      </header>
+      </div>
+
       {!onChat && (
         <Link
           to="/chat"
           aria-label="Ask Foxgen AI"
-          className="fixed bottom-4 right-4 z-50 inline-flex h-12 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-ink-foreground shadow-lift transition hover:-translate-y-0.5 sm:bottom-6 sm:right-6"
+          className={`button-sm fixed bottom-4 right-4 z-30 inline-flex items-center gap-2 rounded-full bg-ink px-3 py-3 text-ink-foreground shadow-lift transition duration-300 ${ease} hover:-translate-y-0.5 active:scale-[0.98] sm:bottom-6 sm:right-6 sm:px-4`}
         >
-          <Sparkles className="size-4 text-primary-foreground/80" />
+          <Sparkle size={18} weight="fill" />
           <span className="hidden sm:inline">Ask Foxgen AI</span>
         </Link>
       )}
