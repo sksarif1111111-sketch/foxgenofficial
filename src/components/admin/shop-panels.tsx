@@ -618,7 +618,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
   return (
     <section className="space-y-4">
       <div className="flex justify-end">
-        <button type="button" className={primaryBtn} onClick={() => setDraft({ ...emptyProduct })}>
+        <button type="button" className={primaryBtn} onClick={() => { setDraft({ ...emptyProduct }); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>
           + Add Product
         </button>
       </div>
@@ -680,7 +680,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1.5">
-                        <button type="button" className={ghostBtn} onClick={() => edit(row)}>Edit</button>
+                        <button type="button" className={ghostBtn} onClick={() => { edit(row); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>Edit</button>
                         <button type="button" className={ghostBtn} onClick={() => void act(() => fState({ data: { id, featured: !(row["featured"] === true) } }), row["featured"] ? "Removed from featured." : "Marked as featured on the Home page.")}>
                           {row["featured"] ? "Unfeature" : "Feature"}
                         </button>
@@ -712,8 +712,8 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
       </div>
 
       {draft && (
-        <div className={`${card} space-y-3 border-primary/40`}>
-          <h3 className="text-lg font-black">{draft.id ? "Edit product" : "New product"}</h3>
+        <div id="product-editor" className={`${card} scroll-mt-24 space-y-3 border-primary/40`}>
+          <h3 className="text-lg font-bold">{draft.id ? "Edit product" : "New product"}</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Name">
               <input className={input} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
