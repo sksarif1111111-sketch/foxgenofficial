@@ -1,7 +1,17 @@
 import { adminAccessStatus } from "@/lib/admin-access.functions";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Ban, Check, CheckCircle2, Copy, KeyRound, Plus, RefreshCw, Search, Timer, Trash2, Zap } from "lucide-react";
-import { AdminShell, MetricCard } from "@/components/admin/admin-shell";
+import { Ban, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock, Copy, KeyRound, Plus, RefreshCw, Search, Timer, Trash2, Zap } from "lucide-react";
+import { AdminShell, MetricCard, useAdminAccess } from "@/components/admin/admin-shell";
+import { ExtensionAccessForm, ExtensionAccessHeader } from "@/components/admin/extension-access";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -20,14 +30,15 @@ export const Route = createFileRoute("/admin")({
   },
   head: () => ({
     meta: [
-      { title: "Licence Center — FoxGEN Pro Control" },
+      { title: "Licence Center — Foxgen Extension Admin" },
       {
         name: "description",
         content:
           "Generate 15, 30, 60 day or fully custom FoxGEN license keys and manage every key in one place.",
       },
-      { property: "og:title", content: "Licence Center — FoxGEN Pro Control" },
-      { property: "og:description", content: "Generate and manage FoxGEN Pro license keys." },
+      { property: "og:title", content: "Licence Center — Foxgen Extension Admin" },
+      { property: "og:description", content: "Generate and manage FoxGEN Pro licence keys." },
+      { name: "robots", content: "noindex" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -66,6 +77,26 @@ function duration(row: LicenseRow) {
 }
 
 function AdminPage() {
+  const access = useAdminAccess();
+  if (access.isLoading) return <AdminShell active="Generator"><p className="text-sm text-muted-foreground">Checking access…</p></AdminShell>;
+  if (access.data?.extension !== true) {
+    return (
+      <AdminShell active="Generator">
+        <div className="mx-auto mt-6 max-w-sm space-y-5 rounded-2xl border border-border bg-card p-6 shadow-lift">
+          <ExtensionAccessHeader />
+          <p className="text-sm text-muted-foreground">Licence generation, blocking and deletion need a separate unlock. It stays active for this admin session.</p>
+          <ExtensionAccessForm onUnlocked={() => void access.refetch()} />
+        </div>
+      </AdminShell>
+    );
+  }
+  return <LicenceCenter />;
+}
+
+const PAGE_SIZE = 25;
+const isExpired = (r: LicenseRow) => !!r.expires_at && new Date(r.expires_at).getTime() < Date.now();
+
+function LicenceCenter() {
   const load = useServerFn(listLicenses);
   const create = useServerFn(generateLicense);
   const setStatus = useServerFn(setLicenseStatus);
@@ -115,24 +146,32 @@ function AdminPage() {
     void generate(n * UNITS[unit], "custom");
   }
 
-  const [filter, setFilter] = useState<"all" | "active" | "blocked" | "unused">("all");
+  const [filter, setFilter] = useState<"all" | "active" | "unused" | "expired" | "blocked">("all");
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [filter, query]);
 
   const stats = useMemo(() => {
-    const active = rows.filter((r) => r.status === "active").length;
+    const active = rows.filter((r) => r.status === "active" && !isExpired(r)).length;
     const activated = rows.filter((r) => r.activated_at).length;
-    return { total: rows.length, active, blocked: rows.length - active, activated };
+    const blocked = rows.filter((r) => r.status !== "active").length;
+    const expired = rows.filter((r) => r.status === "active" && isExpired(r)).length;
+    return { total: rows.length, active, blocked, expired, activated };
   }, [rows]);
 
   const visible = useMemo(() => {
     const q = query.trim().toUpperCase();
     return rows.filter((r) => {
-      if (filter === "active" && r.status !== "active") return false;
+      if (filter === "active" && (r.status !== "active" || isExpired(r))) return false;
       if (filter === "blocked" && r.status === "active") return false;
+      if (filter === "expired" && !(r.status === "active" && isExpired(r))) return false;
       if (filter === "unused" && r.activated_at) return false;
       return !q || r.license_key.toUpperCase().includes(q);
     });
   }, [rows, filter, query]);
+  const pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const pageRows = visible.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const recent = rows.slice(0, 5);
 
   const fieldCls =
     "h-11 rounded-xl border border-input bg-card px-3.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/20";
@@ -148,12 +187,32 @@ function AdminPage() {
       }
     >
       <div className="space-y-8">
-        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <MetricCard label="Total keys" value={stats.total} icon={KeyRound} />
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <MetricCard label="Total licences" value={stats.total} icon={KeyRound} />
           <MetricCard label="Active" value={stats.active} icon={CheckCircle2} tone="success" />
           <MetricCard label="Activated on a device" value={stats.activated} icon={Zap} tone="primary" />
+          <MetricCard label="Expired" value={stats.expired} icon={Clock} tone="warning" />
           <MetricCard label="Blocked" value={stats.blocked} icon={Ban} tone="danger" />
         </section>
+
+        {recent.length > 0 && (
+          <section className="rounded-xl border border-border bg-card p-4 shadow-soft">
+            <p className="text-sm font-semibold">Recently generated</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {recent.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={async () => { await navigator.clipboard.writeText(r.license_key).catch(() => undefined); setCopied(r.license_key); }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 font-mono text-xs hover:bg-muted"
+                  title="Copy key"
+                >
+                  {r.license_key} <span className="font-sans text-muted-foreground">· {duration(r)}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft sm:p-6">
@@ -226,8 +285,8 @@ function AdminPage() {
 
         <section className="rounded-2xl border border-border bg-card shadow-soft">
           <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-            <div className="flex gap-1 rounded-lg bg-muted p-1">
-              {(["all", "active", "unused", "blocked"] as const).map((f) => (
+            <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">
+              {(["all", "active", "unused", "expired", "blocked"] as const).map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -248,16 +307,16 @@ function AdminPage() {
           {/* Mobile list */}
           <ul className="divide-y divide-border md:hidden">
             {visible.length === 0 && <li className="px-4 py-10 text-center text-sm text-muted-foreground">No licences found.</li>}
-            {visible.map((row) => (
+            {pageRows.map((row) => (
               <li key={row.id} className="space-y-3 p-4">
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate font-mono text-sm font-medium">{row.license_key}</span>
-                  <LicenseStatus status={row.status} />
+                  <LicenseStatus row={row} />
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {duration(row)} · Activated {fmt(row.activated_at)} · Expires {fmt(row.expires_at)}
                 </p>
-                <LicenseActions row={row} onCopy={setCopied} onChanged={refresh} setStatus={setStatus} remove={remove} />
+                <LicenseActions row={row} onCopy={setCopied} onChanged={refresh} setStatus={setStatus} remove={remove} onError={setError} />
               </li>
             ))}
           </ul>
@@ -281,33 +340,44 @@ function AdminPage() {
                     <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">No licences found.</td>
                   </tr>
                 )}
-                {visible.map((row) => (
+                {pageRows.map((row) => (
                   <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/50">
                     <td className="px-5 py-3 font-mono text-xs font-medium">{row.license_key}</td>
                     <td className="px-5 py-3 tabular-nums">{duration(row)}</td>
-                    <td className="px-5 py-3"><LicenseStatus status={row.status} /></td>
+                    <td className="px-5 py-3"><LicenseStatus row={row} /></td>
                     <td className="px-5 py-3 text-muted-foreground">{fmt(row.activated_at)}</td>
                     <td className="px-5 py-3 text-muted-foreground">{fmt(row.expires_at)}</td>
                     <td className="px-5 py-3">
-                      <LicenseActions row={row} onCopy={setCopied} onChanged={refresh} setStatus={setStatus} remove={remove} />
+                      <LicenseActions row={row} onCopy={setCopied} onChanged={refresh} setStatus={setStatus} remove={remove} onError={setError} />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          {visible.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm sm:px-5">
+              <span className="text-muted-foreground">{page * PAGE_SIZE + 1}–{Math.min(visible.length, (page + 1) * PAGE_SIZE)} of {visible.length}</span>
+              <div className="flex gap-1.5">
+                <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)} aria-label="Previous page"><ChevronLeft className="size-4" /></Button>
+                <Button variant="outline" size="sm" disabled={page >= pages - 1} onClick={() => setPage((p) => p + 1)} aria-label="Next page"><ChevronRight className="size-4" /></Button>
+              </div>
+            </div>
+          )}
         </section>
       </div>
     </AdminShell>
   );
 }
 
-function LicenseStatus({ status }: { status: string }) {
-  const ok = status === "active";
+function LicenseStatus({ row }: { row: LicenseRow }) {
+  const expired = row.status === "active" && isExpired(row);
+  const label = row.status !== "active" ? row.status : expired ? "expired" : row.activated_at ? "active" : "unused";
+  const cls = row.status !== "active" ? "bg-destructive/10 text-destructive" : expired ? "bg-warning/15 text-warning-foreground" : row.activated_at ? "bg-success/10 text-success" : "bg-accent text-accent-foreground";
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${ok ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${cls}`}>
       <span className="size-1.5 rounded-full bg-current" />
-      {status}
+      {label}
     </span>
   );
 }
@@ -318,14 +388,29 @@ function LicenseActions({
   onChanged,
   setStatus,
   remove,
+  onError,
 }: {
   row: LicenseRow;
   onCopy: (key: string) => void;
   onChanged: () => Promise<void>;
   setStatus: (args: { data: { id: string; status: "active" | "blocked" } }) => Promise<unknown>;
   remove: (args: { data: { id: string } }) => Promise<unknown>;
+  onError: (message: string) => void;
 }) {
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
   const icon = "inline-flex size-8 items-center justify-center rounded-lg border border-border bg-card transition hover:bg-muted";
+  const act = async (fn: () => Promise<unknown>) => {
+    setBusy(true);
+    try {
+      await fn();
+      await onChanged();
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Action failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <div className="flex items-center justify-end gap-1.5">
       <button
@@ -342,27 +427,29 @@ function LicenseActions({
       </button>
       <button
         type="button"
-        onClick={async () => {
-          await setStatus({ data: { id: row.id, status: row.status === "active" ? "blocked" : "active" } });
-          await onChanged();
-        }}
-        className="inline-flex h-8 items-center rounded-lg border border-border bg-card px-3 text-xs font-medium transition hover:bg-muted"
+        disabled={busy}
+        onClick={() => void act(() => setStatus({ data: { id: row.id, status: row.status === "active" ? "blocked" : "active" } }))}
+        className="inline-flex h-8 items-center rounded-lg border border-border bg-card px-3 text-xs font-medium transition hover:bg-muted disabled:opacity-50"
       >
-        {row.status === "active" ? "Block" : "Unblock"}
+        {row.status === "active" ? "Block" : "Activate"}
       </button>
-      <button
-        type="button"
-        title="Delete key"
-        aria-label="Delete key"
-        onClick={async () => {
-          if (!window.confirm(`Delete ${row.license_key}? This cannot be undone.`)) return;
-          await remove({ data: { id: row.id } });
-          await onChanged();
-        }}
-        className={`${icon} text-destructive hover:bg-destructive/10`}
-      >
+      <button type="button" title="Delete key" aria-label="Delete key" disabled={busy} onClick={() => setConfirm(true)} className={`${icon} text-destructive hover:bg-destructive/10`}>
         <Trash2 className="size-3.5" />
       </button>
+      <AlertDialog open={confirm} onOpenChange={setConfirm}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Delete this licence?</AlertDialogTitle>
+          <AlertDialogDescription>
+            <span className="font-mono">{row.license_key}</span> will stop working in the extension immediately. This cannot be undone.
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => void act(() => remove({ data: { id: row.id } }))}>
+              Delete licence
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
