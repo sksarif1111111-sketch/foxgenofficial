@@ -3,40 +3,34 @@ import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  adminAdjustCredits,
   adminApproveReferral,
   adminBotStatus,
   adminBroadcast,
   adminClearLogs,
   adminDeleteReward,
-  adminDeleteTask,
   adminLicenseDurations,
   adminLogs,
   adminRedemptions,
-  adminOverview,
   adminReferrals,
   adminRejectReferral,
   adminRewards,
   adminSaveReward,
   adminSaveSettings,
-  adminResetUserTasks,
-  adminSaveTask,
-  adminSetUserStatus,
   adminSetWebhook,
   adminSettings,
   adminGuidePages,
   adminSaveGuidePage,
   adminDeleteGuidePage,
-  adminTasks,
   adminTestTelegramChannels,
-  adminUsers,
-  type AdminOverview,
 } from "@/lib/hubadmin.functions";
 import { ActivityPanel, CatalogPanel, ProductFilesPanel, ProductsPanel } from "@/components/admin/catalog-panels";
+import { BotDashboardPanel, IntegrationsPanel, LeaderboardPanel, OffersPanel, SecurityPanel, SyncHistoryPanel } from "@/components/admin/control-panels";
+import { MembersPanel, TasksPanel, type TaskFilter } from "@/components/admin/bot-panels";
+import { ExtensionAccessForm, ExtensionAccessHeader } from "@/components/admin/extension-access";
 import { BuyingPanel, ShopProductsPanel, WalletPanel } from "@/components/admin/shop-panels";
 import { ManagementDashboard } from "@/components/admin/management-dashboard";
 import { Button } from "@/components/ui/button";
-import { AdminShell, MetricCard, type AdminNavId } from "@/components/admin/admin-shell";
+import { AdminShell, useAdminAccess, type AdminNavId } from "@/components/admin/admin-shell";
 import { RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/hub-admin")({
@@ -49,13 +43,14 @@ export const Route = createFileRoute("/hub-admin")({
   },
   head: () => ({
     meta: [
-      { title: "Shop & Bot Management — FoxGEN Admin" },
+      { title: "Control Center — Foxgen AI Store" },
       {
         name: "description",
         content: "Manage members, referrals, credits, generated licenses, tasks, rewards and the Telegram bot.",
       },
-      { property: "og:title", content: "Shop & Bot Management — FoxGEN Admin" },
-      { property: "og:description", content: "Full control panel for the FoxGEN PRO Rewards Hub." },
+      { property: "og:title", content: "Control Center — Foxgen AI Store" },
+      { property: "og:description", content: "Store, Telegram bot, rewards and extension management." },
+      { name: "robots", content: "noindex" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -64,30 +59,36 @@ export const Route = createFileRoute("/hub-admin")({
 });
 
 const SECTIONS = [
-  "Overview",
-  "Shop",
-  "Buying",
-  "Products",
-  "Catalog",
-  "Users",
-  "Referrals",
-  "Licenses",
-  "Rewards",
-  "Tasks",
-  "Extension",
-  "Instructions",
-  "Branding",
-  "Links",
-
-  "Bot",
-  "Activity",
-  "Logs",
-] as const;
+  "Dashboard", "Analytics", "Activity",
+  "Bot", "Broadcast", "Branding", "Links",
+  "Shop", "Catalog", "Products", "Offers", "Buying",
+  "Rewards", "Licenses", "Referrals", "Users", "Leaderboard",
+  "Tasks", "TasksYouTube", "TasksWhatsApp", "TasksFacebook", "TasksTelegram",
+  "Integrations", "SyncHistory",
+  "Logs", "Security",
+  "Extension", "Instructions",
+] as const satisfies readonly AdminNavId[];
 type Section = (typeof SECTIONS)[number];
 
 function isSection(value: unknown): value is Section {
   return typeof value === "string" && (SECTIONS as readonly string[]).includes(value);
 }
+
+/** Older bookmarks used "Overview"; it is now the Dashboard. */
+function initialSection(value: unknown): Section {
+  if (value === "Overview") return "Dashboard";
+  return isSection(value) ? value : "Dashboard";
+}
+
+const TASK_FILTERS: Partial<Record<Section, TaskFilter>> = {
+  Tasks: "all",
+  TasksYouTube: "youtube",
+  TasksWhatsApp: "whatsapp",
+  TasksFacebook: "facebook",
+  TasksTelegram: "telegram",
+};
+
+const MESSAGE_FIELDS = ["referral_message", "pricing_message"];
 
 const EXTENSION_FIELDS = [
   "extension_name",
@@ -154,33 +155,20 @@ const EMOJI_FIELDS = [
 
 
 
-type UserRow = Awaited<ReturnType<typeof adminUsers>>[number];
 type RewardRow = Awaited<ReturnType<typeof adminRewards>>[number];
-type TaskRow = Awaited<ReturnType<typeof adminTasks>>[number];
 type RedemptionRow = Awaited<ReturnType<typeof adminRedemptions>>[number];
 type RefRow = Awaited<ReturnType<typeof adminReferrals>>[number];
 type BotInfo = Awaited<ReturnType<typeof adminBotStatus>>;
 type LogRow = Awaited<ReturnType<typeof adminLogs>>[number];
 
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return <MetricCard label={label} value={value} />;
-}
 
 function HubAdmin() {
-  const fOverview = useServerFn(adminOverview);
-  const fUsers = useServerFn(adminUsers);
-  const fStatus = useServerFn(adminSetUserStatus);
-  const fCredits = useServerFn(adminAdjustCredits);
   const fRewards = useServerFn(adminRewards);
   const fSaveReward = useServerFn(adminSaveReward);
   const fDeleteReward = useServerFn(adminDeleteReward);
   const fDurations = useServerFn(adminLicenseDurations);
-  const fTasks = useServerFn(adminTasks);
-  const fSaveTask = useServerFn(adminSaveTask);
-  const fDeleteTask = useServerFn(adminDeleteTask);
   const fTestChannels = useServerFn(adminTestTelegramChannels);
-  const fResetTasks = useServerFn(adminResetUserTasks);
   const fRedemptions = useServerFn(adminRedemptions);
   const fSettings = useServerFn(adminSettings);
   const fSaveSettings = useServerFn(adminSaveSettings);
@@ -202,18 +190,19 @@ function HubAdmin() {
   const [guidePreview, setGuidePreview] = useState(false);
 
   const initial = Route.useSearch().section;
-  const [section, setSection] = useState<Section>(isSection(initial) ? initial : "Overview");
-  function openSection(next: Section) {
+  const [section, setSection] = useState<Section>(initialSection(initial));
+  const access = useAdminAccess();
+  const extensionUnlocked = access.data?.extension === true;
+  function openSection(next: AdminNavId) {
+    if (!isSection(next)) return;
     setSection(next);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `/hub-admin?section=${next}`);
+      window.scrollTo({ top: 0 });
+    }
   }
   const [flash, setFlash] = useState<string | null>(null);
-  const [overview, setOverview] = useState<AdminOverview | null>(null);
-  const [users, setUsers] = useState<UserRow[]>([]);
-  const [search, setSearch] = useState("");
   const [rewards, setRewards] = useState<RewardRow[]>([]);
-  const [tasks, setTasks] = useState<TaskRow[]>([]);
-  const [newTask, setNewTask] = useState({ name: "", platform: "youtube", url: "", description: "", telegram_chat_id: "", verification_type: "manual_confirmation" as "manual_confirmation" | "telegram_auto_verification", required: true, enabled: true, display_order: 10 });
   const [channelTests, setChannelTests] = useState<Awaited<ReturnType<typeof adminTestTelegramChannels>> | null>(null);
   const [redemptions, setRedemptions] = useState<RedemptionRow[]>([]);
   const [durations, setDurations] = useState<number[]>([15, 30, 60]);
@@ -230,8 +219,6 @@ function HubAdmin() {
   const loadSection = useCallback(
     async (s: Section) => {
       try {
-        if (s === "Overview") setOverview(await fOverview({ data: undefined }));
-        if (s === "Users") setUsers(await fUsers({ data: { search } }));
         if (s === "Referrals") setReferrals(await fReferrals({ data: { search: referralSearch, status: referralStatus } }));
         if (s === "Licenses") {
           setRedemptions(await fRedemptions({ data: undefined }));
@@ -241,8 +228,7 @@ function HubAdmin() {
           setRewards(await fRewards({ data: undefined }));
           setDurations(await fDurations({ data: undefined }));
         }
-        if (s === "Tasks") setTasks(await fTasks({ data: undefined }));
-        if (s === "Links" || s === "Extension" || s === "Branding" || s === "Instructions") {
+        if (s === "Links" || s === "Extension" || s === "Branding" || s === "Instructions" || s === "Broadcast") {
           setSettings(await fSettings({ data: undefined }));
         }
         if (s === "Instructions") setGuidePages(await fGuidePages({ data: undefined }));
@@ -255,7 +241,7 @@ function HubAdmin() {
         setFlash(err instanceof Error ? err.message : "Could not load data.");
       }
     },
-    [fOverview, fUsers, fReferrals, fRedemptions, fRewards, fDurations, fTasks, fSettings, fBot, fLogs, fGuidePages, logCategory, search, referralSearch, referralStatus],
+    [fReferrals, fRedemptions, fRewards, fDurations, fSettings, fBot, fLogs, fGuidePages, logCategory, referralSearch, referralStatus],
   );
 
 
@@ -266,9 +252,7 @@ function HubAdmin() {
   return (
     <AdminShell
       active={section}
-      onSelect={(id: AdminNavId) => {
-        if (isSection(id)) openSection(id);
-      }}
+      onSelect={openSection}
       actions={
         <Button variant="outline" size="sm" onClick={() => void loadSection(section)} className="gap-1.5">
           <RefreshCw className="size-3.5" />
@@ -285,25 +269,67 @@ function HubAdmin() {
         </div>
       )}
 
-      {(section === "Overview" || section === "Bot") && <div className="mb-10"><ManagementDashboard onOpen={openSection}/></div>}
-      {section === "Overview" && overview && (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Total users" value={overview.totalUsers} />
-          <Stat label="New today" value={overview.newToday} />
-          <Stat label="Active users" value={overview.activeUsers} />
-          <Stat label="Referrals" value={overview.totalReferrals} />
-          <Stat label="Verified referrals" value={overview.verifiedReferrals} />
-          <Stat label="Pending referrals" value={overview.pendingReferrals} />
-          <Stat label="Credits issued" value={overview.creditsIssued} />
-          <Stat label="Credits spent" value={overview.creditsSpent} />
-          <Stat label="Licenses redeemed" value={overview.redemptions} />
-          <Stat label="Total products" value={overview.totalProducts} />
-          <Stat label="Active products" value={overview.activeProducts} />
-          <Stat label="Generated licenses" value={overview.generatedLicenses} />
-          {overview.generatedByDuration.map((i) => (
-            <Stat key={i.duration_days} label={`${i.duration_days}d generated`} value={i.total} />
-          ))}
-        </section>
+      {section === "Dashboard" && <BotDashboardPanel onOpen={openSection} />}
+      {section === "Analytics" && <ManagementDashboard onOpen={openSection} />}
+      {section === "Offers" && <OffersPanel notify={setFlash} />}
+      {section === "Integrations" && <IntegrationsPanel notify={setFlash} onOpen={openSection} />}
+      {section === "SyncHistory" && <SyncHistoryPanel />}
+      {section === "Leaderboard" && <LeaderboardPanel />}
+      {section === "Security" && <SecurityPanel notify={setFlash} />}
+      {section === "Users" && <MembersPanel notify={setFlash} />}
+      {TASK_FILTERS[section] && <TasksPanel key={section} notify={setFlash} filter={TASK_FILTERS[section]!} />}
+      {(section === "Extension" || section === "Instructions") && !extensionUnlocked && (
+        <div className="mx-auto mt-6 max-w-sm space-y-5 rounded-2xl border border-border bg-card p-6 shadow-lift">
+          <ExtensionAccessHeader />
+          <p className="text-sm text-muted-foreground">Unlock Extension Admin to manage release details and instructions.</p>
+          <ExtensionAccessForm onUnlocked={() => void loadSection(section)} />
+        </div>
+      )}
+      {section === "Broadcast" && (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
+            <p className="font-semibold">Broadcast to all members</p>
+            <p className="mt-1 text-sm text-muted-foreground">Sends a Telegram message to every member. Basic HTML (bold, links) is allowed.</p>
+            <textarea value={broadcast} onChange={(e) => setBroadcast(e.target.value)} rows={6} maxLength={3000} className="mt-3 w-full rounded-lg border border-input bg-background p-3 text-sm" />
+            <Button
+              className="mt-3"
+              disabled={!broadcast.trim()}
+              onClick={async () => {
+                if (!window.confirm("Send this message to every member now?")) return;
+                try {
+                  const res = await fBroadcast({ data: { message: broadcast } });
+                  setFlash(`Sent to ${res.sent} of ${res.total} members.`);
+                  setBroadcast("");
+                } catch (err) {
+                  setFlash(err instanceof Error ? err.message : "Broadcast failed.");
+                }
+              }}
+            >
+              Send broadcast
+            </Button>
+          </div>
+          <div className="space-y-3 rounded-xl border border-border bg-card p-5 shadow-soft">
+            <p className="font-semibold">Bot messages</p>
+            {MESSAGE_FIELDS.map((key) => (
+              <label key={key} className="block space-y-1.5 text-xs font-medium text-muted-foreground">
+                {key === "referral_message" ? "Referral share message" : "Pricing message"}
+                <textarea
+                  defaultValue={settings[key] ?? ""}
+                  rows={4}
+                  onBlur={async (e) => {
+                    try {
+                      await fSaveSettings({ data: { values: { [key]: e.target.value } } });
+                      setFlash("Message saved.");
+                    } catch {
+                      setFlash("Could not save this message.");
+                    }
+                  }}
+                  className="w-full rounded-lg border border-input bg-background p-3 text-sm font-normal text-foreground"
+                />
+              </label>
+            ))}
+          </div>
+        </div>
       )}
 
       {section === "Shop" && <ShopProductsPanel notify={setFlash} />}
@@ -316,76 +342,6 @@ function HubAdmin() {
       {section === "Products" && <ProductsPanel notify={setFlash} />}
       {section === "Catalog" && <CatalogPanel notify={setFlash} />}
       {section === "Activity" && <ActivityPanel notify={setFlash} />}
-
-      {section === "Users" && (
-        <section className="space-y-3">
-          <div className="flex gap-2">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search username, name or code"
-              className="flex-1 rounded-xl border border-border bg-background px-4 py-2 text-sm"
-            />
-            <button
-              onClick={() => void loadSection("Users")}
-              className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
-            >
-              Search
-            </button>
-          </div>
-          {users.map((u) => (
-            <div key={u.id} className="rounded-2xl border border-border bg-card/60 p-4 text-sm">
-              <p className="font-bold">
-                {u.telegram_username ? `@${u.telegram_username}` : (u.first_name ?? "Member")}{" "}
-                <span className="text-xs text-muted-foreground">
-                  · TG {u.telegram_user_id} · {u.referral_code} · {u.status}
-                </span>
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Credits {u.credits_available} (earned {u.credits_earned}, spent {u.credits_spent})
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {(["active", "banned", "suspicious", "pending"] as const).map((s) => (
-                  <button
-                    key={s}
-                    onClick={async () => {
-                      await fStatus({ data: { id: u.id, status: s } });
-                      setFlash(`Status set to ${s}`);
-                      void loadSection("Users");
-                    }}
-                    className="rounded-lg border border-border px-3 py-1 text-xs font-semibold"
-                  >
-                    {s}
-                  </button>
-                ))}
-                {[1, 5, -1, -5].map((amount) => (
-                  <button
-                    key={amount}
-                    onClick={async () => {
-                      await fCredits({ data: { id: u.id, amount, reason: "Admin adjustment" } });
-                      setFlash(`${amount > 0 ? "+" : ""}${amount} credits applied`);
-                      void loadSection("Users");
-                    }}
-                    className="rounded-lg border border-border px-3 py-1 text-xs font-semibold"
-                  >
-                    {amount > 0 ? `+${amount}` : amount} credit
-                  </button>
-                ))}
-                <button
-                  onClick={async () => {
-                    await fResetTasks({ data: { userId: u.id } });
-                    setFlash("Task progress reset");
-                    void loadSection("Users");
-                  }}
-                  className="rounded-lg border border-border px-3 py-1 text-xs font-semibold"
-                >
-                  Reset tasks
-                </button>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
 
       {section === "Referrals" && (
         <section className="space-y-2 text-sm">
@@ -494,118 +450,7 @@ function HubAdmin() {
         </section>
       )}
 
-      {section === "Tasks" && (
-        <section className="space-y-3">
-          <div className="space-y-3 rounded-2xl border border-primary/40 bg-card/60 p-4">
-            <p className="font-bold">Add Task</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <input value={newTask.name} onChange={(e) => setNewTask({ ...newTask, name: e.target.value })} placeholder="Task name" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
-              <input value={newTask.platform} onChange={(e) => setNewTask({ ...newTask, platform: e.target.value })} placeholder="Platform" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
-              <input value={newTask.url} onChange={(e) => setNewTask({ ...newTask, url: e.target.value })} placeholder="https://…" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
-              <input value={newTask.telegram_chat_id} onChange={(e) => setNewTask({ ...newTask, telegram_chat_id: e.target.value })} placeholder="Telegram @username or -100…" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
-            </div>
-            <textarea value={newTask.description} onChange={(e) => setNewTask({ ...newTask, description: e.target.value })} placeholder="Description" className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" />
-            <div className="flex flex-wrap gap-2">
-              <select value={newTask.verification_type} onChange={(e) => setNewTask({ ...newTask, verification_type: e.target.value as typeof newTask.verification_type })} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
-                <option value="manual_confirmation">Manual confirmation</option>
-                <option value="telegram_auto_verification">Telegram auto-check</option>
-              </select>
-              <button onClick={async () => { await fSaveTask({ data: newTask }); setNewTask({ ...newTask, name: "", url: "", description: "", telegram_chat_id: "", display_order: newTask.display_order + 1 }); setFlash("Task added"); void loadSection("Tasks"); }} className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">Add Task</button>
-            </div>
-          </div>
-          {tasks.map((t) => (
-            <div key={t.id} className="space-y-2 rounded-2xl border border-border bg-card/60 p-4">
-              <input
-                defaultValue={t.name}
-                placeholder="▶️ Task name (icon + text)"
-                onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), name: e.target.value } })}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-bold"
-              />
-              <input
-                defaultValue={t.platform}
-                placeholder="Platform"
-                onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), platform: e.target.value } })}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              />
-              <textarea
-                defaultValue={t.description ?? ""}
-                rows={2}
-                placeholder="Description shown to members"
-                onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), description: e.target.value } })}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              />
-              <input
-                defaultValue={t.url ?? ""}
-                placeholder="https://…"
-                onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), url: e.target.value } })}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              />
-              <input
-                type="number"
-                defaultValue={t.display_order}
-                placeholder="Display order"
-                onBlur={async () => {
-                  void 0;
-                }}
-                onChange={(e) => {
-                  const order = Number(e.target.value);
-                  if (Number.isFinite(order)) void fSaveTask({ data: { ...toTaskInput(t), display_order: order } });
-                }}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              />
-              {t.verification_type === "telegram_auto_verification" && (
-                <input
-                  defaultValue={t.telegram_chat_id ?? ""}
-                  placeholder="@channelusername or -100…"
-                  onBlur={(e) => void fSaveTask({ data: { ...toTaskInput(t), telegram_chat_id: e.target.value } })}
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-                />
-              )}
-
-              <div className="flex flex-wrap gap-2 text-xs">
-                <button
-                  onClick={async () => {
-                    await fSaveTask({ data: { ...toTaskInput(t), enabled: !t.enabled } });
-                    void loadSection("Tasks");
-                  }}
-                  className="rounded-lg border border-border px-3 py-1 font-semibold"
-                >
-                  {t.enabled ? "Enabled" : "Disabled"}
-                </button>
-                <button
-                  onClick={async () => {
-                    await fSaveTask({ data: { ...toTaskInput(t), required: !t.required } });
-                    void loadSection("Tasks");
-                  }}
-                  className="rounded-lg border border-border px-3 py-1 font-semibold"
-                >
-                  {t.required ? "Required" : "Optional"}
-                </button>
-                <button
-                  onClick={async () => {
-                    await fSaveTask({
-                      data: {
-                        ...toTaskInput(t),
-                        verification_type:
-                          t.verification_type === "manual_confirmation"
-                            ? "telegram_auto_verification"
-                            : "manual_confirmation",
-                      },
-                    });
-                    void loadSection("Tasks");
-                  }}
-                  className="rounded-lg border border-border px-3 py-1 font-semibold"
-                >
-                  {t.verification_type === "manual_confirmation" ? "Manual check" : "Telegram auto-check"}
-                </button>
-                <button onClick={async () => { await fDeleteTask({ data: { id: t.id } }); setFlash("Task removed"); void loadSection("Tasks"); }} className="rounded-lg border border-destructive px-3 py-1 font-semibold text-destructive">Delete</button>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {section === "Extension" && (
+      {section === "Extension" && extensionUnlocked && (
         <section className="space-y-4">
           <div className="rounded-2xl border border-border bg-card/60 p-5">
             <p className="font-bold">🦊 FoxGEN PRO Extension management</p>
@@ -681,7 +526,7 @@ function HubAdmin() {
         </section>
       )}
 
-      {section === "Instructions" && (
+      {section === "Instructions" && extensionUnlocked && (
         <section className="space-y-5">
           <div className="rounded-2xl border border-border bg-card/60 p-5">
             <p className="font-bold">📘 Extension Instructions</p>
@@ -946,44 +791,10 @@ function HubAdmin() {
               ))}
             </div>
           )}
-          <div className="rounded-2xl border border-border bg-card/60 p-5">
-            <p className="font-bold">Broadcast to all members</p>
-            <textarea
-              value={broadcast}
-              onChange={(e) => setBroadcast(e.target.value)}
-              rows={4}
-              className="mt-2 w-full rounded-xl border border-border bg-background p-3 text-sm"
-            />
-            <button
-              onClick={async () => {
-                const res = await fBroadcast({ data: { message: broadcast } });
-                setFlash(`Sent to ${res.sent}/${res.total} members`);
-                setBroadcast("");
-              }}
-              className="mt-2 rounded-xl bg-ink px-4 py-2 text-xs font-bold text-ink-foreground"
-            >
-              Send broadcast
-            </button>
-          </div>
         </section>
       )}
     </AdminShell>
   );
-}
-
-function toTaskInput(t: TaskRow) {
-  return {
-    id: t.id,
-    name: t.name,
-    platform: t.platform,
-    description: t.description ?? "",
-    url: t.url ?? "",
-    telegram_chat_id: t.telegram_chat_id ?? "",
-    verification_type: t.verification_type as "manual_confirmation" | "telegram_auto_verification",
-    display_order: t.display_order,
-    required: t.required,
-    enabled: t.enabled,
-  };
 }
 
 function relatedProfile(value: unknown) {

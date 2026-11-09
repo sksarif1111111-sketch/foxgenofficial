@@ -159,8 +159,8 @@ async function recordRun(provider: string, trigger: "manual" | "auto", status: "
 
 /**
  * Pulls every supplier, refreshes wholesale data on CRM products and publishes/updates
- * live store products by `reseller_product_id`. Store USDT price follows the admin's CRM
- * selling price; Stars price, emoji, images and other store edits are never overwritten.
+ * live store products by `reseller_product_id`. New products start at the CRM selling price;
+ * existing store prices, Stars prices, emoji, images and other store edits are never overwritten.
  * A failing supplier is skipped and its products are left untouched.
  */
 export async function syncSuppliers(trigger: "manual" | "auto") {
@@ -230,12 +230,9 @@ export async function syncSuppliers(trigger: "manual" | "auto") {
     const supplier = supplierOf(p.id)!;
     const stock = Number.isFinite(Number(p.stock)) ? Math.max(0, Math.floor(Number(p.stock))) : null;
     const price = sellPrice.get(p.id) ?? Math.max(0, Number(p.wholesale_price) || 0);
+    // Existing store products keep their selling price (edited in Products); only stock and name refresh.
     const refresh = {
       name: String(p.name).slice(0, 200),
-      price_usdt: price,
-      price,
-      currency: "USD",
-      is_free: false,
       stock_mode: stock === null ? "manual" : "tracked",
       stock_quantity: stock,
       availability: stock === 0 ? "out_of_stock" : "in_stock",
@@ -249,6 +246,10 @@ export async function syncSuppliers(trigger: "manual" | "auto") {
     } else {
       const { error: e } = await db.from("products").insert({
         ...refresh,
+        price_usdt: price,
+        price,
+        currency: "USD",
+        is_free: false,
         reseller_product_id: p.id,
         description: plainText(p.description),
         short_description: plainText(p.description, 160),

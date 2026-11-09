@@ -7,9 +7,9 @@ import { deleteThread, loadThreads, newThreadId, subscribeThreads, type ChatThre
 export const Route = createFileRoute("/chat")({
   head: () => ({
     meta: [
-      { title: "FoxGEN AI Assistant — Ask about products" },
+      { title: "Foxgen AI Assistant — Foxgen AI Store" },
       { name: "description", content: "Chat with FoxGEN AI to find digital products, prices and stock in the FoxGEN store." },
-      { property: "og:title", content: "FoxGEN AI Assistant" },
+      { property: "og:title", content: "Foxgen AI Assistant — Foxgen AI Store" },
       { property: "og:description", content: "Ask FoxGEN AI about products, prices and how to buy." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

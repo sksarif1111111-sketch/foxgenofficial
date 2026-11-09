@@ -9,13 +9,13 @@ import digiExtensionLogo from "@/assets/digiextension-logo.jpeg.asset.json";
 export const Route = createFileRoute("/hub")({
   head: () => ({
     meta: [
-      { title: "FoxGEN PRO Rewards Hub — Earn. Refer. Unlock." },
+      { title: "Free Rewards — Foxgen AI Store" },
       {
         name: "description",
         content:
           "Invite friends, collect credits and unlock free FoxGEN Pro extension licenses from your rewards dashboard.",
       },
-      { property: "og:title", content: "FoxGEN PRO Rewards Hub" },
+      { property: "og:title", content: "Free Rewards — Foxgen AI Store" },
       { property: "og:description", content: "Earn credits with referrals and unlock free extension licenses." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -313,7 +313,7 @@ function HubPage() {
           {unlocked && (
             <div className="border border-primary bg-primary/10 p-6">
               <h2 className="text-2xl font-black">🎉 Congratulations!</h2>
-              <p className="mt-1 text-sm">Your FOXGEN license was generated instantly.</p>
+              <p className="mt-1 text-sm">Your FoxGEN licence was generated instantly.</p>
               <p className="mt-5 text-xs font-bold uppercase text-muted-foreground">Your Lovable Unlimited License</p>
               <p className="mt-2 break-all font-mono text-xl font-black text-primary">{unlocked.license_key}</p>
               <p className="mt-3 text-sm">📅 {unlocked.duration_days} Days · 💰 {unlocked.credits_used} Credits Used</p>

@@ -254,6 +254,8 @@ const productShopSchema = z.object({
   features: z.array(z.string().trim().max(200)).max(20),
   terms: z.string().trim().max(2000).optional(),
   image_url: z.string().trim().max(700).optional(),
+  logo_url: z.string().trim().max(700).optional(),
+  featured: z.boolean().optional(),
   duration_label: z.string().trim().max(60).optional(),
   credits_per_interval: z.number().int().min(0).max(1000000).nullable().optional(),
   renewal_interval: z.string().trim().max(30).optional(),
@@ -297,6 +299,8 @@ export const shopSaveProduct = createServerFn({ method: "POST" }).middleware([re
       description: blank(rest.description),
       terms: blank(rest.terms),
       image_url: blank(rest.image_url),
+      logo_url: blank(rest.logo_url),
+      featured: rest.featured ?? false,
       duration_label: blank(rest.duration_label),
       renewal_interval: blank(rest.renewal_interval),
       installation_instructions: blank(rest.installation_instructions),
@@ -346,16 +350,38 @@ export const shopSetProductState = createServerFn({ method: "POST" }).middleware
       .object({
         id: z.string().uuid(),
         shop_published: z.boolean().optional(),
+        featured: z.boolean().optional(),
         status: z.enum(["active", "draft", "archived"]).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { db } = await import("@/lib/hub.server");
+    const { db, logActivity } = await import("@/lib/hub.server");
     const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.shop_published !== undefined) patch["shop_published"] = data.shop_published;
+    if (data.featured !== undefined) patch["featured"] = data.featured;
     if (data.status) patch["status"] = data.status;
-    await db.from("products").update(patch as never).eq("id", data.id);
+    const { error } = await db.from("products").update(patch as never).eq("id", data.id);
+    if (error) throw new Error("Could not update this product.");
+    await logActivity("shop", "Product state changed", "success", `${data.id} ${JSON.stringify(patch)}`);
+    return { ok: true };
+  });
+
+/** Permanently deletes a product that has never been ordered; ordered products must be archived instead. */
+export const shopDeleteProduct = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
+  .inputValidator((input: unknown) => idInput.parse(input))
+  .handler(async ({ data }) => {
+    const { db, logActivity } = await import("@/lib/hub.server");
+    const { count, error: countError } = await db.from("shop_order_items").select("id", { count: "exact", head: true }).eq("product_id", data.id);
+    if (countError) throw new Error("Could not check this product's orders.");
+    if ((count ?? 0) > 0) throw new Error("This product has orders, so it can't be deleted. Archive it instead to hide it everywhere.");
+    const { data: row } = await db.from("products").select("name").eq("id", data.id).maybeSingle();
+    await db.from("store_offers").update({ product_id: null, status: "archived" }).eq("product_id", data.id);
+    await db.from("product_prices").delete().eq("product_id", data.id);
+    await db.from("product_files").delete().eq("product_id", data.id);
+    const { error } = await db.from("products").delete().eq("id", data.id);
+    if (error) throw new Error("Could not delete this product. Archive it instead.");
+    await logActivity("shop", "Product deleted", "warning", row?.name ?? data.id);
     return { ok: true };
   });
 

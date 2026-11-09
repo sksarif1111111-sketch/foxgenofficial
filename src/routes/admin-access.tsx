@@ -7,10 +7,10 @@ export const Route = createFileRoute("/admin-access")({
   validateSearch: (s: Record<string, unknown>) => ({ redirect: adminDestination(s.redirect) }),
   head: () => ({
     meta: [
-      { title: "Admin Access — FOXGEN Control Center" },
-      { name: "description", content: "Secure password access to the FOXGEN store, bot and extension control center." },
-      { property: "og:title", content: "Admin Access — FOXGEN Control Center" },
-      { property: "og:description", content: "FOXGEN administrator sign-in." },
+      { title: "Admin Access — Foxgen AI Store" },
+      { name: "description", content: "Secure password access to the Foxgen AI Store control center." },
+      { property: "og:title", content: "Admin Access — Foxgen AI Store" },
+      { property: "og:description", content: "Foxgen AI Store administrator sign-in." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -32,7 +32,7 @@ function AdminAccess() {
         {/* Light dialog card on the ink backdrop */}
         <div className="rounded-2xl border border-border surface-light bg-background p-6 text-foreground shadow-lift sm:p-7">
           <AdminAccessHeader title={redirect === "/admin" ? "Licence Center" : "Control Center"} />
-          <p className="mt-3 text-sm text-muted-foreground">Store, Telegram bot and extension licences are managed here.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Store, Telegram bot, rewards and offers are managed here.</p>
           <div className="mt-6">
             <AdminAccessForm redirect={redirect} />
           </div>

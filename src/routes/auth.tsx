@@ -12,9 +12,9 @@ export const Route = createFileRoute("/auth")({
   }),
   head: () => ({
     meta: [
-      { title: "Admin Sign In — FoxGEN CRM" },
+      { title: "Admin Sign In — Foxgen AI Store" },
       { name: "description", content: "Sign in to the FoxGEN sales CRM admin dashboard." },
-      { property: "og:title", content: "Admin Sign In — FoxGEN CRM" },
+      { property: "og:title", content: "Admin Sign In — Foxgen AI Store" },
       { property: "og:description", content: "Secure admin sign-in for the FoxGEN sales CRM." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
