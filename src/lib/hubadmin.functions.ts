@@ -177,9 +177,15 @@ export const adminDeleteReward = createServerFn({ method: "POST" }).middleware([
 
 
 export const adminTasks = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
-  const { db } = await import("@/lib/hub.server");
-  const { data } = await db.from("social_tasks").select("*").order("display_order");
-  return data ?? [];
+  const { db, activeTasks } = await import("@/lib/hub.server");
+  const [{ data, error }, shown] = await Promise.all([db.from("social_tasks").select("*").order("display_order"), activeTasks()]);
+  if (error) throw new Error("Could not load tasks.");
+  // The bot reads exactly what activeTasks() returns, so admins can see why a saved task is hidden.
+  const visible = new Set(shown.map((t) => t.id));
+  return (data ?? []).map((t) => ({
+    ...t,
+    bot_visibility: visible.has(t.id) ? ("shown" as const) : !t.enabled ? ("disabled" as const) : ("duplicate" as const),
+  }));
 });
 
 export const adminSaveTask = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
