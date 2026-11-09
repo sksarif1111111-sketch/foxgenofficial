@@ -25,7 +25,10 @@ export type ShopCatalog = {
     purchasable: boolean;
     max_units: number;
     delivery_method: string;
+    featured: boolean;
+    created_at: string | null;
   }>;
+  trending: string[];
   methods: Array<{
     id: string;
     provider: string;
@@ -42,13 +45,16 @@ export type ShopCatalog = {
 };
 
 export const shopCatalog = createServerFn({ method: "POST" }).handler(async (): Promise<ShopCatalog> => {
-  const { shopProductRows, websitePaymentMethods, maxUnits, reviewMinutes } = await import("@/lib/shop.server");
+  const { shopProductRows, websitePaymentMethods, maxUnits, reviewMinutes, trendingProductIds } = await import(
+    "@/lib/shop.server"
+  );
   const { getSettings } = await import("@/lib/hub.server");
-  const [rows, methods, settings, minutes] = await Promise.all([
+  const [rows, methods, settings, minutes, trending] = await Promise.all([
     shopProductRows("website"),
     websitePaymentMethods(),
     getSettings(),
     reviewMinutes(),
+    trendingProductIds().catch(() => [] as string[]),
   ]);
   return {
     products: rows.map((p) => ({
@@ -72,7 +78,10 @@ export const shopCatalog = createServerFn({ method: "POST" }).handler(async (): 
       purchasable: p.purchasable,
       max_units: maxUnits(p),
       delivery_method: p.delivery_method,
+      featured: p.featured,
+      created_at: p.created_at,
     })),
+    trending,
     methods: (methods as Array<Record<string, unknown>>).map((m) => ({
       id: String(m["id"]),
       provider: String(m["provider"] ?? ""),
