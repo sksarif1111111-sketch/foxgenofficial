@@ -473,8 +473,8 @@ export function CatalogPanel({ notify }: { notify: Notify }) {
 
 const MODULES = ["all", "users", "referrals", "credits", "licenses", "products", "payments", "communities", "bot", "admin"];
 const STATUS_STYLES: Record<string, string> = {
-  success: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
-  warning: "border-amber-500/40 bg-amber-500/10 text-amber-400",
+  success: "border-success/30 bg-success/10 text-success",
+  warning: "border-warning/40 bg-warning/15 text-warning-foreground",
   error: "border-destructive/40 bg-destructive/10 text-destructive",
   info: "border-border bg-muted/30 text-muted-foreground",
 };

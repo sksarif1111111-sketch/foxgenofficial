@@ -690,7 +690,7 @@ function HubAdmin() {
               licenses immediately and never affect license validity or credits.
             </p>
             {!settings["tutorial_url"] && (
-              <p className="mt-2 text-xs text-amber-500">
+              <p className="mt-2 text-xs text-warning-foreground">
                 ⚠️ No tutorial video URL configured yet — add <b>tutorial_url</b> in the Extension tab. The written guide
                 still works.
               </p>
