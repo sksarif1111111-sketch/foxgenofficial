@@ -142,7 +142,7 @@ function TaskCard({ task, notify, onSaved }: { task: TaskRow; notify: Notify; on
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
           <AlertDialogTitle>Delete this task?</AlertDialogTitle>
-          <AlertDialogDescription>“{task.name}” will disappear from the bot. Members' existing completions for it are removed.</AlertDialogDescription>
+          <AlertDialogDescription>“{task.name}” will disappear from the bot's task list. This cannot be undone.</AlertDialogDescription>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => del.mutate()}>Delete task</AlertDialogAction>
