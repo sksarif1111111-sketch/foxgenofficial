@@ -29,6 +29,8 @@ export type ShopProduct = {
   download_url: string | null;
   tutorial_url: string | null;
   shop_order: number;
+  featured: boolean;
+  created_at: string | null;
   purchasable: boolean;
   stock_label: string;
   price_label: string;
@@ -84,6 +86,8 @@ export function shapeProduct(row: Record<string, unknown>, channel: ShopChannel)
 
   return {
     id: String(row["id"]),
+    featured: row["featured"] === true,
+    created_at: (row["created_at"] as string) ?? null,
     slug: (row["slug"] as string) ?? null,
     name: String(row["name"]),
     emoji: (row["emoji"] as string) ?? null,
@@ -130,6 +134,23 @@ export async function shopProductById(id: string, channel: ShopChannel): Promise
   const { data } = await db.from("products").select("*").eq("id", id).maybeSingle();
   if (!data) return null;
   return shapeProduct(data as Record<string, unknown>, channel);
+}
+
+/** Product ids ranked by paid units over the last 30 days (empty until real sales exist). */
+export async function trendingProductIds(limit = 8): Promise<string[]> {
+  const since = new Date(Date.now() - 30 * 86400_000).toISOString();
+  const { data } = await db
+    .from("shop_order_items")
+    .select("product_id, quantity, shop_orders!inner(status)")
+    .gte("created_at", since)
+    .in("shop_orders.status", ["payment_confirmed", "awaiting_fulfillment", "delivered"])
+    .limit(1000);
+  const units = new Map<string, number>();
+  for (const row of (data ?? []) as Array<{ product_id: string | null; quantity: number | null }>) {
+    if (!row.product_id) continue;
+    units.set(row.product_id, (units.get(row.product_id) ?? 0) + (row.quantity ?? 1));
+  }
+  return [...units.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([id]) => id);
 }
 
 export async function websitePaymentMethods() {

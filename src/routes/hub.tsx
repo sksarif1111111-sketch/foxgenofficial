@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { completeTask, getHubState, redeemReward, verifyMembership, type HubState } from "@/lib/hub.functions";
+import { Gift } from "lucide-react";
+import { SiteNav } from "@/components/site/site-nav";
 import digiExtensionLogo from "@/assets/digiextension-logo.jpeg.asset.json";
 
 export const Route = createFileRoute("/hub")({
@@ -36,9 +38,9 @@ type Tab = (typeof TABS)[number];
 
 function Card({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-border bg-card/60 p-5">
-      <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className="mt-1 text-3xl font-black">{value}</p>
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-2 font-display text-3xl font-bold capitalize tabular-nums">{value}</p>
     </div>
   );
 }
@@ -86,14 +88,23 @@ function HubPage() {
 
   if (!token || error) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-6">
-        <h1 className="text-2xl font-black">FoxGEN PRO Rewards Hub</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="min-h-screen bg-background">
+      <SiteNav />
+      <main className="container-page flex justify-center py-16 sm:py-24">
+        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-7 shadow-lift sm:p-9">
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-ember">
+          <Gift className="size-6" />
+        </span>
+        <p className="eyebrow mt-6 text-primary">Free rewards</p>
+        <h1 className="mt-2 text-3xl font-bold">FoxGEN Rewards Hub</h1>
+        <p className="mt-3 text-sm text-muted-foreground">
           {error ?? "Open the Telegram bot, tap “My account” and use the web dashboard link to sign in."}
         </p>
+        <label className="mt-6 block text-sm font-medium" htmlFor="hub-token">Access token</label>
         <input
+          id="hub-token"
           placeholder="Paste your access token"
-          className="rounded-xl border border-border bg-background px-4 py-3 text-sm"
+          className="mt-1.5 h-11 w-full rounded-xl border border-input bg-background px-4 text-sm outline-none focus:border-primary"
           onChange={(e) => {
             const t = e.target.value.trim();
             if (t.length > 20) {
@@ -103,11 +114,26 @@ function HubPage() {
             }
           }}
         />
+        </div>
       </main>
+      </div>
     );
   }
 
-  if (!state) return <main className="p-10 text-sm text-muted-foreground">Loading…</main>;
+  if (!state)
+    return (
+      <div className="min-h-screen bg-background">
+        <SiteNav />
+        <main className="container-page py-12">
+          <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+          <div className="mt-6 grid gap-4 sm:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-28 animate-pulse rounded-2xl bg-muted" />
+            ))}
+          </div>
+        </main>
+      </div>
+    );
 
   const links = state.links;
   const shareMessage = state.referralLink
@@ -129,8 +155,10 @@ function HubPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-5 py-10">
-      <header className="mb-6">
+    <div className="min-h-screen bg-background">
+    <SiteNav />
+    <main className="container-page max-w-6xl py-10">
+      <header className="mb-8 rounded-3xl border border-border bg-card p-6 shadow-soft sm:p-8">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/40 bg-primary/10 text-lg font-black text-primary">
             {avatarFailed ? (
@@ -145,20 +173,20 @@ function HubPage() {
             )}
           </div>
           <div>
-            <h1 className="text-3xl font-black">🦊 {links["brand_name"] || "FoxGEN PRO Rewards Hub"}</h1>
+            <h1 className="text-2xl font-bold sm:text-3xl">{links["brand_name"] || "FoxGEN Rewards Hub"}</h1>
             <p className="text-sm font-semibold">{state.profile.name}{state.profile.username ? ` · @${state.profile.username}` : ""}</p>
             <p className="text-sm text-muted-foreground">{links["brand_description"] || "Earn. Refer. Unlock."}</p>
           </div>
         </div>
       </header>
 
-      <nav className="mb-6 flex flex-wrap gap-2">
+      <nav className="no-scrollbar mb-8 flex gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1 shadow-soft">
         {TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`rounded-full border px-4 py-2 text-xs font-bold ${
-              tab === t ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"
+            className={`h-9 shrink-0 rounded-lg px-4 text-sm font-medium transition ${
+              tab === t ? "bg-ink text-ink-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {t}
@@ -273,7 +301,7 @@ function HubPage() {
                 return res.allDone ? "Verified — account active!" : "Some required tasks are still incomplete.";
               })
             }
-            className="rounded-xl bg-accent px-5 py-3 text-xs font-black uppercase text-primary-foreground"
+            className="rounded-xl bg-ink px-5 py-3 text-xs font-black uppercase text-ink-foreground"
           >
             Complete verification
           </button>
@@ -441,5 +469,6 @@ function HubPage() {
         </section>
       )}
     </main>
+    </div>
   );
 }

@@ -18,3 +18,6 @@
 - External CRM exports use a read-only bearer-protected `/api/public/shop/v1/$resource` route, narrow non-contact projections, and timestamp/UUID pagination; receiving CRMs upsert `shop:<id>` to avoid duplicate sales without granting payment or bot control.
 - Store Admin uses a server-verified shared-password session with encrypted HttpOnly cookies; guard every Admin server function as well as page entry, and derive session encryption from both secrets so password rotation invalidates prior access.
 - Admin management summaries read retained CRM snapshots through password-guarded server functions, paginate financial sources, separate currencies, and use Kolkata day/month boundaries; prevents truncated totals and keeps bookkeeping private without restoring CRM routes.
+
+- Storefront categories are derived from product names in `src/lib/store-categories.ts` (the category table is unused), so new supplier products sort without manual tagging.
+- Storefront pages share `SiteNav`/`SiteFooter`; Admin pages share `AdminShell` (sidebar, logout, metric tiles) so navigation and session controls live in one place.

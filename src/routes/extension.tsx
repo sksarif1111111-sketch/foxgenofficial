@@ -1,20 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, Download, FolderOpen, KeyRound, MonitorCog, ToggleRight } from "lucide-react";
 import digiExtensionLogo from "@/assets/digiextension-logo.jpeg.asset.json";
+import { SiteNav } from "@/components/site/site-nav";
+import { SiteFooter } from "@/components/site/site-footer";
 
 export const Route = createFileRoute("/extension")({
   head: () => ({
     meta: [
-      { title: "FoxGEN Pro Extension — Download" },
+      { title: "FoxGEN Pro Extension — Download | FOXGEN OFFICIAL" },
       {
         name: "description",
-        content:
-          "Download the FoxGEN Pro browser extension. A valid FoxGEN license key unlocks the extension on lovable.dev.",
+        content: "Download the FoxGEN Pro browser extension for lovable.dev. Activate it with a FoxGEN licence key on any number of devices.",
       },
       { property: "og:title", content: "FoxGEN Pro Extension — Download" },
-      {
-        property: "og:description",
-        content: "Download FoxGEN Pro and activate it with your license key.",
-      },
+      { property: "og:description", content: "Download FoxGEN Pro and activate it with your licence key." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -22,161 +21,157 @@ export const Route = createFileRoute("/extension")({
   component: DownloadPage,
 });
 
-const BUILD_TAG = "2026-09-14";
+type Release = {
+  name: string;
+  version: string;
+  tag: string;
+  notes: string;
+  href: string;
+  file: string;
+  logo?: string;
+  recommended?: boolean;
+};
 
-const steps = [
-  "Download the ZIP file and unzip it on your computer.",
-  "Open your browser Extensions page and turn on Developer mode.",
-  'Click "Load unpacked" and select the unzipped folder.',
-  "Open lovable.dev, paste your FoxGEN license key and it unlocks instantly.",
+const RELEASES: Release[] = [
+  {
+    name: "FoxGEN Pro",
+    version: "6.20",
+    tag: "Latest · Smooth send fix",
+    notes: "No screen shaking, no send cooldown and the new premium panel.",
+    href: "/foxgen-pro-6.20.zip",
+    file: "FoxGEN-Pro-6.20.zip",
+    recommended: true,
+  },
+  {
+    name: "FoxGEN Pro · Lovable edition",
+    version: "6.3.0",
+    tag: "Stable",
+    notes: "Reliable activation, direct Approve action.",
+    href: "/foxgen-pro-lovable-extension.zip",
+    file: "FoxGEN-Pro-Lovable-6.3.0.zip",
+  },
+  {
+    name: "FoxGEN Pro · Classic",
+    version: "5.1.5",
+    tag: "Classic",
+    notes: "Original build with licence gate on lovable.dev.",
+    href: "/foxgen-pro-extension.zip",
+    file: "FoxGEN-Pro-5.1.5.zip",
+  },
+  {
+    name: "DIGI Extension · Reseller 3",
+    version: "5.1.5",
+    tag: "Reseller edition",
+    notes: "Light pink edition · Made by Krishna Gupta.",
+    href: "/digiextension-reseller-3.zip",
+    file: "DG-Extension-Reseller-3-5.1.5.zip",
+    logo: digiExtensionLogo.url,
+  },
+];
+
+const STEPS = [
+  { icon: Download, title: "Download & unzip", text: "Save the ZIP and extract it to a folder on your computer." },
+  { icon: ToggleRight, title: "Developer mode", text: "Open your browser’s Extensions page and switch on Developer mode." },
+  { icon: FolderOpen, title: "Load unpacked", text: "Click “Load unpacked” and choose the extracted folder." },
+  { icon: KeyRound, title: "Activate", text: "Open lovable.dev and paste your FoxGEN licence key." },
 ];
 
 export default function DownloadPage() {
+  const [latest, ...others] = RELEASES;
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none absolute -left-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-primary/20 blur-[140px]" />
-      <div className="pointer-events-none absolute -bottom-40 -right-32 h-[30rem] w-[30rem] rounded-full bg-accent/20 blur-[140px]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:44px_44px]" />
+    <div className="min-h-screen bg-background text-foreground">
+      <SiteNav />
 
-      <div className="relative mx-auto flex max-w-4xl flex-col gap-14 px-6 py-20">
-        <header className="flex flex-col items-center gap-6 text-center">
-          <img
-            src="/foxgen-logo.png"
-            alt="FoxGEN Pro logo"
-            width={112}
-            height={112}
-            className="h-28 w-28 rounded-3xl shadow-[0_0_60px_-10px_var(--color-primary)]"
-          />
-          <span className="rounded-full border border-primary/40 bg-primary/10 px-4 py-1 text-[0.7rem] font-bold uppercase tracking-[0.35em] text-primary">
-            FoxGEN Pro
-          </span>
-          <h1 className="bg-gradient-to-r from-primary via-foreground to-accent bg-clip-text text-4xl font-black tracking-tight text-transparent sm:text-6xl">
-            FoxGEN Pro Extension
-          </h1>
-          <p className="max-w-xl text-muted-foreground">
-            Free to download. The extension stays locked until you activate it with a valid
-            FoxGEN license key.
-          </p>
-        </header>
-
-        <section className="relative overflow-hidden rounded-3xl border border-primary/25 bg-card/70 p-8 backdrop-blur-xl shadow-[0_30px_90px_-40px_var(--color-primary)]">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-                Latest build
+      <section className="container-page pt-4 sm:pt-6">
+        <div className="surface-ink relative overflow-hidden rounded-3xl">
+          <div className="bg-grid-ink pointer-events-none absolute inset-0 opacity-70" />
+          <div className="relative grid gap-10 px-6 py-12 sm:px-10 sm:py-16 lg:grid-cols-[1fr_auto] lg:items-center lg:px-14">
+            <div className="max-w-xl">
+              <p className="eyebrow text-primary">FoxGEN Pro · Browser extension</p>
+              <h1 className="mt-4 text-4xl font-bold leading-[1.05] sm:text-6xl">Build faster on lovable.dev.</h1>
+              <p className="mt-4 text-muted-foreground sm:text-lg">
+                Free to download. The extension unlocks with a valid FoxGEN licence key and works on multiple devices.
               </p>
-              <p className="text-2xl font-bold">FoxGEN Pro 5.1.5</p>
-              <p className="text-sm text-muted-foreground">
-                ZIP archive · build {BUILD_TAG} · license gate on lovable.dev
-              </p>
-            </div>
-            <a
-              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-primary to-accent px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
-              href="/foxgen-pro-extension.zip"
-              download="FoxGEN-Pro-5.1.5.zip"
-            >
-              Download extension
-            </a>
-          </div>
-        </section>
-
-        <section className="relative overflow-hidden rounded-3xl border border-accent/25 bg-card/70 p-8 backdrop-blur-xl shadow-[0_30px_90px_-40px_var(--color-accent)]">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent" />
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
-                Lovable edition
-              </p>
-              <p className="text-2xl font-bold">FoxGEN Pro 6.3.0</p>
-              <p className="text-sm text-muted-foreground">
-                Reliable activation · stable device binding · direct Approve action
-              </p>
-            </div>
-            <a
-              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent to-primary px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
-              href="/foxgen-pro-lovable-extension.zip"
-              download="FoxGEN-Pro-Lovable-6.3.0.zip"
-            >
-              Download extension
-            </a>
-          </div>
-        </section>
-
-        <section className="relative overflow-hidden rounded-3xl border border-primary/30 bg-card/70 p-8 backdrop-blur-xl">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Latest · Smooth send fix</p>
-              <p className="text-2xl font-bold">FoxGEN Pro 6.20</p>
-              <p className="text-sm text-muted-foreground">No screen shaking · No send cooldown · Premium design</p>
-            </div>
-            <a
-              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent to-primary px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
-              href="/foxgen-pro-6.20.zip"
-              download="FoxGEN-Pro-6.20.zip"
-            >
-              Download extension
-            </a>
-          </div>
-        </section>
-
-        <section className="relative overflow-hidden rounded-3xl border border-accent/25 bg-card/70 p-8 backdrop-blur-xl shadow-[0_30px_90px_-40px_var(--color-accent)]">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent" />
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <img
-                src={digiExtensionLogo.url}
-                alt="DIGI Extension logo"
-                width={72}
-                height={72}
-                className="h-18 w-18 rounded-2xl border border-accent/30 object-cover"
-              />
-              <div className="flex flex-col gap-1">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
-                  Reseller 3
-                </p>
-                <p className="text-2xl font-bold">DIGI Extension 5.1.5</p>
-                <p className="text-sm text-muted-foreground">
-                   Light pink edition · Made by Krishna Gupta
-                </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <a
+                  href={latest.href}
+                  download={latest.file}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-ember"
+                >
+                  <Download className="size-4" /> Download {latest.version}
+                </a>
+                <Link to="/shop" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border px-6 text-sm font-semibold hover:bg-card">
+                  Get a licence key <ArrowRight className="size-4" />
+                </Link>
               </div>
             </div>
-            <a
-              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent to-primary px-7 py-4 text-sm font-black uppercase tracking-widest text-primary-foreground transition hover:brightness-110"
-              href="/digiextension-reseller-3.zip"
-              download="DG-Extension-Reseller-3-5.1.5.zip"
-            >
-              Download extension
-            </a>
+            <div className="relative mx-auto">
+              <div className="absolute inset-0 rounded-full bg-primary/30 blur-3xl" />
+              <img src="/foxgen-logo.png" alt="FoxGEN Pro logo" width={200} height={200} className="relative size-40 rounded-[2.25rem] ring-1 ring-border sm:size-48" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <main className="container-page mt-16 space-y-20">
+        <section>
+          <div className="mb-6">
+            <p className="eyebrow text-primary">Releases</p>
+            <h2 className="mt-2 text-2xl font-bold sm:text-3xl">Choose your build</h2>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+            {[latest, ...others].map((r) => (
+              <div key={r.file} className="flex flex-col gap-4 border-b border-border p-5 last:border-0 sm:flex-row sm:items-center sm:p-6">
+                <img src={r.logo ?? "/foxgen-logo.png"} alt="" width={48} height={48} className="size-12 shrink-0 rounded-xl object-cover ring-1 ring-border" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold">{r.name}</p>
+                    <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-xs">v{r.version}</span>
+                    {r.recommended ? (
+                      <span className="rounded-md bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground">Recommended</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">{r.tag}</span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{r.notes}</p>
+                </div>
+                <a
+                  href={r.href}
+                  download={r.file}
+                  className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold ${
+                    r.recommended ? "bg-ink text-ink-foreground" : "border border-border hover:bg-muted"
+                  }`}
+                >
+                  <Download className="size-4" /> Download
+                </a>
+              </div>
+            ))}
           </div>
         </section>
 
-
-        <section className="flex flex-col gap-5">
-          <h2 className="text-xl font-bold">How to install</h2>
-          <ol className="grid gap-3 sm:grid-cols-2">
-            {steps.map((step, i) => (
-              <li
-                key={step}
-                className="flex gap-3 rounded-2xl border border-border bg-card/50 p-4 text-sm text-muted-foreground backdrop-blur"
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-xs font-black text-primary-foreground">
-                  {i + 1}
-                </span>
-                <span>{step}</span>
+        <section>
+          <div className="mb-6 flex items-center gap-3">
+            <MonitorCog className="size-5 text-primary" />
+            <h2 className="text-2xl font-bold sm:text-3xl">Install in four steps</h2>
+          </div>
+          <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map((s, i) => (
+              <li key={s.title} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+                <div className="flex items-center justify-between">
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                    <s.icon className="size-5" />
+                  </span>
+                  <span className="font-mono text-xs text-muted-foreground">0{i + 1}</span>
+                </div>
+                <p className="mt-5 font-semibold">{s.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{s.text}</p>
               </li>
             ))}
           </ol>
+          <p className="mt-6 text-sm text-muted-foreground">Replacing an older version? Remove it from the Extensions page first, then load the new folder.</p>
         </section>
-
-        <footer className="flex items-center justify-between border-t border-border pt-6 text-sm text-muted-foreground">
-          <span>© FoxGEN Pro</span>
-          <a className="font-semibold text-primary hover:underline" href="/admin">
-            Admin panel
-          </a>
-        </footer>
-      </div>
-    </main>
+      </main>
+      <SiteFooter />
+    </div>
   );
 }
