@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { BRAND } from "@/lib/brand";
 import { unlockAdmin } from "@/lib/admin-access.functions";
 
 type Destination = "/hub-admin" | "/admin";
@@ -78,9 +79,9 @@ export function AdminAccessForm({ redirect, onDone }: { redirect: Destination; o
 export function AdminAccessHeader({ title = "Control Center" }: { title?: string }) {
   return (
     <div className="flex items-center gap-3">
-      <img src="/foxgen-logo.png" alt="FOXGEN" width={44} height={44} className="size-11 rounded-xl ring-1 ring-border" />
+      <img src={BRAND.mark} alt={BRAND.name} width={44} height={44} className="size-11 rounded-xl bg-ink object-cover ring-1 ring-border" />
       <div>
-        <p className="eyebrow text-primary">FOXGEN OFFICIAL</p>
+        <p className="eyebrow text-primary">{BRAND.name}</p>
         <h2 className="text-xl font-bold">{title}</h2>
       </div>
     </div>
@@ -97,7 +98,7 @@ export function AdminAccessDialog({ trigger, redirect = "/hub-admin" }: { trigge
         <DialogTitle className="sr-only">Administrator access</DialogTitle>
         <AdminAccessHeader />
         <DialogDescription className="-mt-2 text-sm text-muted-foreground">
-          Store, Telegram bot and extension licences are managed here.
+          Store, Telegram bot, rewards and offers are managed here.
         </DialogDescription>
         <AdminAccessForm redirect={redirect} onDone={() => setOpen(false)} />
       </DialogContent>

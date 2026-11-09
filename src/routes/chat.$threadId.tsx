@@ -7,6 +7,7 @@ import { Conversation, ConversationContent, ConversationEmptyState, Conversation
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import { BRAND } from "@/lib/brand";
 import { getThread, newThreadId, saveThreadMessages } from "@/lib/chat-threads";
 
 export const Route = createFileRoute("/chat/$threadId")({
@@ -66,7 +67,7 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
     <>
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
-          <img src="/foxgen-logo.png" alt="" className="h-7 w-7 rounded-md" />
+          <img src={BRAND.mark} alt="" className="h-7 w-7 rounded-md" />
           <span className="text-sm font-bold">FoxGEN AI</span>
         </div>
         <Link
@@ -81,12 +82,12 @@ function ChatWindow({ threadId, initialMessages }: { threadId: string; initialMe
         <ConversationContent>
           {messages.length === 0 ? (
             <ConversationEmptyState
-              icon={<img src="/foxgen-logo.png" alt="" className="h-12 w-12 rounded-xl" />}
+              icon={<img src={BRAND.mark} alt="" className="h-12 w-12 rounded-xl" />}
               title="Hi! I'm FoxGEN AI"
               description="Ask me about products, prices and stock."
             >
               <div className="flex flex-col items-center gap-3">
-                <img src="/foxgen-logo.png" alt="" className="h-12 w-12 rounded-xl" />
+                <img src={BRAND.mark} alt="" className="h-12 w-12 rounded-xl" />
                 <p className="text-sm font-semibold">Hi! I'm FoxGEN AI — ask me about products, prices and stock.</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {SUGGESTIONS.map((s) => (

@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 export const Route = createFileRoute("/extension")({
   head: () => ({
     meta: [
-      { title: "FoxGEN Pro Extension — Download | FOXGEN OFFICIAL" },
+      { title: "FoxGEN Pro Extension — Download | Foxgen AI Store" },
       {
         name: "description",
         content: "Download the FoxGEN Pro browser extension for lovable.dev. Activate it with a FoxGEN licence key on any number of devices.",

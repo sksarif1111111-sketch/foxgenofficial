@@ -32,7 +32,7 @@ function AdminAccess() {
         {/* Light dialog card on the ink backdrop */}
         <div className="rounded-2xl border border-border surface-light bg-background p-6 text-foreground shadow-lift sm:p-7">
           <AdminAccessHeader title={redirect === "/admin" ? "Licence Center" : "Control Center"} />
-          <p className="mt-3 text-sm text-muted-foreground">Store, Telegram bot and extension licences are managed here.</p>
+          <p className="mt-3 text-sm text-muted-foreground">Store, Telegram bot, rewards and offers are managed here.</p>
           <div className="mt-6">
             <AdminAccessForm redirect={redirect} />
           </div>
