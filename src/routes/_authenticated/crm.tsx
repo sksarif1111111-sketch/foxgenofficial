@@ -30,6 +30,7 @@ const NAV = [
   { to: "/crm/expenses", label: "Expenses" },
   { to: "/crm/refunds", label: "Refunds" },
   { to: "/crm/reports", label: "Reports" },
+  { to: "/crm/bot", label: "Bot management" },
 ] as const;
 
 function CrmLayout() {

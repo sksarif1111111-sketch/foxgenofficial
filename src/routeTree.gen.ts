@@ -20,6 +20,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
 import { Route as AuthenticatedCrmIndexRouteImport } from './routes/_authenticated/crm.index'
+import { Route as AuthenticatedCrmBotRouteImport } from './routes/_authenticated/crm.bot'
 import { Route as AuthenticatedCrmCustomersRouteImport } from './routes/_authenticated/crm.customers'
 import { Route as AuthenticatedCrmExpensesRouteImport } from './routes/_authenticated/crm.expenses'
 import { Route as AuthenticatedCrmInventoryRouteImport } from './routes/_authenticated/crm.inventory'
@@ -87,6 +88,11 @@ const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
 const AuthenticatedCrmIndexRoute = AuthenticatedCrmIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedCrmRoute,
+} as any)
+const AuthenticatedCrmBotRoute = AuthenticatedCrmBotRouteImport.update({
+  id: '/bot',
+  path: '/bot',
   getParentRoute: () => AuthenticatedCrmRoute,
 } as any)
 const AuthenticatedCrmCustomersRoute =
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
   '/crm': typeof AuthenticatedCrmRouteWithChildren
+  '/crm/bot': typeof AuthenticatedCrmBotRoute
   '/crm/customers': typeof AuthenticatedCrmCustomersRoute
   '/crm/expenses': typeof AuthenticatedCrmExpensesRoute
   '/crm/inventory': typeof AuthenticatedCrmInventoryRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/hub-admin': typeof HubAdminRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
+  '/crm/bot': typeof AuthenticatedCrmBotRoute
   '/crm/customers': typeof AuthenticatedCrmCustomersRoute
   '/crm/expenses': typeof AuthenticatedCrmExpensesRoute
   '/crm/inventory': typeof AuthenticatedCrmInventoryRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRouteWithChildren
+  '/_authenticated/crm/bot': typeof AuthenticatedCrmBotRoute
   '/_authenticated/crm/customers': typeof AuthenticatedCrmCustomersRoute
   '/_authenticated/crm/expenses': typeof AuthenticatedCrmExpensesRoute
   '/_authenticated/crm/inventory': typeof AuthenticatedCrmInventoryRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/crm'
+    | '/crm/bot'
     | '/crm/customers'
     | '/crm/expenses'
     | '/crm/inventory'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/hub-admin'
     | '/reset-password'
     | '/shop'
+    | '/crm/bot'
     | '/crm/customers'
     | '/crm/expenses'
     | '/crm/inventory'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/_authenticated/crm'
+    | '/_authenticated/crm/bot'
     | '/_authenticated/crm/customers'
     | '/_authenticated/crm/expenses'
     | '/_authenticated/crm/inventory'
@@ -422,6 +434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmIndexRouteImport
       parentRoute: typeof AuthenticatedCrmRoute
     }
+    '/_authenticated/crm/bot': {
+      id: '/_authenticated/crm/bot'
+      path: '/bot'
+      fullPath: '/crm/bot'
+      preLoaderRoute: typeof AuthenticatedCrmBotRouteImport
+      parentRoute: typeof AuthenticatedCrmRoute
+    }
     '/_authenticated/crm/customers': {
       id: '/_authenticated/crm/customers'
       path: '/customers'
@@ -524,6 +543,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedCrmRouteChildren {
+  AuthenticatedCrmBotRoute: typeof AuthenticatedCrmBotRoute
   AuthenticatedCrmCustomersRoute: typeof AuthenticatedCrmCustomersRoute
   AuthenticatedCrmExpensesRoute: typeof AuthenticatedCrmExpensesRoute
   AuthenticatedCrmInventoryRoute: typeof AuthenticatedCrmInventoryRoute
@@ -537,6 +557,7 @@ interface AuthenticatedCrmRouteChildren {
 }
 
 const AuthenticatedCrmRouteChildren: AuthenticatedCrmRouteChildren = {
+  AuthenticatedCrmBotRoute: AuthenticatedCrmBotRoute,
   AuthenticatedCrmCustomersRoute: AuthenticatedCrmCustomersRoute,
   AuthenticatedCrmExpensesRoute: AuthenticatedCrmExpensesRoute,
   AuthenticatedCrmInventoryRoute: AuthenticatedCrmInventoryRoute,
