@@ -1,5 +1,4 @@
 import { adminAccessStatus } from "@/lib/admin-access.functions";
-import { AdminSessionBar } from "@/components/admin/admin-session-bar";
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -37,11 +36,13 @@ import { ActivityPanel, CatalogPanel, ProductFilesPanel, ProductsPanel } from "@
 import { BuyingPanel, ShopProductsPanel, WalletPanel } from "@/components/admin/shop-panels";
 import { ManagementDashboard } from "@/components/admin/management-dashboard";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "@tanstack/react-router";
-import { Bot, ShoppingBag, Puzzle, KeyRound } from "lucide-react";
+import { AdminShell, MetricCard, type AdminNavId } from "@/components/admin/admin-shell";
+import { RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/hub-admin")({
+  validateSearch: (s: Record<string, unknown>): { section?: string } => ({
+    section: typeof s.section === "string" ? s.section : undefined,
+  }),
   beforeLoad: async () => {
     const status = await adminAccessStatus();
     if (!status.unlocked) throw redirect({ to: "/admin-access", search: { redirect: "/hub-admin" } });
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/hub-admin")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: () => <><AdminSessionBar /><HubAdmin /></>,
+  component: HubAdmin,
 });
 
 const SECTIONS = [
@@ -84,11 +85,9 @@ const SECTIONS = [
 ] as const;
 type Section = (typeof SECTIONS)[number];
 
-const ADMIN_GROUPS = {
-  shop: ["Overview", "Shop", "Buying", "Products", "Catalog", "Activity"],
-  bot: ["Bot", "Users", "Referrals", "Rewards", "Tasks", "Branding", "Links", "Logs"],
-  extension: ["Extension", "Instructions", "Licenses"],
-} satisfies Record<string, Section[]>;
+function isSection(value: unknown): value is Section {
+  return typeof value === "string" && (SECTIONS as readonly string[]).includes(value);
+}
 
 const EXTENSION_FIELDS = [
   "extension_name",
@@ -165,12 +164,7 @@ type LogRow = Awaited<ReturnType<typeof adminLogs>>[number];
 
 
 function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card/60 p-5">
-      <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className="mt-1 text-3xl font-black">{value}</p>
-    </div>
-  );
+  return <MetricCard label={label} value={value} />;
 }
 
 function HubAdmin() {
@@ -207,13 +201,11 @@ function HubAdmin() {
   const [newGuidePage, setNewGuidePage] = useState({ heading: "", body: "", display_order: 10 });
   const [guidePreview, setGuidePreview] = useState(false);
 
-  const [section, setSection] = useState<Section>("Overview");
-  const [group, setGroup] = useState<keyof typeof ADMIN_GROUPS>("shop");
+  const initial = Route.useSearch().section;
+  const [section, setSection] = useState<Section>(isSection(initial) ? initial : "Overview");
   function openSection(next: Section) {
-    if (ADMIN_GROUPS.extension.some(s => s === next)) setGroup("extension");
-    else if (ADMIN_GROUPS.bot.some(s => s === next)) setGroup("bot");
-    else setGroup("shop");
     setSection(next);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
   }
   const [flash, setFlash] = useState<string | null>(null);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -272,37 +264,26 @@ function HubAdmin() {
   }, [section, loadSection]);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
-      <header className="mb-7 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3"><img src="/foxgen-logo.png" alt="FoxGEN" width={48} height={48} className="size-12 rounded-lg"/><div><p className="text-xs font-medium text-primary">ADMIN WORKSPACE</p><h1 className="mt-1 text-2xl font-bold sm:text-3xl">FoxGEN Management</h1></div></div>
-        <Button variant="outline" onClick={() => openSection("Extension")}><Puzzle/>Extension</Button>
-      </header>
-      <Tabs value={group} onValueChange={(value) => {
-        if(value === "shop" || value === "bot" || value === "extension") {
-          setGroup(value); setSection(value === "shop" ? "Overview" : value === "bot" ? "Bot" : "Extension");
-        }
-      }} className="mb-4">
-        <TabsList className="grid h-auto w-full grid-cols-3 gap-1 p-1 sm:w-fit">
-          <TabsTrigger value="shop" className="min-w-0 gap-2 px-2 py-3 text-xs sm:px-6 sm:text-sm"><ShoppingBag className="hidden size-4 sm:block"/>Shop</TabsTrigger>
-          <TabsTrigger value="bot" className="min-w-0 gap-2 px-2 py-3 text-xs sm:px-6 sm:text-sm"><Bot className="hidden size-4 sm:block"/>Bot Management</TabsTrigger>
-          <TabsTrigger value="extension" className="min-w-0 gap-2 px-2 py-3 text-xs sm:px-6 sm:text-sm"><Puzzle className="hidden size-4 sm:block"/>Extension</TabsTrigger>
-        </TabsList>
-      </Tabs>
-      <nav aria-label="Management sections" className="mb-8 flex flex-wrap gap-2 border-b border-border pb-5">
-        {ADMIN_GROUPS[group].map((s) => (
-          <Button
-            key={s}
-            onClick={() => setSection(s)}
-            size="sm" variant={section === s ? "secondary" : "ghost"}
-            className={section === s ? "text-primary" : "text-muted-foreground"}
-          >
-            {s}
-          </Button>
-        ))}
-        {group === "extension" && <Button asChild size="sm" variant="outline"><Link to="/admin"><KeyRound/>License generator</Link></Button>}
-      </nav>
-
-      {flash && <p className="mb-4 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm">{flash}</p>}
+    <AdminShell
+      active={section}
+      onSelect={(id: AdminNavId) => {
+        if (isSection(id)) openSection(id);
+      }}
+      actions={
+        <Button variant="outline" size="sm" onClick={() => void loadSection(section)} className="gap-1.5">
+          <RefreshCw className="size-3.5" />
+          <span className="hidden sm:inline">Refresh</span>
+        </Button>
+      }
+    >
+      {flash && (
+        <div role="status" className="mb-6 flex items-start justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm shadow-soft">
+          <span>{flash}</span>
+          <button type="button" onClick={() => setFlash(null)} className="text-xs font-medium text-muted-foreground hover:text-foreground">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {(section === "Overview" || section === "Bot") && <div className="mb-10"><ManagementDashboard onOpen={openSection}/></div>}
       {section === "Overview" && overview && (
@@ -986,7 +967,7 @@ function HubAdmin() {
           </div>
         </section>
       )}
-    </main>
+    </AdminShell>
   );
 }
 
