@@ -82,7 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Foxgen AI Store — Premium AI & Software Marketplace" },
       { name: "description", content: "Premium AI tools, software plans and licences from Foxgen AI Store." },
       { name: "author", content: "Foxgen AI Store" },
-      { name: "theme-color", content: "#1b2240" },
+      { name: "theme-color", content: "#181818" },
     ],
     links: [
       {
@@ -94,7 +94,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Sora:wght@500..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap",
       },
     ],
   }),

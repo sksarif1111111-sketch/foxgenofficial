@@ -5,15 +5,15 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Foxgen AI Store design system — "Porcelain & Navy".
- * Soft cool-white canvas, deep navy surfaces and one refined blue accent.
- * A blue→violet gradient (taken from the fox logo) is reserved for brand moments.
- * Display: Sora · Text: Geist · Data: Geist Mono. All colours are oklch tokens.
+ * Foxgen AI Store design system (follows the landing-page-design skill).
+ * Flat soft-white canvas, near-black ink surfaces (#181818 family) and one refined blue accent.
+ * No background gradients; the only gradient is the hero heading text.
+ * One typeface: Geist (Geist Mono only for numeric/data UI). All colours are oklch tokens.
  */
 
 @theme inline {
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Sora", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -88,7 +88,7 @@
   --success-foreground: oklch(0.99 0.003 255);
   --warning: oklch(0.74 0.15 75);
   --warning-foreground: oklch(0.32 0.07 60);
-  --ink: oklch(0.21 0.045 266);
+  --ink: oklch(0.205 0 0); /* #181818 */
   --ink-foreground: oklch(0.97 0.005 255);
   --brand-violet: oklch(0.58 0.2 300);
   --border: oklch(0.915 0.01 260);
@@ -108,28 +108,27 @@
   --sidebar-border: oklch(1 0 0 / 9%);
   --sidebar-ring: oklch(0.74 0.13 250);
 
-  --gradient-brand: linear-gradient(120deg, oklch(0.6 0.17 248), oklch(0.56 0.2 298));
   --shadow-soft: 0 1px 2px oklch(0.22 0.04 265 / 5%), 0 6px 20px -12px oklch(0.22 0.04 265 / 14%);
   --shadow-lift: 0 2px 4px oklch(0.22 0.04 265 / 5%), 0 22px 44px -22px oklch(0.22 0.04 265 / 26%);
   --shadow-ember: 0 14px 34px -16px oklch(0.52 0.19 262 / 50%);
 }
 
-/* Deep navy surfaces (hero bands, admin sidebar, access screens). */
+/* Near-black surfaces (hero bands, footer, access screens) — skill palette #181818 / #1F1F1F / #272727 / #313131. */
 .surface-ink {
-  --background: oklch(0.2 0.045 266);
-  --foreground: oklch(0.97 0.005 255);
-  --card: oklch(0.245 0.05 266);
-  --card-foreground: oklch(0.97 0.005 255);
-  --popover: oklch(0.245 0.05 266);
-  --popover-foreground: oklch(0.97 0.005 255);
-  --secondary: oklch(0.28 0.05 266);
-  --secondary-foreground: oklch(0.97 0.005 255);
-  --muted: oklch(0.27 0.05 266);
-  --muted-foreground: oklch(0.76 0.025 260);
-  --accent: oklch(0.3 0.07 262);
+  --background: oklch(0.205 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.235 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.235 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --secondary: oklch(0.31 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.268 0 0);
+  --muted-foreground: oklch(0.74 0 0);
+  --accent: oklch(0.268 0 0);
   --accent-foreground: oklch(0.86 0.08 250);
   --primary: oklch(0.74 0.13 250);
-  --primary-foreground: oklch(0.2 0.045 266);
+  --primary-foreground: oklch(0.205 0 0);
   --border: oklch(1 0 0 / 11%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.74 0.13 250);
@@ -154,9 +153,21 @@
     font-feature-settings: "ss01", "cv11";
   }
 
-  h1, h2, h3 {
+  h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.03em;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  p, li, dd {
+    text-wrap: pretty;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   ::selection {
@@ -173,14 +184,47 @@
 @utility shadow-ember {
   box-shadow: var(--shadow-ember);
 }
+/* Flat brand tint (the skill forbids background gradients; name kept for existing call sites). */
 @utility bg-brand-gradient {
-  background-image: var(--gradient-brand);
+  background-color: var(--primary);
 }
-@utility text-brand-gradient {
-  background-image: var(--gradient-brand);
+/* Hero heading text gradient, light theme: #000000 → #666666 (left to right). */
+@utility text-hero-gradient {
+  background-image: linear-gradient(90deg, #000000, #666666);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
+}
+/* Named text styles from the skill (B1). Sizes are Tailwind scale steps. */
+@utility heading-1 { font-size: 3.75rem; line-height: 1; font-weight: 600; }
+@utility heading-2 { font-size: 3rem; line-height: 1; font-weight: 600; }
+@utility heading-3 { font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; }
+@utility heading-4 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; }
+@utility heading-5 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; }
+@utility heading-6 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; }
+@utility title-1 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 500; }
+@utility title-2 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 500; }
+@utility title-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+@utility title-4 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+@utility title-5 { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
+@utility body-1 { font-size: 1rem; line-height: 1.5rem; font-weight: 600; }
+@utility body-2 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+@utility body-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 400; }
+@utility body-4 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; }
+@utility body-5 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+@utility body-6 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+@utility button-lg { font-size: 1.125rem; line-height: 1.75rem; font-weight: 600; }
+@utility button-md { font-size: 1rem; line-height: 1.5rem; font-weight: 600; }
+@utility button-sm { font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; }
+@utility button-xsm { font-size: 0.75rem; line-height: 1rem; font-weight: 600; }
+@utility caption-1 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+@utility caption-2 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+@utility caption-3 { font-size: 0.75rem; line-height: 1rem; font-weight: 600; }
+@utility caption-4 { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
+@utility caption-5 { font-size: 0.75rem; line-height: 1rem; font-weight: 400; }
+/* Skill base motion curve. */
+@utility ease-weighted {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 @utility font-display {
   font-family: var(--font-display);
