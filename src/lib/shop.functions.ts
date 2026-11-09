@@ -48,7 +48,7 @@ export type ShopCatalog = {
 };
 
 export const shopCatalog = createServerFn({ method: "POST" }).handler(async (): Promise<ShopCatalog> => {
-  const { shopProductRows, websitePaymentMethods, maxUnits, reviewMinutes, trendingProductIds, lastSupplierSync } = await import(
+  const { shopProductRows, websitePaymentMethods, reviewMinutes, trendingProductIds, lastSupplierSync, toCatalogProduct } = await import(
     "@/lib/shop.server"
   );
   const { getSettings } = await import("@/lib/hub.server");
@@ -61,32 +61,7 @@ export const shopCatalog = createServerFn({ method: "POST" }).handler(async (): 
     lastSupplierSync().catch(() => null),
   ]);
   return {
-    products: rows.map((p) => ({
-      id: p.id,
-      name: p.name,
-      emoji: p.emoji,
-      short_description: p.short_description,
-      description: p.description,
-      features: p.features,
-      terms: p.terms,
-      image_url: p.image_url,
-      logo_url: p.logo_url,
-      duration_label: p.duration_label,
-      credits_per_interval: p.credits_per_interval,
-      renewal_interval: p.renewal_interval,
-      price_usdt: p.price_usdt,
-      price_inr: p.price_inr,
-      price_label: p.price_label,
-      stock_label: p.stock_label,
-      availability: p.availability,
-      purchasable: p.purchasable,
-      max_units: maxUnits(p),
-      delivery_method: p.delivery_method,
-      featured: p.featured,
-      created_at: p.created_at,
-      updated_at: p.updated_at,
-      source: p.source,
-    })),
+    products: rows.map(toCatalogProduct),
     trending,
     lastSupplierSync: lastSync,
     methods: (methods as Array<Record<string, unknown>>).map((m) => ({
@@ -117,20 +92,24 @@ export type ProductDetail = {
 export const shopProductDetail = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }): Promise<ProductDetail | null> => {
-    const { shopCatalogInternal } = await import("@/lib/shop.server");
+    const { shopProductRows, websitePaymentMethods, reviewMinutes, lastSupplierSync, toCatalogProduct } = await import("@/lib/shop.server");
     const { categoryOf } = await import("@/lib/store-categories");
-    const catalog = await shopCatalogInternal();
-    const full = catalog.rows.find((p) => p.id === data.id);
+    const [rows, methods, minutes, lastSync] = await Promise.all([
+      shopProductRows("website"),
+      websitePaymentMethods(),
+      reviewMinutes(),
+      lastSupplierSync().catch(() => null),
+    ]);
+    const full = rows.find((p) => p.id === data.id);
     if (!full) return null;
-    const shaped = catalog.products.find((p) => p.id === data.id)!;
     const cat = categoryOf(full.name);
-    const related = catalog.products.filter((p) => p.id !== full.id && p.purchasable && categoryOf(p.name) === cat).slice(0, 4);
+    const related = rows.filter((p) => p.id !== full.id && p.purchasable && categoryOf(p.name) === cat).slice(0, 4).map(toCatalogProduct);
     return {
-      product: { ...shaped, installation_instructions: full.installation_instructions, tutorial_url: full.tutorial_url },
+      product: { ...toCatalogProduct(full), installation_instructions: full.installation_instructions, tutorial_url: full.tutorial_url },
       related,
-      methods: catalog.methods,
-      reviewMinutes: catalog.reviewMinutes,
-      lastSupplierSync: catalog.lastSupplierSync,
+      methods: (methods as Array<Record<string, unknown>>).map((m) => String(m["name"])),
+      reviewMinutes: minutes,
+      lastSupplierSync: lastSync,
     };
   });
 

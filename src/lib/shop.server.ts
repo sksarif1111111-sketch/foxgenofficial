@@ -139,6 +139,36 @@ export async function shopProductRows(channel: ShopChannel): Promise<ShopProduct
   return (data ?? []).map((row) => shapeProduct(row as Record<string, unknown>, channel));
 }
 
+/** Public-safe product projection used by the storefront catalogue and product pages. */
+export function toCatalogProduct(p: ShopProduct) {
+  return {
+    id: p.id,
+    name: p.name,
+    emoji: p.emoji,
+    short_description: p.short_description,
+    description: p.description,
+    features: p.features,
+    terms: p.terms,
+    image_url: p.image_url,
+    logo_url: p.logo_url,
+    duration_label: p.duration_label,
+    credits_per_interval: p.credits_per_interval,
+    renewal_interval: p.renewal_interval,
+    price_usdt: p.price_usdt,
+    price_inr: p.price_inr,
+    price_label: p.price_label,
+    stock_label: p.stock_label,
+    availability: p.availability,
+    purchasable: p.purchasable,
+    max_units: maxUnits(p),
+    delivery_method: p.delivery_method,
+    featured: p.featured,
+    created_at: p.created_at,
+    updated_at: p.updated_at,
+    source: p.source,
+  };
+}
+
 /** Most recent successful supplier sync (null when suppliers have never synced). */
 export async function lastSupplierSync(): Promise<string | null> {
   const [runs, crm] = await Promise.all([
