@@ -32,7 +32,7 @@ function ResetPassword() {
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (error) return setMsg(error.message);
-    navigate({ to: "/crm", replace: true });
+    navigate({ to: "/", replace: true });
   }
 
   return (
