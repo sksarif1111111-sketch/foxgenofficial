@@ -273,7 +273,7 @@ function HubPage() {
                 return res.allDone ? "Verified — account active!" : "Some required tasks are still incomplete.";
               })
             }
-            className="rounded-xl bg-accent px-5 py-3 text-xs font-black uppercase text-primary-foreground"
+            className="rounded-xl bg-ink px-5 py-3 text-xs font-black uppercase text-ink-foreground"
           >
             Complete verification
           </button>
