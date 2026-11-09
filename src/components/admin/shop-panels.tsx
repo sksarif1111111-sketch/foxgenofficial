@@ -458,6 +458,9 @@ const emptyProduct = {
   features: "",
   terms: "",
   image_url: "",
+  logo_url: "",
+  featured: false,
+  reseller_product_id: "",
   duration_label: "",
   credits_per_interval: "",
   renewal_interval: "",
@@ -512,6 +515,28 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
     void load();
   }, [load]);
 
+  const visibleRows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return rows.filter((row) => {
+      if (q && !String(row["name"] ?? "").toLowerCase().includes(q)) return false;
+      if (sourceFilter === "manual") return !row["reseller_product_id"];
+      if (sourceFilter === "api") return Boolean(row["reseller_product_id"]);
+      if (sourceFilter === "featured") return row["featured"] === true;
+      if (sourceFilter === "unpublished") return row["shop_published"] !== true;
+      return true;
+    });
+  }, [rows, query, sourceFilter]);
+
+  const act = async (fn: () => Promise<unknown>, ok: string) => {
+    try {
+      await fn();
+      notify(ok);
+      await load();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Action failed.");
+    }
+  };
+
   const edit = (row: Row) =>
     setDraft({
       id: String(row["id"]),
@@ -560,6 +585,8 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
           features: draft.features.split("\n").map((f) => f.trim()).filter(Boolean),
           terms: draft.terms,
           image_url: draft.image_url,
+          logo_url: draft.logo_url,
+          featured: draft.featured,
           duration_label: draft.duration_label,
           credits_per_interval: numOrNull(draft.credits_per_interval),
           renewal_interval: draft.renewal_interval,
@@ -596,53 +623,93 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
         </button>
       </div>
 
-      {rows.map((row) => (
-        <article key={String(row["id"])} className={`${card} space-y-2`}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-bold">
-              {String(row["emoji"] ?? "")} {String(row["name"])}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {row["price_usdt"] === null ? "Price not configured" : `${Number(row["price_usdt"]).toFixed(2)} USDT`} ·{" "}
-              {row["price_stars"] === null ? "Stars not configured" : `${String(row["price_stars"])} ⭐`} ·{" "}
-              {String(row["availability"])} · {row["shop_published"] ? "published" : "unpublished"}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className={ghostBtn} onClick={() => edit(row)}>
-              Edit
+      <div className="flex flex-wrap items-center gap-2">
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search products" aria-label="Search products" className="h-10 min-w-56 flex-1 rounded-lg border border-input bg-background px-3 text-sm" />
+        <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">
+          {([["all", "All"], ["manual", "Store managed"], ["api", "Supplier API"], ["featured", "Featured"], ["unpublished", "Hidden"]] as const).map(([id, label]) => (
+            <button key={id} type="button" onClick={() => setSourceFilter(id)} className={`h-8 rounded-md px-3 text-xs font-medium ${sourceFilter === id ? "bg-card shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>
+              {label}
             </button>
-            <button
-              type="button"
-              className={ghostBtn}
-              onClick={() =>
-                void fDuplicate({ data: { id: String(row["id"]) } })
-                  .then(load)
-                  .then(() => notify("Product duplicated as a draft."))
-              }
-            >
-              Duplicate
-            </button>
-            <button
-              type="button"
-              className={ghostBtn}
-              onClick={() =>
-                void fState({ data: { id: String(row["id"]), shop_published: !(row["shop_published"] === true) } })
-                  .then(load)
-              }
-            >
-              {row["shop_published"] ? "Unpublish" : "Publish"}
-            </button>
-            <button
-              type="button"
-              className={ghostBtn}
-              onClick={() => void fState({ data: { id: String(row["id"]), status: "archived" } }).then(load)}
-            >
-              Archive
-            </button>
-          </div>
-        </article>
-      ))}
+          ))}
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">{visibleRows.length} of {rows.length} products. Supplier API products refresh price and stock on sync; store-only edits (images, Stars price, descriptions) are kept.</p>
+
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[860px] text-left text-sm">
+            <thead className="bg-muted/50 text-xs text-muted-foreground">
+              <tr>{["Product", "Source", "Price", "Stock", "Visibility", ""].map((h) => <th key={h} className="px-4 py-3 font-medium">{h}</th>)}</tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {visibleRows.map((row) => {
+                const id = String(row["id"]);
+                const api = Boolean(row["reseller_product_id"]);
+                const archived = row["status"] === "archived";
+                return (
+                  <tr key={id} className={`hover:bg-muted/30 ${archived ? "opacity-60" : ""}`}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted text-base">
+                          {row["logo_url"] ? <img src={String(row["logo_url"])} alt="" className="size-6 object-contain" /> : String(row["emoji"] ?? "") || String(row["name"]).charAt(0)}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-1.5 truncate font-medium">{row["featured"] === true && <span className="text-warning" aria-label="Featured">★</span>}{String(row["name"])}</p>
+                          <p className="text-xs text-muted-foreground">{String(row["status"])}{row["duration_label"] ? ` · ${String(row["duration_label"])}` : ""}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${api ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+                        {api ? (String(row["reseller_product_id"]).startsWith("digihup:") ? "DIGIHUP API" : "Reseller API") : "Store managed"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 tabular-nums">
+                      {row["price_usdt"] === null ? <span className="text-muted-foreground">Not set</span> : `${Number(row["price_usdt"]).toFixed(2)} USDT`}
+                      <p className="text-xs text-muted-foreground">{row["price_stars"] === null ? "No Stars price" : `${String(row["price_stars"])} Stars`}</p>
+                    </td>
+                    <td className="px-4 py-3 text-xs">{String(row["availability"]).replaceAll("_", " ")}{row["stock_mode"] === "tracked" ? ` · ${String(row["stock_quantity"] ?? 0)} left` : ""}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${row["shop_published"] ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}
+                        onClick={() => void act(() => fState({ data: { id, shop_published: !(row["shop_published"] === true) } }), row["shop_published"] ? "Product hidden from the store and bot." : "Product published to the store and bot.")}
+                      >
+                        {row["shop_published"] ? "Published" : "Hidden"}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1.5">
+                        <button type="button" className={ghostBtn} onClick={() => edit(row)}>Edit</button>
+                        <button type="button" className={ghostBtn} onClick={() => void act(() => fState({ data: { id, featured: !(row["featured"] === true) } }), row["featured"] ? "Removed from featured." : "Marked as featured on the Home page.")}>
+                          {row["featured"] ? "Unfeature" : "Feature"}
+                        </button>
+                        <button type="button" className={ghostBtn} onClick={() => void act(() => fDuplicate({ data: { id } }), "Product duplicated as a hidden draft.")}>Duplicate</button>
+                        {archived ? (
+                          <button type="button" className={ghostBtn} onClick={() => void act(() => fState({ data: { id, status: "active" } }), "Product restored.")}>Restore</button>
+                        ) : (
+                          <button type="button" className={ghostBtn} onClick={() => void act(() => fState({ data: { id, status: "archived" } }), "Product archived.")}>Archive</button>
+                        )}
+                        <button
+                          type="button"
+                          className="rounded-xl border border-destructive/40 px-3 py-2 text-xs font-bold text-destructive"
+                          onClick={() => {
+                            if (!window.confirm(`Delete “${String(row["name"])}” permanently? Products with orders can only be archived.`)) return;
+                            void act(() => fDeleteProduct({ data: { id } }), "Product deleted.");
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {!visibleRows.length && <p className="px-4 py-10 text-center text-sm text-muted-foreground">No products match.</p>}
+        </div>
+      </div>
 
       {draft && (
         <div className={`${card} space-y-3 border-primary/40`}>
@@ -657,9 +724,15 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
             <Field label="Emoji">
               <input className={input} value={draft.emoji} onChange={(e) => setDraft({ ...draft, emoji: e.target.value })} />
             </Field>
-            <Field label="Image URL">
-              <input className={input} value={draft.image_url} onChange={(e) => setDraft({ ...draft, image_url: e.target.value })} />
-            </Field>
+            <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+              <ImageUpload folder="products" label="Product image (cards & product page)" value={draft.image_url} onChange={(url) => setDraft({ ...draft, image_url: url })} />
+              <ImageUpload folder="products" label="Brand logo (square)" value={draft.logo_url} onChange={(url) => setDraft({ ...draft, logo_url: url })} />
+            </div>
+            {draft.reseller_product_id && (
+              <p className="sm:col-span-2 rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground">
+                Connected to supplier product <span className="font-mono">{draft.reseller_product_id}</span>. Name, USDT price and stock are refreshed on each sync; everything else you edit here is kept.
+              </p>
+            )}
             <Field label="Price USDT (blank = not configured)">
               <input className={input} value={draft.price_usdt} onChange={(e) => setDraft({ ...draft, price_usdt: e.target.value })} />
             </Field>
@@ -735,6 +808,10 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={draft.shop_published} onChange={(e) => setDraft({ ...draft, shop_published: e.target.checked })} />
             Published in the store
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={draft.featured} onChange={(e) => setDraft({ ...draft, featured: e.target.checked })} />
+            Featured on the Home page
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={draft.requires_buyer_email} onChange={(e) => setDraft({ ...draft, requires_buyer_email: e.target.checked })} />
