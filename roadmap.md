@@ -1,7 +1,8 @@
 # Roadmap
 
-- [ ] Build and verify authenticated Store/Bot export API for external CRM sync.
-- [ ] Configure shared CRM API key and connect the external CRM (requires its connection details).
+- [x] Build and verify authenticated Store/Bot export API for external CRM sync (live catalogue/order reads, pagination, auth and rule tests passed; no paid sale available to verify).
+- [x] Configure shared SHOP_CRM_API_KEY securely.
+- [ ] Publish the API and connect the external CRM (requires its project link/access and the same shared key there).
 
 - [x] Verify and resolve the reported `use-mobile.tsx` TypeScript error.
 - [x] Rebrand the latest uploaded extension’s visible design to FoxGEN Pro while preserving licensing and functionality.
