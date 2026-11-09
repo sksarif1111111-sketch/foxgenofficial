@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Deliver a clean complete source ZIP containing the CRM before removing its pages.
+- [ ] Remove only CRM pages and entry links; preserve stored data, Store, Bot and export API, then verify.
+
 - [x] Build and verify authenticated Store/Bot export API for external CRM sync (live catalogue/order reads, pagination, auth and rule tests passed; no paid sale available to verify).
 - [x] Configure shared SHOP_CRM_API_KEY securely.
 - [ ] Publish the API and connect the external CRM (requires its project link/access and the same shared key there).
