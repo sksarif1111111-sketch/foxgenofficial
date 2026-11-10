@@ -533,6 +533,11 @@
     translate: -50% -50%;
     transform: rotateX(70deg);
   }
+  .hm-plane-reveal {
+    position: absolute;
+    inset: 0;
+    animation: hm-plane-in 900ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
   .hm-plane-idle {
     position: absolute;
     inset: 0;
@@ -687,6 +692,10 @@
 @keyframes hm-approach {
   0%, 60%, 100% { transform: translate3d(0, 0, 0) scale(1); }
   72%, 82% { transform: translate3d(0, -4px, calc(70px * var(--amp-k))) scale(1.03); }
+}
+@keyframes hm-plane-in {
+  from { opacity: 0; transform: translateZ(-30px) scale(0.92); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes hm-platform {
   0%, 100% { transform: translateZ(0); }

@@ -3,7 +3,8 @@ export function GlassPlatform() {
   return (
     <>
       <div className="hm-floor-shadow" />
-      <div className="hm-plane hm-enter hm-anim" style={{ ["--enter-dur" as string]: "900ms", ["--from-y" as string]: "24px", ["--from-z" as string]: "0px" }}>
+      <div className="hm-plane">
+        <div className="hm-plane-reveal hm-anim">
         <div className="hm-plane-idle hm-anim">
           <div className="hm-ring" style={{ width: "128%", height: "128%" }}>
             <div className="hm-ring-spin hm-anim">
@@ -22,6 +23,7 @@ export function GlassPlatform() {
           <div className="hm-disc" style={{ width: "62%", height: "62%", transform: "translateZ(16px)" }} />
           <div className="hm-disc hm-disc-edge" style={{ width: "42%", height: "42%", transform: "translateZ(24px)" }} />
           <div className="hm-disc" style={{ width: "42%", height: "42%", transform: "translateZ(32px)" }} />
+        </div>
         </div>
       </div>
     </>
