@@ -220,7 +220,7 @@ function LicenceCenter() {
           {([
             { id: "expired", label: "Expired", value: stats.expired, icon: AlertCircle, cls: "border-destructive/50 shadow-[0_0_24px_-8px_var(--destructive)]", chip: "bg-destructive/15 text-destructive" },
             { id: "soon", label: "Expiring soon", value: stats.soon, icon: Clock, cls: "border-warning/50 shadow-[0_0_24px_-8px_var(--warning)]", chip: "bg-warning/15 text-warning" },
-            { id: "active", label: "Active", value: stats.active, icon: CheckCircle2, cls: "border-success/40 shadow-[0_0_24px_-8px_var(--success)]", chip: "bg-success/15 text-success", hint: `${stats.activated} activated on a device` },
+            { id: "active", label: "Active", value: stats.active, icon: CheckCircle2, cls: "border-success/40 shadow-[0_0_24px_-8px_var(--success)]", chip: "bg-success/15 text-success", hint: `${stats.activated} activated` },
             { id: "blocked", label: "Blocked", value: stats.blocked, icon: Ban, cls: "border-border", chip: "bg-muted text-muted-foreground" },
             { id: "all", label: "Total", value: stats.total, icon: KeyRound, cls: "border-primary/50 shadow-[0_0_28px_-8px_var(--primary)]", chip: "bg-primary/20 text-primary" },
           ] as const).map((t, i) => (
@@ -286,7 +286,7 @@ function LicenceCenter() {
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <label className="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
+              <label className="relative min-w-0 flex-1 sm:w-52 sm:flex-none">
                 <span className="sr-only">Search keys</span>
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search key" className={`${fieldCls} h-9 w-full pl-9 font-mono`} />

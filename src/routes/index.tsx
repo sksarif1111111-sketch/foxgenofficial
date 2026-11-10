@@ -156,12 +156,12 @@ function Home() {
         {/* HERO */}
         <section aria-labelledby="hero-title" className="hero-aura relative -mt-20 overflow-hidden pb-16 pt-28 sm:pt-36 lg:pb-24">
           <div className="container-page">
-            <div className="grid items-end gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-16">
+            <div className="grid items-end gap-10 lg:grid-cols-[1.6fr_1fr] lg:gap-12">
               <div className="min-w-0 animate-fade-up">
                 <p className="caption-1 inline-flex items-center gap-2 rounded-lg border border-border bg-card/90 px-3 py-1.5 text-primary shadow-soft">
                   <SealCheck size={16} weight="fill" /> Every payment checked by a person
                 </p>
-                <h1 id="hero-title" className="heading-3 text-hero-gradient mt-6 max-w-[720px] pb-1 sm:heading-2 xl:heading-1 xl:leading-[1.05]">
+                <h1 id="hero-title" className="heading-3 text-hero-gradient mt-6 max-w-[760px] pb-1 sm:heading-2 sm:leading-[1.1] xl:text-[3.5rem]">
                   <span className="sm:hidden">
                     Premium software.
                     <br />
