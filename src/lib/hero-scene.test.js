@@ -46,8 +46,8 @@ describe("showcase rows", () => {
     const picked = pickShowcaseProducts([p("Notion Business 3m"), p("Notion Business 3 Months")], 10);
     expect(picked).toHaveLength(1);
   });
-  it("puts products with a logo or emoji first", () => {
-    const picked = pickShowcaseProducts([p("Windows 11 Pro"), p("Spotify", { emoji: "🎵" }), p("Notion", { logo_url: "n" })], 10);
-    expect(picked.map((x) => x.name)).toEqual(["Spotify", "Notion", "Windows 11 Pro"]);
+  it("puts products with an official logo first, then emoji, then the rest", () => {
+    const picked = pickShowcaseProducts([p("Mystery Bundle"), p("Acme Kit", { emoji: "🎵" }), p("Netflix Premium 1 month")], 10);
+    expect(picked.map((x) => x.name)).toEqual(["Netflix Premium 1 month", "Acme Kit", "Mystery Bundle"]);
   });
 });

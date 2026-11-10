@@ -47,8 +47,7 @@ export function shortProductName(name: string): string {
 
 /**
  * Products for the moving showcase rows under the hero: purchasable only, one tile per product
- * name (plans that differ only by length collapse into one), products with an official logo first,
- * then emoji,
+ * name (plans that differ only by length collapse into one), official logo first, then emoji,
  * featured before the rest. Reads straight from the live catalogue, so edits appear automatically.
  */
 export function pickShowcaseProducts<T extends HeroSceneProduct>(products: T[], count: number): T[] {
