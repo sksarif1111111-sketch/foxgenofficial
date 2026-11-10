@@ -1,19 +1,22 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { ASSISTANT_OPEN_EVENT } from "@/lib/assistant-events";
-import { canFall, clampX, hasRoomToFall, pickTarget, robotWidth, walkDuration } from "@/lib/robot-motion";
+import { canFall, canPoint, clampX, hasRoomToFall, pickTarget, pointDirection, robotWidth, walkDuration } from "@/lib/robot-motion";
 
 /** Loaded only when the visitor first opens the chat, so pages stay light. */
 const AssistantChatPopup = lazy(() => import("@/components/site/assistant-chat-popup"));
 
 const PRIMARY = "How can I help you?";
 const EXTRA = ["Hey there!", "Need a little help?", "I'm here for you!", "Let's find something!"];
+const POINT_LINES = ["Look at this!", "Check this one out!", "Have a look!"];
 
-type Act = "idle" | "walk" | "look" | "wave" | "stumble" | "fall" | "fallen" | "getup" | "shake" | "greet";
+type Act = "idle" | "walk" | "look" | "wave" | "point" | "stumble" | "fall" | "fallen" | "getup" | "shake" | "greet";
+const BUSY_ACTS: Act[] = ["stumble", "fall", "fallen", "getup", "shake", "greet"];
 type Token = { cancelled: boolean };
 
 /**
  * Foxgen's little walking robot. It strolls along the bottom of the screen, looks around, waves,
  * and now and then trips, plops down, wiggles back up and asks "How can I help you?".
+ * When a product card comes into view it stops and points at it with its little finger.
  * Clicking it opens the chat pop-up; walking pauses while the chat is open, the tab is hidden
  * or the pointer rests on it. Reduced motion keeps a still robot in the corner.
  */
@@ -24,6 +27,10 @@ export function AssistantRobot() {
   const lastFallRef = useRef<number | null>(null);
   const startedRef = useRef(0);
   const extraRef = useRef(0);
+  const actRef = useRef<Act>("idle");
+  const lastPointRef = useRef<number | null>(null);
+  const pendingPointRef = useRef<1 | -1 | null>(null);
+  const pointLineRef = useRef(0);
 
   const [mounted, setMounted] = useState(false);
   const [act, setAct] = useState<Act>("idle");
@@ -34,6 +41,8 @@ export function AssistantRobot() {
   const [hover, setHover] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatSide, setChatSide] = useState<"left" | "right">("right");
+  const [pointNonce, setPointNonce] = useState(0);
+  actRef.current = act;
 
   /** Move the layer; duration 0 jumps. */
   const moveTo = useCallback((x: number, ms: number) => {
@@ -74,6 +83,44 @@ export function AssistantRobot() {
   }, [moveTo]);
 
   const paused = !mounted || hidden || hover || chatOpen;
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+
+  // Watch product cards; when one comes into view, ask the robot to point at it.
+  useEffect(() => {
+    if (!mounted) return;
+    const seen = new WeakSet<Element>();
+    const pointed = new WeakSet<Element>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting || pointed.has(e.target)) continue;
+          pointed.add(e.target);
+          const now = Date.now();
+          if (pausedRef.current || BUSY_ACTS.includes(actRef.current) || !canPoint(now, lastPointRef.current)) continue;
+          const r = e.boundingClientRect;
+          const vw = window.innerWidth;
+          pendingPointRef.current = pointDirection(xRef.current + robotWidth(vw) / 2, r.left + r.width / 2);
+          lastPointRef.current = now;
+          setPointNonce((n) => n + 1);
+        }
+      },
+      { threshold: 0.6 },
+    );
+    const scan = () => {
+      document.querySelectorAll("[data-robot-point]").forEach((el) => {
+        if (seen.has(el)) return;
+        seen.add(el);
+        io.observe(el);
+      });
+    };
+    scan();
+    const t = window.setInterval(scan, 1500);
+    return () => {
+      window.clearInterval(t);
+      io.disconnect();
+    };
+  }, [mounted]);
 
   // The little life script.
   useEffect(() => {
@@ -127,8 +174,21 @@ export function AssistantRobot() {
           await wait(8000);
         }
       }
-      setAct("idle");
-      await wait(1200);
+      if (pendingPointRef.current !== null) {
+        const d = pendingPointRef.current;
+        pendingPointRef.current = null;
+        setDir(d);
+        setAct("point");
+        pointLineRef.current = (pointLineRef.current + 1) % POINT_LINES.length;
+        setBubble(POINT_LINES[pointLineRef.current]!);
+        await wait(2800);
+        setBubble(null);
+        setAct("idle");
+        await wait(600);
+      } else {
+        setAct("idle");
+        await wait(1200);
+      }
       for (;;) {
         const vw = window.innerWidth;
         const from = xRef.current;
@@ -173,7 +233,7 @@ export function AssistantRobot() {
       setAct("idle");
       setBubble(null);
     };
-  }, [paused, moveTo, freeze]);
+  }, [paused, pointNonce, moveTo, freeze]);
 
   const closeChat = useCallback(() => {
     setChatOpen(false);
@@ -329,6 +389,7 @@ function RobotSvg() {
           </g>
           <g className="rb-arm-r">
             <ellipse cx="83" cy="113" rx="6" ry="9.5" fill="url(#rb-blue)" transform="rotate(-24 83 113)" />
+            <ellipse className="rb-finger" cx="88.4" cy="125" rx="2.3" ry="4.6" fill="url(#rb-blue)" transform="rotate(-24 88.4 125)" />
           </g>
 
         </g>
