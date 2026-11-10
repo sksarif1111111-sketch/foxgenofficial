@@ -129,7 +129,7 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
           </div>
         </div>
       </div>
-      {children && <div className="relative z-10">{children}</div>}
+      {children && <div className="relative z-10 mx-auto max-w-[460px]">{children}</div>}
     </div>
   );
 }
