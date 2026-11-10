@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { canFall, clampX, hasRoomToFall, pickTarget, walkRange } from "./robot-motion";
+import { canFall, canPoint, clampX, hasRoomToFall, pickTarget, pointDirection, walkRange } from "./robot-motion";
 
 describe("walking robot", () => {
   it("never walks off a desktop screen", () => {
@@ -31,5 +31,16 @@ describe("walking robot", () => {
     expect(hasRoomToFall(1184, 1, 1280)).toBe(false);
     expect(hasRoomToFall(600, 1, 1280)).toBe(true);
     expect(hasRoomToFall(12, -1, 1280)).toBe(false);
+  });
+
+  it("points at a new product at most once every 9 seconds", () => {
+    expect(canPoint(1000, null)).toBe(true);
+    expect(canPoint(8000, 0)).toBe(false);
+    expect(canPoint(9000, 0)).toBe(true);
+  });
+
+  it("points towards the side the product is on", () => {
+    expect(pointDirection(1000, 300)).toBe(-1);
+    expect(pointDirection(300, 1000)).toBe(1);
   });
 });

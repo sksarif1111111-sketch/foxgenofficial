@@ -92,13 +92,13 @@ export function ProductCard({
     "group flex h-full flex-col rounded-2xl border border-border bg-card p-3 text-left shadow-soft transition duration-300 hover:-translate-y-1 hover:border-foreground/15 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
   if (onOpen) {
     return (
-      <button type="button" onClick={onOpen} className={cls}>
+      <button type="button" onClick={onOpen} className={cls} data-robot-point="">
         {body}
       </button>
     );
   }
   return (
-    <Link to="/product/$productId" params={{ productId: product.id }} className={cls}>
+    <Link to="/product/$productId" params={{ productId: product.id }} className={cls} data-robot-point="">
       {body}
     </Link>
   );
