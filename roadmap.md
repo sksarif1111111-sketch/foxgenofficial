@@ -2,7 +2,7 @@
 
 ## Homepage rebuild from the user's SKILL.md (Nov 2026)
 - [x] Floating nav + full height mobile menu, hero with Buy now, live offers with category filter, why, how it works, tagline reveal, rewards + bot, tutorials, support, FAQ (with FAQ schema), final CTA, footer, Privacy and Terms pages, branded 404. Tested at 1280/1024/768/390.
-- [ ] Refund/cancellation terms — waiting for owner's wording (pages say "not published yet").
+- [x] Refund/cancellation terms — owner gave the 30 minute delivery promise and refund rule (Home trust band, FAQ, Terms).
 - [ ] Tutorial video URL — not configured yet; section links to the YouTube channel instead.
 - [ ] Brand name on public pages (Foxgen AI Store vs FOXGEN OFFICIAL) — waiting for owner's confirmation.
 
@@ -69,3 +69,4 @@
 - [x] Bright white studio hero with glass platform, floating real product tiles and in-stock category cards; entrance, slow idle drift, mouse tilt on desktop, pause off screen, static under reduced motion. Checked at 1280, 820 and 390 with no overflow or console errors; hero buttons stay clickable.
 - [x] Sliding product rows show only logo/emoji and the clean product name (no price, plan length or badges), follow the live catalogue and refresh every minute.
 - [x] Hero product tiles circle the platform on a slow 3D orbit (always facing the viewer, dimmer behind); category cards moved above the orbit.
+- [x] Full width member counter + 30 minute delivery guarantee band under the Home hero.
