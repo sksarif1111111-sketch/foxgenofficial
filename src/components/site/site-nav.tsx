@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { ShoppingBagOpen, Sparkle, UserCircle } from "@phosphor-icons/react/dist/ssr";
+import { ShoppingBagOpen, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import { AdminAccessDialog } from "@/components/admin/admin-access-form";
 import { BRAND } from "@/lib/brand";
 import { AssistantRobot } from "@/components/site/assistant-robot";
