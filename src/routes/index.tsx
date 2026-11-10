@@ -161,7 +161,7 @@ function Home() {
                 <p className="caption-1 inline-flex items-center gap-2 rounded-lg border border-border bg-card/90 px-3 py-1.5 text-primary shadow-soft">
                   <SealCheck size={16} weight="fill" /> Every payment checked by a person
                 </p>
-                <h1 id="hero-title" className="heading-3 text-hero-gradient mt-6 max-w-[760px] pb-1 sm:heading-2 sm:leading-[1.1] xl:text-[3.5rem]">
+                <h1 id="hero-title" className="heading-3 text-hero-gradient mt-6 max-w-[760px] pb-1 [text-wrap:wrap] sm:heading-2 sm:leading-[1.1] xl:text-[3.5rem]">
                   <span className="sm:hidden">
                     Premium software.
                     <br />
