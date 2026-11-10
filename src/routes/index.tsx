@@ -154,7 +154,7 @@ function Home() {
 
       <main id="main">
         {/* HERO */}
-        <section aria-labelledby="hero-title" className="hero-aura relative -mt-28 overflow-hidden pb-16 pt-36 sm:pt-44 lg:pb-24">
+        <section aria-labelledby="hero-title" className="hero-aura relative -mt-20 overflow-hidden pb-16 pt-28 sm:pt-36 lg:pb-24">
           <div className="container-page">
             <div className="grid items-end gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-16">
               <div className="min-w-0 animate-fade-up">

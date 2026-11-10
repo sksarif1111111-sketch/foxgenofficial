@@ -4,6 +4,8 @@ import type { CatalogProduct } from "@/components/site/product-card";
 import { ProductLogo } from "@/components/site/product-logo";
 
 const ease = "ease-[cubic-bezier(0.22,1,0.36,1)]";
+const LIGHT_TILES = ["tile-lavender", "tile-sky", "tile-blush"] as const;
+const tileFor = (name: string) => LIGHT_TILES[[...name].reduce((n, c) => n + c.charCodeAt(0), 0) % LIGHT_TILES.length]!;
 
 export function Availability({ p }: { p: CatalogProduct }) {
   const label = p.purchasable ? "In stock" : p.availability === "coming_soon" ? "Coming soon" : p.price_usdt === null ? "Price pending" : "Sold out";
@@ -19,18 +21,18 @@ export function Availability({ p }: { p: CatalogProduct }) {
 /** Homepage product card: verified data only, Buy now opens the existing checkout with this product selected. */
 export function HomeOfferCard({ product: p, category }: { product: CatalogProduct; category: string }) {
   return (
-    <article className={`group flex h-full flex-col rounded-2xl border border-border bg-card p-2 transition duration-500 ${ease} hover:-translate-y-1 hover:shadow-lift`}>
+    <article className={`group flex h-full flex-col rounded-2xl border border-border bg-card p-2 shadow-soft transition duration-500 ${ease} hover:-translate-y-1.5 hover:border-primary/30 hover:shadow-lift`}>
       <Link
         to="/product/$productId"
         params={{ productId: p.id }}
-        className="relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-lg bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={`card-sheen relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-xl ${p.image_url ? "bg-muted" : tileFor(p.name)} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
         aria-label={`${p.name} details`}
       >
         {p.image_url ? (
           <img src={p.image_url} alt={`${p.name} product image`} loading="lazy" className={`absolute inset-0 h-full w-full object-cover transition-transform duration-500 ${ease} group-hover:scale-[1.03]`} />
         ) : (
-          <span className={`transition-transform duration-500 ${ease} group-hover:scale-105`}>
-            <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} size="lg" />
+          <span className={`transition-transform duration-500 ${ease} group-hover:-translate-y-1 group-hover:scale-110`}>
+            <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} size="xl" />
           </span>
         )}
       </Link>
@@ -60,7 +62,7 @@ export function HomeOfferCard({ product: p, category }: { product: CatalogProduc
             <Link
               to="/shop"
               search={{ product: p.id, buy: true }}
-              className={`button-sm inline-flex items-center gap-1 rounded-full bg-ink px-3 py-2 text-ink-foreground transition duration-300 ${ease} hover:bg-primary hover:text-primary-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
+              className={`button-sm inline-flex items-center gap-1 rounded-xl bg-navy px-3 py-2 text-navy-foreground transition duration-300 ${ease} hover:bg-primary hover:text-primary-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
               aria-label={`Buy ${p.name}`}
             >
               <ShoppingBagOpen size={14} weight="bold" /> Buy now
