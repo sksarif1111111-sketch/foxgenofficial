@@ -12,13 +12,13 @@ import type { FestiveOffer } from "@/lib/festive-offer";
  * Prices are shown exactly as written, for example "12.00 USDT" or "₹999".
  */
 export const ACTIVE_OFFER: FestiveOffer = {
-  name: "Test festival offer",
-  discountLabel: "TEST 20% off",
-  originalPrice: "10.00 USDT",
-  offerPrice: "8.00 USDT",
-  startsAt: "2026-11-09T23:32:09.480091+00:00",
-  endsAt: "2026-11-12T03:32:09.480091+00:00",
-  productName: "Lovable",
-  ctaLabel: "Claim the offer",
-  ctaHref: "/#offers",
+  name: "{{offerName}}",
+  discountLabel: "{{discountLabel}}",
+  originalPrice: "{{originalPrice}}",
+  offerPrice: "{{offerPrice}}",
+  startsAt: "{{startsAt}}",
+  endsAt: "{{endsAt}}",
+  productName: "{{productName}}",
+  ctaLabel: "{{ctaLabel}}",
+  ctaHref: "{{ctaHref}}",
 };
