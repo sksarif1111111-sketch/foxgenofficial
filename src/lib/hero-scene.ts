@@ -32,11 +32,35 @@ export function heroGroupOf(name: string): HeroGroupId {
 export function shortProductName(name: string): string {
   const cleaned = name
     .replace(/\p{Extended_Pictographic}/gu, "")
-    .split(/\s[–—|(]|\s-\s|\s•\s/)[0]!
-    .replace(/\b\d+\s*(m|months?|yrs?|years?|days?|d)\b.*$/i, "")
+    .split(/\s[–—|(/]|\s-\s|\s•\s/)[0]!
+    .replace(/\b\d+\s*(m|mo|months?|yrs?|years?|days?|d)\b.*$/i, "")
+    .replace(/\b(FW|NW)\b/g, "")
+    .replace(/(\s+\d+)?[\s\-–—:|•,+]+$/, "")
     .replace(/\s+/g, " ")
     .trim();
   return cleaned || name.trim();
+}
+
+/**
+ * Products for the moving showcase rows under the hero: purchasable only, one tile per product
+ * name (plans that differ only by length collapse into one), products with a logo or emoji first,
+ * featured before the rest. Reads straight from the live catalogue, so edits appear automatically.
+ */
+export function pickShowcaseProducts<T extends HeroSceneProduct>(products: T[], count: number): T[] {
+  const seen = new Set<string>();
+  const rank = (p: T) => (p.logo_url || p.emoji ? 0 : 2) + (p.featured ? 0 : 1);
+  return products
+    .filter((p) => p.purchasable)
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => rank(a.p) - rank(b.p) || a.i - b.i)
+    .map(({ p }) => p)
+    .filter((p) => {
+      const key = shortProductName(p.name).toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, count);
 }
 
 /** Brand key used to avoid showing the same brand twice (e.g. two Mobbin plans). */

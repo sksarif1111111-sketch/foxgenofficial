@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { heroGroupCounts, pickHeroProducts, shortProductName } from "./hero-scene";
+import { heroGroupCounts, pickHeroProducts, pickShowcaseProducts, shortProductName } from "./hero-scene";
 
 const p = (name, extra = {}) => ({ id: name, name, emoji: null, logo_url: null, purchasable: true, featured: false, ...extra });
 
@@ -25,5 +25,29 @@ describe("hero scene products", () => {
     expect(shortProductName("Granola Business 12m NW")).toBe("Granola Business");
     expect(shortProductName("Gemini AI Pro — 18 Months")).toBe("Gemini AI Pro");
     expect(shortProductName("👋Duolingo Super – 12 Months | Activation Link")).toBe("Duolingo Super");
+  });
+  it("removes plan length and warranty tags from showcase names", () => {
+    expect(shortProductName("Resend Pro 12m FW")).toBe("Resend Pro");
+    expect(shortProductName("Notion Business 3m")).toBe("Notion Business");
+    expect(shortProductName("Magic Patterns 12m NW")).toBe("Magic Patterns");
+    expect(shortProductName("Capcut Pro 1 Month FW")).toBe("Capcut Pro");
+    expect(shortProductName("YouTube Premium • 3 Months")).toBe("YouTube Premium");
+    expect(shortProductName("Gro.k super 9-10 Days")).toBe("Gro.k super");
+    expect(shortProductName("Windows 11+ 10 Pro")).toBe("Windows 11+ 10 Pro");
+  });
+});
+
+describe("showcase rows", () => {
+  it("only shows products that can be bought", () => {
+    const picked = pickShowcaseProducts([p("Netflix 1 month", { purchasable: false }), p("Notion Plus 12M")], 10);
+    expect(picked.map((x) => x.name)).toEqual(["Notion Plus 12M"]);
+  });
+  it("shows a product once even when it has several plan lengths", () => {
+    const picked = pickShowcaseProducts([p("Notion Business 3m"), p("Notion Business 3 Months")], 10);
+    expect(picked).toHaveLength(1);
+  });
+  it("puts products with a logo or emoji first", () => {
+    const picked = pickShowcaseProducts([p("Windows 11 Pro"), p("Spotify", { emoji: "🎵" }), p("Notion", { logo_url: "n" })], 10);
+    expect(picked.map((x) => x.name)).toEqual(["Spotify", "Notion", "Windows 11 Pro"]);
   });
 });
