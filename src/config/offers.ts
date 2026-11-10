@@ -22,3 +22,4 @@ export const ACTIVE_OFFER: FestiveOffer = {
   ctaLabel: "{{ctaLabel}}",
   ctaHref: "{{ctaHref}}",
 };
+
