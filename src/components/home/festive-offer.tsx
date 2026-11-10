@@ -73,13 +73,13 @@ export function OfferAnnouncementBar() {
   );
 }
 
-const ctaClass = `inline-flex items-center justify-center gap-2 rounded-full bg-primary px-3 py-2 text-primary-foreground transition duration-300 ${ease} hover:bg-primary/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`;
+const ctaClass = `btn-glow inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`;
 
 /** The single primary action: the offer CTA while the offer is live, otherwise the store's Buy now. */
 export function PrimaryCta({ live, className = "" }: { live: boolean; className?: string }) {
   if (!live) {
     return (
-      <BuyNowLink className={className}>
+      <BuyNowLink tone="glow" className={className}>
         <ShoppingBagOpen size={18} weight="bold" /> Buy now
       </BuyNowLink>
     );
