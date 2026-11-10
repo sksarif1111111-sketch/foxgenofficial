@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { adminAccessStatus, lockAdmin } from "@/lib/admin-access.functions";
+import { botDashboard } from "@/lib/control.functions";
 import { ExtensionAccessDialog } from "@/components/admin/extension-access";
 import { BRAND } from "@/lib/brand";
 
@@ -160,18 +161,18 @@ function NavList({ active, onSelect, onNavigate }: { active: AdminNavId; onSelec
 
   return (
     <>
-      <nav aria-label="Management" className="flex flex-col gap-1">
+      <nav aria-label="Management" className="flex flex-col">
         {ADMIN_NAV.map((group) => {
           const isOpen = open[group.label] ?? false;
           return (
-            <div key={group.label} className="py-1">
+            <div key={group.label} className="border-b border-sidebar-border py-2 last:border-0">
               <button
                 type="button"
                 onClick={() => setOpen((o) => ({ ...o, [group.label]: !isOpen }))}
                 aria-expanded={isOpen}
-                className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left"
+                className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left"
               >
-                <span className="eyebrow flex items-center gap-1.5 text-[10px] text-sidebar-foreground/55">
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/60">
                   {group.label}
                   {group.extension && !extensionUnlocked && <Lock className="size-3" />}
                 </span>
@@ -189,15 +190,16 @@ function NavList({ active, onSelect, onNavigate }: { active: AdminNavId; onSelec
                             if (group.extension && !extensionUnlocked) setPending(item.id);
                             else go(item.id);
                           }}
-                          className={`flex h-9 w-full items-center gap-3 rounded-lg px-3 text-sm transition-colors ${
+                          className={`relative flex h-10 w-full items-center gap-3 rounded-lg px-3 text-[15px] transition duration-300 ease-weighted ${
                             isActive
                               ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                              : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                              : "text-sidebar-foreground hover:translate-x-0.5 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                           }`}
                         >
-                          <item.icon className={`size-4 ${isActive ? "text-sidebar-primary" : ""}`} />
+                          {isActive && <span aria-hidden="true" className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-sidebar-primary" />}
+                          <item.icon className={`size-[18px] shrink-0 ${isActive ? "text-sidebar-primary" : ""}`} />
                           <span className="truncate">{item.label}</span>
-                          {isActive && <span className="ml-auto size-1.5 rounded-full bg-sidebar-primary" />}
+                          {group.extension && !extensionUnlocked && <Lock className="ml-auto size-3.5 text-sidebar-foreground/40" />}
                         </button>
                       </li>
                     );
@@ -221,40 +223,105 @@ function NavList({ active, onSelect, onNavigate }: { active: AdminNavId; onSelec
   );
 }
 
+function ExtensionStatusCard() {
+  const access = useAdminAccess();
+  const [open, setOpen] = useState(false);
+  const unlocked = access.data?.extension === true;
+  const navigate = useNavigate();
+  return (
+    <div className="rounded-xl border border-sidebar-border bg-background p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium text-foreground">Extension admin</p>
+        <span className={`text-xs font-semibold ${unlocked ? "text-success" : "text-muted-foreground"}`}>{access.isLoading ? "…" : unlocked ? "Unlocked" : "Locked"}</span>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className={`h-full rounded-full transition-all duration-700 ease-weighted ${unlocked ? "w-full bg-success" : "w-1/4 bg-violet"}`} />
+      </div>
+      {unlocked ? (
+        <button type="button" onClick={() => void navigate({ to: "/admin" })} className="mt-2 text-xs font-medium text-primary hover:underline">Open licence manager</button>
+      ) : (
+        <button type="button" onClick={() => setOpen(true)} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+          <KeyRound className="size-3" /> Unlock with password
+        </button>
+      )}
+      <ExtensionAccessDialog
+        open={open}
+        onOpenChange={setOpen}
+        onUnlocked={() => {
+          setOpen(false);
+          void access.refetch();
+        }}
+      />
+    </div>
+  );
+}
+
 function SidebarBody({ active, onSelect, onNavigate }: { active: AdminNavId; onSelect?: (id: AdminNavId) => void; onNavigate?: () => void }) {
   const lock = useServerFn(lockAdmin);
   const navigate = useNavigate();
   const cache = useQueryClient();
   return (
-    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-5">
-        <img src={BRAND.mark} alt="" width={32} height={32} className="size-8 rounded-lg object-cover" />
-        <div className="leading-tight">
-          <p className="font-display text-sm font-bold text-sidebar-accent-foreground">{BRAND.short}</p>
-          <p className="eyebrow text-[9px] text-sidebar-foreground/60">Control Center</p>
+    <div className="flex h-full flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+      <div className="space-y-4 px-4 pb-3 pt-5">
+        <Link to="/" className="flex items-center gap-2.5">
+          <img src={BRAND.mark} alt="" width={36} height={36} className="size-9 rounded-xl bg-ink object-cover shadow-ember" />
+          <span className="font-display text-lg font-bold tracking-tight text-foreground">
+            {BRAND.short}<span className="text-primary">.store</span>
+          </span>
+        </Link>
+        <div className="flex items-center gap-3 rounded-xl border border-sidebar-border bg-sidebar p-2.5 shadow-soft">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">{BRAND.short.charAt(0)}</span>
+          <div className="min-w-0 leading-tight">
+            <p className="truncate text-sm font-semibold text-foreground">{BRAND.name}</p>
+            <p className="truncate text-xs text-muted-foreground">Control Center</p>
+          </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-3 py-4">
+      <div className="flex-1 overflow-y-auto border-t border-sidebar-border px-3 py-2">
         <NavList active={active} onSelect={onSelect} onNavigate={onNavigate} />
       </div>
-      <div className="space-y-0.5 border-t border-sidebar-border p-3">
-        <Link to="/" className="flex h-9 items-center gap-3 rounded-lg px-3 text-sm text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground">
-          <ExternalLink className="size-4" /> View store
-        </Link>
-        <button
-          type="button"
-          onClick={async () => {
-            await lock();
-            await cache.cancelQueries();
-            cache.clear();
-            await navigate({ to: "/admin-access", search: { redirect: "/hub-admin" } });
-          }}
-          className="flex h-9 w-full items-center gap-3 rounded-lg px-3 text-sm text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-        >
-          <LogOut className="size-4" /> Sign out
-        </button>
+      <div className="space-y-2 border-t border-sidebar-border p-3">
+        <ExtensionStatusCard />
+        <div className="flex gap-1">
+          <Link to="/" className="flex h-9 flex-1 items-center justify-center gap-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground">
+            <ExternalLink className="size-4" /> Store
+          </Link>
+          <button
+            type="button"
+            onClick={async () => {
+              await lock();
+              await cache.cancelQueries();
+              cache.clear();
+              await navigate({ to: "/admin-access", search: { redirect: "/hub-admin" } });
+            }}
+            className="flex h-9 flex-1 items-center justify-center gap-2 rounded-lg text-sm text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive"
+          >
+            <LogOut className="size-4" /> Sign out
+          </button>
+        </div>
       </div>
     </div>
+  );
+}
+
+function BotStatusPill() {
+  const load = useServerFn(botDashboard);
+  const q = useQuery({ queryKey: ["bot-dashboard"], queryFn: () => load(), staleTime: 60_000 });
+  if (q.isLoading) return <span className="hidden h-9 w-36 animate-pulse rounded-full bg-muted sm:inline-block" />;
+  if (!q.data) return null;
+  const on = q.data.bot.connected;
+  return (
+    <span className="hidden items-center gap-2 rounded-full border border-border bg-card py-1 pl-3 pr-1 text-sm shadow-soft sm:inline-flex">
+      <Bot className="size-4 text-muted-foreground" />
+      <span className="max-w-[140px] truncate">{on && q.data.bot.username ? `@${q.data.bot.username}` : "Telegram bot"}</span>
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${on ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+        <span className="relative inline-flex size-1.5">
+          {on && <span className="absolute inset-0 rounded-full bg-current animate-glow-ping" />}
+          <span className="relative size-1.5 rounded-full bg-current" />
+        </span>
+        {on ? "Online" : "Offline"}
+      </span>
+    </span>
   );
 }
 
@@ -264,20 +331,22 @@ export function AdminShell({
   onSelect,
   actions,
   children,
+  tone = "default",
 }: {
   active: AdminNavId;
   onSelect?: (id: AdminNavId) => void;
   actions?: ReactNode;
   children: ReactNode;
+  tone?: "default" | "violet";
 }) {
   const [open, setOpen] = useState(false);
   const item = adminNavItem(active);
   return (
-    <div className="min-h-screen bg-background lg:pl-64">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:block">
+    <div className="min-h-screen bg-background lg:pl-[17rem]">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[17rem] lg:block">
         <SidebarBody active={active} onSelect={onSelect} />
       </aside>
-      <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-border bg-card/85 backdrop-blur-xl">
         <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-10">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -290,15 +359,27 @@ export function AdminShell({
               <SidebarBody active={active} onSelect={onSelect} onNavigate={() => setOpen(false)} />
             </SheetContent>
           </Sheet>
-          <div className="min-w-0 flex-1">
-            <p className="eyebrow truncate text-[10px] text-muted-foreground">{item?.group ?? "Control Center"}</p>
-            <h1 className="truncate text-lg font-bold sm:text-xl">{item?.label ?? active}</h1>
+          <p className="truncate text-sm text-muted-foreground">
+            {item?.group ?? "Control Center"} <span className="text-border">/</span> <span className="text-foreground">{item?.label ?? active}</span>
+          </p>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <BotStatusPill />
+            {actions}
           </div>
-          {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
         </div>
       </header>
-      <main className="min-w-0 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-        {item?.hint && <p className="mb-6 max-w-2xl text-sm text-muted-foreground">{item.hint}</p>}
+      <main className={`min-w-0 px-4 py-6 sm:px-6 sm:py-8 lg:px-10 ${tone === "violet" ? "surface-violet min-h-[calc(100vh-4rem)]" : ""}`}>
+        <div className="mb-8 flex items-start gap-3 animate-fade-up">
+          {item && (
+            <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl border ${tone === "violet" ? "border-primary/40 bg-primary/15 text-primary" : "border-border bg-card text-primary shadow-soft"}`}>
+              <item.icon className="size-5" />
+            </span>
+          )}
+          <div className="min-w-0">
+            <h1 className="truncate font-display text-2xl font-bold tracking-tight sm:text-3xl">{item?.label ?? active}</h1>
+            {item?.hint && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{item.hint}</p>}
+          </div>
+        </div>
         {children}
       </main>
     </div>
@@ -315,30 +396,37 @@ export function MetricCard({ label, value, icon: Icon, tone = "default", hint }:
     warning: "bg-warning/15 text-warning-foreground",
   }[tone];
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+    <div className="h-full rounded-2xl border border-border bg-card p-5 shadow-soft transition duration-300 ease-weighted hover:shadow-lift">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
         {Icon && (
-          <span className={`flex size-8 items-center justify-center rounded-lg ${toneCls}`}>
+          <span className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${toneCls}`}>
             <Icon className="size-4" />
           </span>
         )}
       </div>
-      <p className="mt-2 font-display text-2xl font-bold tabular-nums tracking-tight">{value}</p>
+      <p className="mt-3 font-display text-3xl font-bold tabular-nums tracking-tight">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
 
 /** Section card used by admin panels. */
-export function Panel({ title, description, actions, children, className = "" }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
+export function Panel({ title, description, actions, children, className = "", icon: Icon }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; icon?: LucideIcon }) {
   return (
-    <section className={`rounded-xl border border-border bg-card shadow-soft ${className}`}>
+    <section className={`rounded-2xl border border-border bg-card shadow-soft ${className}`}>
       {(title || actions) && (
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-5 py-4">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-start gap-3">
+            {Icon && (
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                <Icon className="size-4" />
+              </span>
+            )}
+            <div className="min-w-0">
             {title && <h2 className="font-semibold">{title}</h2>}
             {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
+            </div>
           </div>
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
