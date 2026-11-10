@@ -149,15 +149,25 @@ function Home() {
       <main id="main">
         {/* HERO */}
         <section aria-labelledby="hero-title" className="container-page pb-16 pt-8 sm:pt-16 lg:pb-24">
-          <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
+          <div className="grid items-center gap-12 lg:grid-cols-[1.3fr_1fr]">
             <div className="min-w-0">
               <p className="caption-1 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-muted-foreground">
                 <SealCheck size={16} weight="fill" className="text-primary" /> Every payment checked by a person
               </p>
-              <h1 id="hero-title" className="heading-3 text-hero-gradient mt-6 max-w-[680px] sm:heading-2 lg:heading-1">
-                Premium software access.
-                <br />
-                Better value. One place.
+              <h1 id="hero-title" className="heading-3 text-hero-gradient mt-6 max-w-[680px] xl:heading-2">
+                {/* Narrow screens: shorter lines that break where the thought breaks. */}
+                <span className="sm:hidden">
+                  Premium software.
+                  <br />
+                  Better value.
+                  <br />
+                  One place.
+                </span>
+                <span className="hidden sm:inline">
+                  Premium software access.
+                  <br />
+                  Better value. One place.
+                </span>
               </h1>
               <p className="title-2 mt-6 max-w-[680px] font-normal text-muted-foreground">
                 Discover current offers for Lovable, ChatGPT, Gemini, AI tools and developer software. Check the real price, then press Buy now to start your order with our team.
@@ -181,7 +191,7 @@ function Home() {
                 </div>
                 <div>
                   <dt className="caption-5 text-muted-foreground">Typical review</dt>
-                  <dd className="heading-5 mt-1 tabular-nums">{reviewMinutes ? `${reviewMinutes} min` : "—"}</dd>
+                  <dd className="heading-5 mt-1 tabular-nums">{reviewMinutes ? `${reviewMinutes} min` : <span className="inline-block h-6 w-10 animate-pulse rounded bg-muted" />}</dd>
                 </div>
               </dl>
             </div>

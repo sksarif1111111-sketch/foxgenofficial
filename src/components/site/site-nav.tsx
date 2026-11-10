@@ -174,7 +174,7 @@ export function SiteNav({ right }: { right?: ReactNode }) {
         </div>
       </div>
 
-      {!onChat && (
+      {!onChat && !open && (
         <Link
           to="/chat"
           aria-label="Ask Foxgen AI"
