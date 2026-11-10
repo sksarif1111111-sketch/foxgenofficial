@@ -523,7 +523,15 @@
     transform-style: preserve-3d;
   }
 
-  /* Glass platform: stacked discs lying on the studio floor. */
+  /* Glass platform: stacked discs lying on the studio floor. Flattened into its own layer so the
+     rotated discs and rings never slice through the floating tiles. */
+  .hm-world .hm-platform-layer {
+    position: absolute;
+    inset: 0;
+    transform-style: flat;
+    perspective: 1100px;
+    perspective-origin: 50% 30%;
+  }
   .hm-plane {
     position: absolute;
     left: 50%;

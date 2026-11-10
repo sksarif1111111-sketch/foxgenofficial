@@ -1,7 +1,7 @@
 /** Layered glass pedestal on the studio floor with two slow orbit rings (decorative). */
 export function GlassPlatform() {
   return (
-    <>
+    <div className="hm-platform-layer">
       <div className="hm-floor-shadow" />
       <div className="hm-plane">
         <div className="hm-plane-reveal hm-anim">
@@ -26,6 +26,6 @@ export function GlassPlatform() {
         </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
