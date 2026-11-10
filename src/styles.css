@@ -1026,8 +1026,8 @@
   60%, 80% { transform: translateX(4px); }
 }
 @keyframes rb-wave {
-  0%, 100% { transform: translate(18px, -6px) rotate(-95deg); }
-  50% { transform: translate(18px, -6px) rotate(-130deg); }
+  0%, 100% { transform: translate(16px, -18px) rotate(-95deg); }
+  50% { transform: translate(16px, -18px) rotate(-130deg); }
 }
 @keyframes rb-tilt {
   0% { transform: rotate(0deg); }
@@ -1042,12 +1042,12 @@
   100% { transform: rotate(16deg); }
 }
 @keyframes rb-flail-l {
-  0%, 100% { transform: translate(-15px, -2px) rotate(95deg); }
-  50% { transform: translate(-15px, -2px) rotate(140deg); }
+  0%, 100% { transform: translate(-15px, -14px) rotate(95deg); }
+  50% { transform: translate(-15px, -14px) rotate(140deg); }
 }
 @keyframes rb-flail-r {
-  0%, 100% { transform: translate(15px, -2px) rotate(-95deg); }
-  50% { transform: translate(15px, -2px) rotate(-140deg); }
+  0%, 100% { transform: translate(15px, -14px) rotate(-95deg); }
+  50% { transform: translate(15px, -14px) rotate(-140deg); }
 }
 @keyframes rb-eyes-wide {
   0% { transform: scale(1); }
