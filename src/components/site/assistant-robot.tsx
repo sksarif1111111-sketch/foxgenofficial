@@ -91,18 +91,28 @@ export function AssistantRobot() {
     if (!mounted) return;
     const seen = new WeakSet<Element>();
     const pointed = new WeakSet<Element>();
+    /** A product that appeared while the robot was busy; it gets its point once the robot is free. */
+    let waiting: Element | null = null;
+
+    const tryPoint = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const visible = r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < vw;
+      if (!visible) return "gone";
+      const now = Date.now();
+      if (pausedRef.current || BUSY_ACTS.includes(actRef.current) || !canPoint(now, lastPointRef.current)) return "wait";
+      pointed.add(el);
+      pendingPointRef.current = pointDirection(xRef.current + robotWidth(vw) / 2, r.left + r.width / 2);
+      lastPointRef.current = now;
+      setPointNonce((n) => n + 1);
+      return "done";
+    };
+
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (!e.isIntersecting || pointed.has(e.target)) continue;
-          pointed.add(e.target);
-          const now = Date.now();
-          if (pausedRef.current || BUSY_ACTS.includes(actRef.current) || !canPoint(now, lastPointRef.current)) continue;
-          const r = e.boundingClientRect;
-          const vw = window.innerWidth;
-          pendingPointRef.current = pointDirection(xRef.current + robotWidth(vw) / 2, r.left + r.width / 2);
-          lastPointRef.current = now;
-          setPointNonce((n) => n + 1);
+          if (tryPoint(e.target) === "wait") waiting = e.target;
         }
       },
       { threshold: 0.6 },
@@ -113,6 +123,7 @@ export function AssistantRobot() {
         seen.add(el);
         io.observe(el);
       });
+      if (waiting && tryPoint(waiting) !== "wait") waiting = null;
     };
     scan();
     const t = window.setInterval(scan, 1500);
