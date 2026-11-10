@@ -330,8 +330,8 @@ function Home() {
               { Icon: ShieldCheck, title: "A person checks every payment", body: "Orders are confirmed only after the owner sees your payment arrive. Typed references are never enough." },
               { Icon: Lifebuoy, title: "Help when you need it", body: "Support on WhatsApp and Telegram, plus written setup guides on the Tutorials page." },
             ].map((b, i) => (
-              <Reveal key={b.title} delay={i * 60} className="rounded-2xl border border-border bg-card p-6">
-                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+              <Reveal key={b.title} delay={i * 60} className={`card-sheen rounded-2xl border border-border bg-card p-6 shadow-soft transition duration-500 ${ease} hover:-translate-y-1 hover:shadow-lift`}>
+                <span className={`inline-flex size-11 items-center justify-center rounded-xl text-foreground ${["bg-accent", "bg-tint-violet", "bg-tint-green", "bg-tint-amber"][i]}`}>
                   <b.Icon size={20} weight="duotone" />
                 </span>
                 <h3 className="title-2 mt-4">{b.title}</h3>
@@ -539,7 +539,7 @@ function Home() {
 
         {/* FINAL CTA */}
         <section aria-labelledby="final-title" className="container-page pb-8 pt-16 lg:pt-24">
-          <Reveal className="surface-ink rounded-3xl px-6 py-16 text-center sm:px-12 lg:py-24">
+          <Reveal className="surface-ink tile-night relative overflow-hidden rounded-3xl px-6 py-16 text-center shadow-lift sm:px-12 lg:py-24">
             <h2 id="final-title" className="heading-4 mx-auto max-w-[680px] sm:heading-3 lg:heading-2">Find the software you need.</h2>
             <p className="body-3 mx-auto mt-4 max-w-[680px] text-muted-foreground">Explore the available {BRAND.name} offers and start your order when you are ready.</p>
             <div className="mt-8 flex flex-col items-center gap-4">
