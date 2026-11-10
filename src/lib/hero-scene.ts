@@ -33,7 +33,8 @@ export function shortProductName(name: string): string {
   const cleaned = name
     .replace(/\p{Extended_Pictographic}/gu, "")
     .split(/\s[–—|(/]|\s-\s|\s•\s/)[0]!
-    .replace(/\b\d+\s*(m|mo|months?|yrs?|years?|days?|d)\b.*$/i, "")
+    .replace(/(?<!\d)\d+\s*(m|mo|months?|yrs?|years?|days?|d)\b.*$/i, "")
+    .replace(/\b\d+\s*credits?\b/i, "")
     .replace(/\b(FW|NW)\b/g, "")
     .replace(/(\s+\d+)?[\s\-–—:|•,+]+$/, "")
     .replace(/\s+/g, " ")
