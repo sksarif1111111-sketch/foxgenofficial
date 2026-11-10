@@ -12,13 +12,10 @@ import {
   MagnifyingGlass,
   PlayCircle,
   SealCheck,
-  Package,
   ShieldCheck,
   Sparkle,
   SquaresFour,
   TelegramLogo,
-  Timer,
-  UsersThree,
   WhatsappLogo,
   Warning,
 } from "@phosphor-icons/react/dist/ssr";
