@@ -8,7 +8,6 @@ import { ProductLogo } from "@/components/site/product-logo";
 import { BuyNowLink } from "@/components/site/site-nav";
 import { Reveal } from "@/components/home/reveal";
 
-const ease = "ease-[cubic-bezier(0.22,1,0.36,1)]";
 const MAX_TIMEOUT = 2_147_483_647;
 
 /**
