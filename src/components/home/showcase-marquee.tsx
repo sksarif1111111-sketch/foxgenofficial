@@ -17,7 +17,7 @@ function ShowcaseTile({ product: p, index }: { product: CatalogProduct; index: n
       <div className={`${tile} card-sheen relative flex h-44 w-[272px] flex-col justify-between overflow-hidden rounded-xl p-5 sm:h-52 sm:w-[340px]`}>
         <div className="flex items-start justify-between gap-3">
           <span className="transition-transform duration-500 ease-weighted group-hover:scale-110">
-            <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} size="md" />
+            <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} size="lg" />
           </span>
           {p.featured && <span className="caption-4 rounded-full bg-card/90 px-2 py-0.5 text-foreground shadow-soft">Featured</span>}
         </div>
