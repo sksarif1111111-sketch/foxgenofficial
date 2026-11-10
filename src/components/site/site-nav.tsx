@@ -4,6 +4,7 @@ import { ShoppingBagOpen, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import { AdminAccessDialog } from "@/components/admin/admin-access-form";
 import { BRAND } from "@/lib/brand";
 import { AssistantRobot } from "@/components/site/assistant-robot";
+import { openAssistant } from "@/lib/assistant-events";
 
 const LINKS = [
   { to: "/", label: "Home" },
@@ -17,7 +18,6 @@ const MORE = [
   { to: "/offers", label: "Latest offers" },
   { to: "/account", label: "My account" },
   { to: "/extension", label: "FoxGEN Pro extension" },
-  { to: "/chat", label: "Ask Foxgen AI" },
 ] as const;
 
 const ease = "ease-[cubic-bezier(0.22,1,0.36,1)]";
@@ -76,7 +76,6 @@ function MenuToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
 export function SiteNav({ right, announcement }: { right?: ReactNode; announcement?: ReactNode }) {
   const pathname = useLocation({ select: (l) => l.pathname });
   const [open, setOpen] = useState(false);
-  const onChat = pathname.startsWith("/chat");
   const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
 
   useEffect(() => setOpen(false), [pathname]);
@@ -185,7 +184,7 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
         </div>
       </div>
 
-      {!onChat && !open && <AssistantRobot />}
+      {!open && <AssistantRobot />}
     </>
   );
 }
