@@ -64,3 +64,6 @@
 - [x] Home like reference 1: floating white nav, blue hero light, big navy heading, live stats, moving rows of real product tiles, livelier product cards.
 - [x] Bot management like reference 2: white sidebar, bot Online pill, quick actions, member tiles, rewards/licences/bot cards.
 - [x] Extension licence center like reference 3: dark violet stage, glowing status tiles, filters, card/table view, sort.
+
+## White studio 3D hero motion (Nov 2026)
+- [x] Bright white studio hero with glass platform, floating real product tiles and in-stock category cards; entrance, slow idle drift, mouse tilt on desktop, pause off screen, static under reduced motion. Checked at 1280, 820 and 390 with no overflow or console errors; hero buttons stay clickable.

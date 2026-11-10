@@ -33,6 +33,7 @@ import { HomeOfferCard, OfferCardSkeleton } from "@/components/home/home-offer-c
 import { Reveal } from "@/components/home/reveal";
 import { TaglineReveal } from "@/components/home/tagline-reveal";
 import { ShowcaseMarquee } from "@/components/home/showcase-marquee";
+import { HeroMotionScene } from "@/components/home/hero-motion/hero-motion-scene";
 import { Faq, type FaqItem } from "@/components/home/faq";
 import { FestiveOfferSection, HeroOfferVisual, OfferAnnouncementBar, PrimaryCta, findOfferProduct, useFestiveOffer } from "@/components/home/festive-offer";
 import { categoryOf, type StoreCategoryId } from "@/lib/store-categories";
@@ -153,15 +154,15 @@ function Home() {
       <SiteNav announcement={festive.live ? <OfferAnnouncementBar /> : undefined} />
 
       <main id="main">
-        {/* HERO */}
-        <section aria-labelledby="hero-title" className="hero-aura relative -mt-20 overflow-hidden pb-16 pt-28 sm:pt-36 lg:pb-24">
+        {/* HERO — existing copy and buttons on the left, white studio 3D scene behind/right */}
+        <section aria-labelledby="hero-title" className="hero-studio relative -mt-20 overflow-hidden pb-16 pt-28 sm:pt-36 lg:pb-24">
           <div className="container-page">
-            <div className="grid items-end gap-10 lg:grid-cols-[1.6fr_1fr] lg:gap-12">
-              <div className="min-w-0 animate-fade-up">
+            <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:gap-6">
+              <div className="relative z-10 min-w-0 animate-fade-up">
                 <p className="caption-1 inline-flex items-center gap-2 rounded-lg border border-border bg-card/90 px-3 py-1.5 text-primary shadow-soft">
                   <SealCheck size={16} weight="fill" /> Every payment checked by a person
                 </p>
-                <h1 id="hero-title" className="heading-3 text-hero-gradient mt-6 max-w-[760px] pb-1 [text-wrap:wrap] sm:heading-2 sm:leading-[1.1] xl:text-[3.5rem]">
+                <h1 id="hero-title" className="heading-3 text-hero-gradient mt-6 max-w-[760px] pb-1 [text-wrap:wrap] sm:heading-2 sm:leading-[1.1]">
                   <span className="sm:hidden">
                     Premium software.
                     <br />
@@ -175,9 +176,13 @@ function Home() {
                     better value in one place
                   </span>
                 </h1>
-                {festive.live && (
+                {festive.live ? (
                   <p className="title-2 mt-6 max-w-[620px] font-normal text-muted-foreground">
                     Discover current offers for Lovable, ChatGPT, Gemini, AI tools and developer software, then press Buy now to start your order.
+                  </p>
+                ) : (
+                  <p className="body-3 mt-6 max-w-[540px] text-muted-foreground lg:title-2 lg:font-normal">
+                    Discover current offers for Lovable, ChatGPT, Gemini, AI tools and developer software. Check the real price, then start your order with our team.
                   </p>
                 )}
                 <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -186,16 +191,8 @@ function Home() {
                     Explore all offers <ArrowRight size={16} />
                   </Link>
                 </div>
-              </div>
-
-              {festive.live ? (
-                <HeroOfferVisual product={festiveProduct} loading={catalog.isLoading} />
-              ) : (
-                <div className="min-w-0 animate-fade-up [animation-delay:150ms]">
-                  <p className="body-3 max-w-[420px] text-muted-foreground lg:title-2 lg:font-normal">
-                    Discover current offers for Lovable, ChatGPT, Gemini, AI tools and developer software. Check the real price, then start your order with our team.
-                  </p>
-                  <dl className="mt-6 grid max-w-[420px] grid-cols-3 gap-4">
+                {!festive.live && (
+                  <dl className="mt-10 grid max-w-[460px] grid-cols-3 gap-4">
                     {[
                       { Icon: Package, label: "Products in stock", value: catalog.data ? live.length.toLocaleString("en-US") : null },
                       { Icon: UsersThree, label: "Bot members", value: members !== null ? members.toLocaleString("en-US") : null },
@@ -210,8 +207,12 @@ function Home() {
                       </div>
                     ))}
                   </dl>
-                </div>
-              )}
+                )}
+              </div>
+
+              <HeroMotionScene products={live} loading={catalog.isLoading}>
+                {festive.live ? <HeroOfferVisual product={festiveProduct} loading={catalog.isLoading} /> : undefined}
+              </HeroMotionScene>
             </div>
           </div>
 

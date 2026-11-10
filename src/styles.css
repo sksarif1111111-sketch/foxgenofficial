@@ -53,6 +53,11 @@
   --color-tint-amber: var(--tint-amber);
   --color-tint-rose: var(--tint-rose);
   --color-tint-green: var(--tint-green);
+  --color-studio: var(--studio);
+  --color-studio-grey: var(--studio-grey);
+  --color-studio-silver: var(--studio-silver);
+  --color-studio-muted: var(--studio-muted);
+  --color-studio-ink: var(--studio-ink);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -121,6 +126,13 @@
   --tint-amber: oklch(0.96 0.04 80);
   --tint-rose: oklch(0.95 0.03 15);
   --tint-green: oklch(0.95 0.035 158);
+  /* White studio palette for the homepage hero scene (#FAFBFC, #F1F3F5, #DDE1E6, #737982, #17191D). */
+  --studio: oklch(0.988 0.002 248);
+  --studio-grey: oklch(0.962 0.004 248);
+  --studio-silver: oklch(0.905 0.008 250);
+  --studio-muted: oklch(0.56 0.012 255);
+  --studio-ink: oklch(0.21 0.008 265);
+  --studio-shadow: oklch(0.25 0.02 260);
 
   --shadow-soft: 0 1px 2px oklch(0.22 0.04 265 / 5%), 0 6px 20px -12px oklch(0.22 0.04 265 / 14%);
   --shadow-lift: 0 2px 4px oklch(0.22 0.04 265 / 5%), 0 22px 44px -22px oklch(0.22 0.04 265 / 26%);
@@ -224,6 +236,12 @@
     .animate-marquee-reverse,
     .animate-float {
       animation: none !important;
+    }
+    .hm-anim {
+      animation: none !important;
+    }
+    .hm-root {
+      animation: offer-fade 500ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
     }
     .animate-offer-pop,
     .animate-offer-strike,
@@ -452,4 +470,256 @@
   &:hover::after {
     transform: translateX(120%);
   }
+}
+
+/* ---------- Homepage hero: white studio 3D scene (transform and opacity only) ---------- */
+/* Bright studio backdrop: flat #FAFBFC with one soft overhead light. */
+@utility hero-studio {
+  background-color: var(--studio);
+  background-image: radial-gradient(60% 45% at 62% 0%, oklch(1 0 0), transparent 75%);
+}
+
+@layer components {
+  .hm-root {
+    --hm-px: 0;
+    --hm-py: 0;
+    --amp-k: 1;
+    position: relative;
+    isolation: isolate;
+  }
+  @media (width < 1024px) {
+    .hm-root { --amp-k: 0.6; }
+  }
+  @media (width < 640px) {
+    .hm-root { --amp-k: 0.45; }
+  }
+  .hm-backdrop {
+    position: absolute;
+    inset: 4% 0 0;
+    pointer-events: none;
+    translate: calc(var(--hm-px) * -6px) calc(var(--hm-py) * -4px);
+    background-image:
+      radial-gradient(50% 40% at 50% 46%, oklch(1 0 0), transparent 70%),
+      radial-gradient(42% 9% at 50% 86%, oklch(0.25 0.02 260 / 8%), transparent 70%);
+  }
+  .hm-stage {
+    position: absolute;
+    inset: 0;
+    perspective: 1400px;
+    perspective-origin: 50% 40%;
+    pointer-events: none;
+  }
+  .hm-world {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transform: rotateX(calc(4deg + var(--hm-py) * -3deg)) rotateY(calc(-6deg + var(--hm-px) * 4deg));
+  }
+  @media (width < 640px) {
+    .hm-world { transform: rotateX(3deg) rotateY(-3deg); }
+  }
+  .hm-world *,
+  .hm-plane {
+    transform-style: preserve-3d;
+  }
+  /* Card faces are flattened so a logo never z-fights with the surface it sits on. */
+  .hm-world .hm-tile,
+  .hm-world .hm-glass,
+  .hm-world .hm-tile *,
+  .hm-world .hm-glass * {
+    transform-style: flat;
+  }
+
+  /* Glass platform: stacked discs lying on the studio floor. Flattened into its own layer so the
+     rotated discs and rings never slice through the floating tiles. */
+  .hm-world .hm-platform-layer {
+    position: absolute;
+    inset: 0;
+    transform-style: flat;
+    perspective: 1100px;
+    perspective-origin: 50% 30%;
+  }
+  .hm-plane {
+    position: absolute;
+    left: 50%;
+    top: 72%;
+    width: 68%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%) rotateX(70deg);
+  }
+  .hm-plane-reveal {
+    position: absolute;
+    inset: 0;
+    animation: hm-plane-in 900ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .hm-plane-idle {
+    position: absolute;
+    inset: 0;
+    animation: hm-platform 11s cubic-bezier(0.45, 0, 0.55, 1) -3s infinite;
+  }
+  .hm-disc {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 9999px;
+    translate: -50% -50%;
+    background-color: oklch(1 0 0 / 72%);
+    background-image: radial-gradient(70% 70% at 35% 30%, oklch(1 0 0), oklch(0.975 0.003 250) 70%);
+    border: 1px solid var(--studio-silver);
+    box-shadow: inset 0 0 0 6px oklch(1 0 0 / 60%), inset 0 -10px 24px oklch(0.25 0.02 260 / 5%);
+  }
+  .hm-disc-edge {
+    background: var(--studio-grey);
+    border-color: var(--studio-silver);
+    box-shadow: none;
+  }
+  .hm-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 9999px;
+    border: 1px solid oklch(0.905 0.008 250 / 90%);
+    translate: -50% -50%;
+  }
+  .hm-ring-spin {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    animation: hm-orbit 160s linear infinite;
+  }
+  .hm-ring-spin.is-reverse { animation-duration: 220s; animation-direction: reverse; }
+  .hm-node {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--card);
+    border: 1px solid var(--studio-silver);
+    box-shadow: 0 0 0 3px oklch(1 0 0 / 80%);
+  }
+  .hm-floor-shadow {
+    position: absolute;
+    left: 50%;
+    top: 78%;
+    width: 60%;
+    height: 12%;
+    translate: -50% -50%;
+    border-radius: 9999px;
+    background: radial-gradient(closest-side, oklch(0.25 0.02 260 / 16%), transparent);
+  }
+
+  /* Slots hold the resting position and depth; inner layers carry the separate animations. */
+  .hm-slot {
+    position: absolute;
+    /* translate lives inside transform: the CSS build drops a separate translate next to transform. */
+    transform: translate(-50%, -50%) translateZ(var(--z, 0px)) rotateY(var(--ry0, 0deg)) rotateX(var(--rx0, 0deg));
+  }
+  .hm-enter {
+    position: relative;
+    animation: hm-enter var(--enter-dur, 1100ms) cubic-bezier(0.22, 1, 0.36, 1) var(--enter-delay, 0ms) backwards;
+  }
+  .hm-idle {
+    animation: var(--idle, hm-float) var(--dur, 10s) cubic-bezier(0.45, 0, 0.55, 1) var(--delay, 0s) infinite;
+    will-change: transform;
+  }
+  .hm-approach {
+    animation: hm-approach var(--approach-dur, 22s) cubic-bezier(0.45, 0, 0.55, 1) var(--approach-delay, 0s) infinite;
+  }
+  .hm-shadow {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--shadow-gap, 18px) * -1);
+    width: 78%;
+    height: 14px;
+    margin-left: -39%;
+    border-radius: 9999px;
+    background: radial-gradient(closest-side, oklch(0.25 0.02 260 / 24%), transparent);
+    animation: hm-shadow var(--dur, 10s) cubic-bezier(0.45, 0, 0.55, 1) var(--delay, 0s) infinite;
+  }
+
+  .hm-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 22px;
+    border: 1px solid var(--studio-silver);
+    background-color: var(--card);
+    background-image: linear-gradient(180deg, oklch(1 0 0), oklch(0.985 0.002 250));
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0),
+      0 1px 2px oklch(0.25 0.02 260 / 6%),
+      0 14px 28px -14px oklch(0.25 0.02 260 / 24%),
+      0 34px 60px -34px oklch(0.25 0.02 260 / 26%);
+  }
+  .hm-tile.is-glass {
+    background-color: oklch(1 0 0 / 62%);
+    background-image: none;
+    border-color: oklch(1 0 0 / 85%);
+    box-shadow: inset 0 1px 0 oklch(1 0 0), 0 10px 24px -16px oklch(0.25 0.02 260 / 22%);
+  }
+  .hm-glass {
+    border: 1px solid oklch(1 0 0 / 90%);
+    background-color: oklch(1 0 0 / 74%);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0),
+      inset 0 0 0 1px oklch(0.905 0.008 250 / 55%),
+      0 18px 40px -20px oklch(0.25 0.02 260 / 28%);
+  }
+  @media (width < 640px) {
+    .hm-tile, .hm-glass { box-shadow: inset 0 1px 0 oklch(1 0 0), 0 10px 20px -14px oklch(0.25 0.02 260 / 22%); }
+    .hm-tile { border-radius: 16px; }
+  }
+  .hm-swap {
+    animation: hm-swap 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .hm-root[data-paused] .hm-anim { animation-play-state: paused; }
+  .hm-root[data-lite] .hm-idle,
+  .hm-root[data-lite] .hm-shadow,
+  .hm-root[data-lite] .hm-approach,
+  .hm-root[data-lite] .hm-ring-spin,
+  .hm-root[data-lite] .hm-plane-idle { animation: none; }
+}
+
+@keyframes hm-enter {
+  from { opacity: 0; transform: translate3d(0, var(--from-y, 36px), var(--from-z, -220px)) rotateY(var(--from-ry, 0deg)) rotateX(var(--from-rx, 0deg)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hm-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotateX(0deg) rotateZ(0deg); }
+  50% { transform: translate3d(0, calc(var(--amp, 10px) * var(--amp-k) * -1), 0) rotateX(calc(var(--rot, 2deg) * var(--amp-k))) rotateZ(calc(var(--rot, 2deg) * var(--amp-k) * 0.5)); }
+}
+@keyframes hm-depth {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, calc(var(--amp, 10px) * var(--amp-k) * -0.5), calc(var(--amp, 10px) * var(--amp-k) * 4)); }
+}
+@keyframes hm-tilt {
+  0%, 100% { transform: rotateY(calc(var(--rot, 3deg) * var(--amp-k) * -1)) translate3d(0, 0, 0); }
+  50% { transform: rotateY(calc(var(--rot, 3deg) * var(--amp-k))) rotateX(calc(var(--rot, 3deg) * var(--amp-k) * 0.5)) translate3d(0, calc(var(--amp, 10px) * var(--amp-k) * -0.6), 0); }
+}
+@keyframes hm-shadow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.82); }
+}
+@keyframes hm-approach {
+  0%, 60%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  72%, 82% { transform: translate3d(0, -4px, calc(70px * var(--amp-k))) scale(1.03); }
+}
+@keyframes hm-plane-in {
+  from { opacity: 0; transform: translateZ(-30px) scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hm-platform {
+  0%, 100% { transform: translateZ(0); }
+  50% { transform: translateZ(5px); }
+}
+@keyframes hm-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes hm-swap {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
 }
