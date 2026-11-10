@@ -13,6 +13,8 @@ import {
   ListChecks,
   Loader2,
   Lock,
+  Package,
+  Tag,
   Pencil,
   Plus,
   RefreshCw,
@@ -67,6 +69,28 @@ function ErrorBox({ message, onRetry }: { message: string; onRetry: () => void }
 
 /* -------------------------------- Dashboard ------------------------------- */
 
+const QUICK: Array<{ title: string; body: string; cta: string; icon: typeof Users; go: AdminNavId; tint: string; text: string }> = [
+  { title: "Store products", body: "Add, edit, feature or publish products for the store and the bot.", cta: "Manage products", icon: Package, go: "Shop", tint: "bg-tint-violet", text: "text-violet" },
+  { title: "Promotional offers", body: "Banner and offer cards with dates, priority and images.", cta: "Create offer", icon: Tag, go: "Offers", tint: "bg-accent", text: "text-primary" },
+  { title: "Bot tasks", body: "Community tasks members complete before Invite and Earn unlocks.", cta: "Manage tasks", icon: ListChecks, go: "Tasks", tint: "bg-tint-rose", text: "text-destructive" },
+];
+
+function SectionTitle({ icon: Icon, title, action }: { icon: typeof Users; title: string; action?: { label: string; onClick: () => void } }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-2.5 text-lg font-semibold">
+        <span className="flex size-8 items-center justify-center rounded-lg bg-accent text-accent-foreground"><Icon className="size-4" /></span>
+        {title}
+      </h2>
+      {action && (
+        <button type="button" onClick={action.onClick} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+          {action.label} <ArrowUpRight className="size-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function BotDashboardPanel({ onOpen }: { onOpen: (id: AdminNavId) => void }) {
   const load = useServerFn(botDashboard);
   const q = useQuery({ queryKey: ["bot-dashboard"], queryFn: () => load() });
@@ -78,53 +102,129 @@ export function BotDashboardPanel({ onOpen }: { onOpen: (id: AdminNavId) => void
     { label: "Active users", value: d.users.active, icon: UserCheck, tone: "success", hint: `${d.users.pending} pending verification`, go: "Users" },
     { label: "Total referrals", value: d.referrals.total, icon: Users, go: "Referrals" },
     { label: "Verified referrals", value: d.referrals.verified, icon: BadgeCheck, tone: "success", go: "Leaderboard" },
-    { label: "Credits issued", value: d.credits.issued, icon: Coins, tone: "primary", hint: `${d.credits.spent} spent · ${d.credits.available} available`, go: "Users" },
-    { label: "Pending referral approvals", value: d.referrals.pending, icon: AlertTriangle, tone: d.referrals.pending ? "warning" : undefined, go: "Referrals" },
-    { label: "Active licences", value: d.licenses.active, icon: KeyRound, tone: "primary", hint: `${d.licenses.total} total · ${d.licenses.redeemedByMembers} redeemed by members`, go: "Licenses" },
+    { label: "Pending approvals", value: d.referrals.pending, icon: AlertTriangle, tone: d.referrals.pending ? "warning" : undefined, go: "Referrals" },
     { label: "Enabled tasks", value: d.tasks.enabled, icon: ListChecks, hint: `${d.tasks.total} configured`, go: "Tasks" },
   ];
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 xl:grid-cols-4">
-        {tiles.map((t) => (
-          <button key={t.label} type="button" onClick={() => onOpen(t.go)} className="text-left transition hover:-translate-y-0.5">
-            <MetricCard label={t.label} value={t.value.toLocaleString()} icon={t.icon} tone={t.tone} hint={t.hint} />
-          </button>
-        ))}
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="min-w-0 space-y-8">
+        <section>
+          <SectionTitle icon={Plus} title="Quick actions" />
+          <div className="grid gap-4 md:grid-cols-3">
+            {QUICK.map((c, i) => (
+              <button
+                key={c.title}
+                type="button"
+                onClick={() => onOpen(c.go)}
+                style={{ animationDelay: `${i * 80}ms` }}
+                className="group card-sheen relative overflow-hidden rounded-2xl border border-border bg-card p-5 text-left shadow-soft transition duration-500 ease-weighted animate-fade-up hover:-translate-y-1 hover:shadow-lift"
+              >
+                <c.icon aria-hidden="true" className="absolute -right-3 -top-3 size-24 text-foreground/[0.04] transition-transform duration-700 ease-weighted group-hover:rotate-6 group-hover:scale-110" />
+                <span className={`flex size-11 items-center justify-center rounded-xl border border-border ${c.tint} ${c.text}`}><c.icon className="size-5" /></span>
+                <p className="mt-4 text-lg font-semibold">{c.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{c.body}</p>
+                <span className={`mt-4 inline-flex items-center gap-1 text-sm font-medium ${c.text}`}>
+                  {c.cta} <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <SectionTitle icon={Users} title="Members and referrals" action={{ label: "Leaderboard", onClick: () => onOpen("Leaderboard") }} />
+          <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-3">
+            {tiles.map((t) => (
+              <button key={t.label} type="button" onClick={() => onOpen(t.go)} className="text-left transition duration-300 ease-weighted hover:-translate-y-0.5">
+                <MetricCard label={t.label} value={t.value.toLocaleString()} icon={t.icon} tone={t.tone} hint={t.hint} />
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <SectionTitle icon={Activity} title="Recent activity" action={{ label: "View all", onClick: () => onOpen("Activity") }} />
+          <div className="rounded-2xl border border-border bg-card shadow-soft">
+            {d.recent.length === 0 ? (
+              <p className="p-5 text-sm text-muted-foreground">No activity recorded yet.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {d.recent.map((a) => (
+                  <li key={a.id} className="flex items-start gap-3 px-5 py-3.5 text-sm transition-colors hover:bg-muted/40">
+                    <span className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${a.status === "error" ? "bg-destructive/10 text-destructive" : a.status === "warning" ? "bg-warning/15 text-warning-foreground" : "bg-muted text-muted-foreground"}`}>
+                      <Activity className="size-4" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate"><span className="font-medium">{a.action}</span> <span className="text-muted-foreground">· {a.module}</span></p>
+                      {a.details && <p className="truncate text-xs text-muted-foreground">{a.details}</p>}
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(a.created_at)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
       </div>
-      <div className="grid gap-4 xl:grid-cols-[1fr_1.4fr]">
-        <Panel title="Bot connection" actions={<Button variant="outline" size="sm" onClick={() => onOpen("Bot")}>Settings</Button>}>
-          <div className="flex items-center gap-3">
-            <span className={`flex size-11 items-center justify-center rounded-xl ${d.bot.connected ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
-              <Bot className="size-5" />
-            </span>
-            <div>
-              <p className="font-semibold">{d.bot.connected ? `@${d.bot.username}` : "Not connected"}</p>
-              <p className="text-sm text-muted-foreground">Webhook {d.bot.webhookSet ? "connected" : "not set"} · {d.bot.pending} pending updates</p>
+
+      <aside className="min-w-0 space-y-8">
+        <section>
+          <SectionTitle icon={Coins} title="Rewards performance" />
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Credits issued</p>
+            <p className="mt-1 flex items-baseline gap-2 font-display text-4xl font-bold tabular-nums tracking-tight">
+              {d.credits.issued.toLocaleString()} <span className="text-sm font-medium text-muted-foreground">credits</span>
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Spent</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums">{d.credits.spent.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Available</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-success">{d.credits.available.toLocaleString()}</p>
+              </div>
             </div>
           </div>
-          {d.bot.lastError && <p className="mt-4 rounded-lg bg-destructive/5 px-3 py-2 text-xs text-destructive">Last Telegram error: {d.bot.lastError}</p>}
-          <p className="mt-4 text-xs text-muted-foreground">Checked {dateTime(d.checkedAt)}</p>
-        </Panel>
-        <Panel title="Recent activity" actions={<Button variant="ghost" size="sm" onClick={() => onOpen("Activity")}>All activity <ArrowUpRight className="size-3.5" /></Button>}>
-          {d.recent.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {d.recent.map((a) => (
-                <li key={a.id} className="flex items-start gap-3 py-2.5 text-sm">
-                  <Activity className={`mt-0.5 size-4 shrink-0 ${a.status === "error" ? "text-destructive" : a.status === "warning" ? "text-warning-foreground" : "text-muted-foreground"}`} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate"><span className="font-medium">{a.action}</span> <span className="text-muted-foreground">· {a.module}</span></p>
-                    {a.details && <p className="truncate text-xs text-muted-foreground">{a.details}</p>}
-                  </div>
-                  <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(a.created_at)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
-      </div>
+        </section>
+
+        <section>
+          <SectionTitle icon={KeyRound} title="Licences" action={{ label: "History", onClick: () => onOpen("Licenses") }} />
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <div className="flex items-baseline gap-2">
+              <p className="font-display text-4xl font-bold tabular-nums">{d.licenses.active.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">active</p>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Total</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums">{d.licenses.total.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Redeemed</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-primary">{d.licenses.redeemedByMembers.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <SectionTitle icon={Bot} title="Bot connection" action={{ label: "Settings", onClick: () => onOpen("Bot") }} />
+          <div className={`rounded-2xl border border-border bg-card p-5 shadow-soft border-l-4 ${d.bot.connected ? "border-l-success" : "border-l-destructive"}`}>
+            <div className="flex items-center gap-3">
+              <span className={`flex size-11 items-center justify-center rounded-full ${d.bot.connected ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+                <Bot className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-semibold">{d.bot.connected ? `@${d.bot.username}` : "Not connected"}</p>
+                <p className="text-sm text-muted-foreground">Webhook {d.bot.webhookSet ? "connected" : "not set"} · {d.bot.pending} pending</p>
+              </div>
+            </div>
+            {d.bot.lastError && <p className="mt-4 rounded-lg bg-destructive/5 px-3 py-2 text-xs text-destructive">Last Telegram error: {d.bot.lastError}</p>}
+            <p className="mt-4 text-xs text-muted-foreground">Checked {dateTime(d.checkedAt)}</p>
+          </div>
+        </section>
+      </aside>
     </div>
   );
 }
