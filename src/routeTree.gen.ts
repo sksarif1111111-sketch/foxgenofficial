@@ -19,9 +19,11 @@ import { Route as ExtensionRouteImport } from './routes/extension'
 import { Route as HubRouteImport } from './routes/hub'
 import { Route as HubAdminRouteImport } from './routes/hub-admin'
 import { Route as OffersRouteImport } from './routes/offers'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TutorialsRouteImport } from './routes/tutorials'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ChatIndexRouteImport } from './routes/chat.index'
@@ -86,6 +88,11 @@ const OffersRoute = OffersRouteImport.update({
   path: '/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -99,6 +106,11 @@ const ShopRoute = ShopRouteImport.update({
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TutorialsRoute = TutorialsRouteImport.update({
@@ -180,9 +192,11 @@ export interface FileRoutesByFullPath {
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
   '/offers': typeof OffersRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
@@ -207,9 +221,11 @@ export interface FileRoutesByTo {
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
   '/offers': typeof OffersRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
@@ -236,9 +252,11 @@ export interface FileRoutesById {
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
   '/offers': typeof OffersRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRoute
   '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
@@ -266,9 +284,11 @@ export interface FileRouteTypes {
     | '/hub'
     | '/hub-admin'
     | '/offers'
+    | '/privacy'
     | '/reset-password'
     | '/shop'
     | '/support'
+    | '/terms'
     | '/tutorials'
     | '/api/chat'
     | '/chat/$threadId'
@@ -293,9 +313,11 @@ export interface FileRouteTypes {
     | '/hub'
     | '/hub-admin'
     | '/offers'
+    | '/privacy'
     | '/reset-password'
     | '/shop'
     | '/support'
+    | '/terms'
     | '/tutorials'
     | '/api/chat'
     | '/chat/$threadId'
@@ -321,9 +343,11 @@ export interface FileRouteTypes {
     | '/hub'
     | '/hub-admin'
     | '/offers'
+    | '/privacy'
     | '/reset-password'
     | '/shop'
     | '/support'
+    | '/terms'
     | '/tutorials'
     | '/api/chat'
     | '/chat/$threadId'
@@ -350,9 +374,11 @@ export interface RootRouteChildren {
   HubRoute: typeof HubRoute
   HubAdminRoute: typeof HubAdminRoute
   OffersRoute: typeof OffersRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRoute
   SupportRoute: typeof SupportRoute
+  TermsRoute: typeof TermsRoute
   TutorialsRoute: typeof TutorialsRoute
   ApiChatRoute: typeof ApiChatRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
@@ -438,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OffersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -457,6 +490,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tutorials': {
@@ -576,9 +616,11 @@ const rootRouteChildren: RootRouteChildren = {
   HubRoute: HubRoute,
   HubAdminRoute: HubAdminRoute,
   OffersRoute: OffersRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRoute,
   SupportRoute: SupportRoute,
+  TermsRoute: TermsRoute,
   TutorialsRoute: TutorialsRoute,
   ApiChatRoute: ApiChatRoute,
   ProductProductIdRoute: ProductProductIdRoute,

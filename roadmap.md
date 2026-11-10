@@ -1,5 +1,11 @@
 # Roadmap
 
+## Homepage rebuild from the user's SKILL.md (Nov 2026)
+- [x] Floating nav + full height mobile menu, hero with Buy now, live offers with category filter, why, how it works, tagline reveal, rewards + bot, tutorials, support, FAQ (with FAQ schema), final CTA, footer, Privacy and Terms pages, branded 404. Tested at 1280/1024/768/390.
+- [ ] Refund/cancellation terms — waiting for owner's wording (pages say "not published yet").
+- [ ] Tutorial video URL — not configured yet; section links to the YouTube channel instead.
+- [ ] Brand name on public pages (Foxgen AI Store vs FOXGEN OFFICIAL) — waiting for owner's confirmation.
+
 ## Foxgen AI Store premium redesign (Nov 2026)
 - [x] Rename to Foxgen AI Store with the new fox logo; soft white / navy / blue design; whole site in English.
 - [x] Header: Home, Shop, Latest Offers, Free Rewards, Tutorials, Support, search, Account; mobile menu.

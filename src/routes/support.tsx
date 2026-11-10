@@ -58,7 +58,7 @@ function SupportPage() {
           <p className="mt-3 max-w-2xl text-muted-foreground">Questions about an order, a licence or the extension? Reach us on the channel you prefer.</p>
         </div>
       </header>
-      <main className="container-page space-y-14 py-10 sm:py-14">
+      <main id="main" className="container-page space-y-14 py-10 sm:py-14">
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {isLoading && Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-2xl border border-border bg-card" />)}
           {primary.map((c) => (

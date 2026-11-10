@@ -113,7 +113,7 @@ export default function DownloadPage() {
         </div>
       </section>
 
-      <main className="container-page mt-16 space-y-20">
+      <main id="main" className="container-page mt-16 space-y-20">
         <section>
           <div className="mb-6">
             <p className="eyebrow text-primary">Releases</p>

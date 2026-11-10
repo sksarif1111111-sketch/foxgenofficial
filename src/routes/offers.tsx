@@ -51,7 +51,7 @@ function OffersPage() {
         </div>
       </header>
 
-      <main className="container-page space-y-16 py-10 sm:py-14">
+      <main id="main" className="container-page space-y-16 py-10 sm:py-14">
         <section>
           <div className="mb-6 flex items-center gap-2">
             <Tag className="size-5 text-primary" />
