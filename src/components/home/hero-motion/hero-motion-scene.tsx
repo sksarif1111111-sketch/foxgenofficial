@@ -5,7 +5,7 @@ import { FloatingProductTile, LogoMark, ORBIT_SECONDS } from "./floating-product
 import { FloatingCategoryCard } from "./floating-category-card";
 import { CATEGORY_SLOTS } from "./slots";
 
-const ORBIT_TILES = 10;
+const ORBIT_TILES = 8;
 
 const CYCLE_MS = 6500;
 const clamp = (v: number) => Math.max(-1, Math.min(1, v));
@@ -104,7 +104,7 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
             ))}
 
             {!children && (
-              <div className="hm-slot" style={{ left: "50%", top: "44%", ["--z" as string]: "0px", ["--dur" as string]: "12s", ["--delay" as string]: "-2s", ["--amp" as string]: "6px", ["--rot" as string]: "1deg", ["--enter-delay" as string]: "800ms", ["--enter-dur" as string]: "1200ms", ["--from-y" as string]: "60px", ["--from-z" as string]: "-60px" }}>
+              <div className="hm-slot" style={{ left: "50%", top: "38%", ["--z" as string]: "0px", ["--dur" as string]: "12s", ["--delay" as string]: "-2s", ["--amp" as string]: "6px", ["--rot" as string]: "1deg", ["--enter-delay" as string]: "800ms", ["--enter-dur" as string]: "1200ms", ["--from-y" as string]: "60px", ["--from-z" as string]: "-60px" }}>
                 <div className="hm-enter hm-anim">
                   <div className="hm-shadow hm-anim" style={{ ["--shadow-gap" as string]: "26px" }} />
                   <div className="hm-idle hm-anim">

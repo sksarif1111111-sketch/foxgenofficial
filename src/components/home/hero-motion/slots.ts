@@ -18,7 +18,7 @@ export const CATEGORY_SLOTS: Slot[] = [
   { x: 82, y: 90, z: 80, ry: -10, from: "base", dur: 13.6, delay: -6.5, enter: 2200 },
   { x: 82, y: 9, z: 30, ry: -8, from: "sm", dur: 11.4, delay: -4.0, enter: 2400 },
   { x: 18, y: 92, z: 70, ry: 8, from: "sm", dur: 14.8, delay: -8.8, enter: 2500 },
-  { x: 50, y: 99, z: 90, ry: 0, from: "lg", dur: 12.8, delay: -1.4, enter: 2600 },
+  { x: 50, y: 95, z: 90, ry: 0, from: "lg", dur: 12.8, delay: -1.4, enter: 2600 },
 ];
 
 export const visibility = { base: "", sm: "hidden sm:block", lg: "hidden lg:block" } as const;

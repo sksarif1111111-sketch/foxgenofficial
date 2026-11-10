@@ -16,7 +16,8 @@ export function LogoMark({ product, className }: { product: HeroSceneProduct; cl
 /**
  * One app tile on the orbit ring. Layers: place on the ring → cancel the ring spin and tilt so the
  * tile always faces the viewer → dim while passing behind → entrance → gentle bob → tile.
- * Every second tile is hidden on phones, which keeps the rest evenly spaced.
+ * Every second tile is hidden on phones, which keeps the rest evenly spaced. The product name
+ * shows on the showcase card; ring tiles carry the logo only so passing tiles never overlap text.
  */
 export function FloatingProductTile({ product, index, total }: { product: HeroSceneProduct; index: number; total: number }) {
   const angle = (360 / total) * index;
@@ -41,7 +42,6 @@ export function FloatingProductTile({ product, index, total }: { product: HeroSc
                   <div className="hm-tile size-14 sm:size-[72px] lg:size-20">
                     <LogoMark product={product} className="size-7 sm:size-9 lg:size-10" />
                   </div>
-                  <p className="caption-5 absolute left-1/2 top-full mt-2 hidden w-[104px] -translate-x-1/2 truncate text-center text-studio-muted lg:block">{shortProductName(product.name)}</p>
                 </div>
               </div>
             </div>
