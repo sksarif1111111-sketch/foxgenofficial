@@ -133,6 +133,15 @@
   --studio-muted: oklch(0.56 0.012 255);
   --studio-ink: oklch(0.21 0.008 265);
   --studio-shadow: oklch(0.25 0.02 260);
+  /* Foxgen AI robot: sky blue, clean white, deep navy visor. */
+  --robot-blue: oklch(0.62 0.17 245);
+  --robot-blue-light: oklch(0.8 0.12 232);
+  --robot-white: oklch(1 0 0);
+  --robot-white-shade: oklch(0.93 0.015 245);
+  --robot-visor: oklch(0.22 0.06 265);
+  --robot-visor-top: oklch(0.32 0.08 262);
+  --robot-eye: oklch(0.86 0.13 215);
+  --robot-cheek: oklch(0.8 0.1 5);
 
   --shadow-soft: 0 1px 2px oklch(0.22 0.04 265 / 5%), 0 6px 20px -12px oklch(0.22 0.04 265 / 14%);
   --shadow-lift: 0 2px 4px oklch(0.22 0.04 265 / 5%), 0 22px 44px -22px oklch(0.22 0.04 265 / 26%);
@@ -871,4 +880,80 @@
     animation: none !important;
   }
   .trust-count-done::after { animation: none !important; opacity: 0; }
+}
+
+/* ---------- Foxgen AI robot assistant (SVG, transform and opacity only) ---------- */
+@layer components {
+  .robot-svg { overflow: visible; filter: drop-shadow(0 10px 14px oklch(0.45 0.15 250 / 28%)); }
+  .robot-svg g { transform-box: view-box; }
+  .rb-line { stroke: oklch(0.85 0.03 245); stroke-width: 1; }
+  .rb-ear { stroke: oklch(0.55 0.16 248); stroke-width: 1; }
+  .rb-ear-inner { fill: var(--robot-white); opacity: 0.85; }
+  .rb-eye { fill: var(--robot-eye); transform-box: fill-box; transform-origin: center; animation: rb-blink 4.6s infinite; }
+  .rb-eye-shine { fill: var(--robot-white); }
+  .rb-smile { stroke: var(--robot-eye); }
+  .rb-chest { stroke: var(--robot-white); }
+  .rb-cheek { fill: var(--robot-cheek); opacity: 0.55; }
+  .rb-gloss { fill: var(--robot-white); opacity: 0.75; }
+  .rb-antenna { fill: var(--robot-eye); animation: rb-glow 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+  .rb-shadow { fill: oklch(0.3 0.06 255 / 18%); transform-box: fill-box; transform-origin: center; animation: rb-shadow 1.6s ease-in-out infinite; }
+  .rb-sway { transform-origin: 60px 128px; animation: rb-sway 4.8s ease-in-out infinite; }
+  .rb-bounce { animation: rb-bounce 1.6s ease-in-out infinite; }
+  .rb-head { transform-origin: 60px 76px; animation: rb-head 9s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+  .rb-arm-l { transform-origin: 30px 84px; animation: rb-arm-swing 1.6s ease-in-out infinite; }
+  .rb-arm-r { transform-origin: 90px 84px; animation: rb-wave 7s ease-in-out 1.2s infinite; }
+  .rb-leg-l { animation: rb-step 0.8s ease-in-out infinite; }
+  .rb-leg-r { animation: rb-step 0.8s ease-in-out -0.4s infinite; }
+  .robot-bubble { transform-origin: bottom right; }
+  .robot-root[data-paused] * { animation-play-state: paused !important; }
+}
+@keyframes rb-blink {
+  0%, 44%, 50%, 100% { transform: scaleY(1); }
+  47% { transform: scaleY(0.1); }
+}
+@keyframes rb-glow {
+  0%, 100% { opacity: 0.6; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+@keyframes rb-shadow {
+  0%, 100% { transform: scaleX(1); opacity: 1; }
+  50% { transform: scaleX(0.85); opacity: 0.7; }
+}
+@keyframes rb-sway {
+  0%, 100% { transform: rotate(-3deg) translateX(-1px); }
+  50% { transform: rotate(3deg) translateX(1px); }
+}
+@keyframes rb-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+/* Look left, look right, then a curious tilt as if asking a question. */
+@keyframes rb-head {
+  0%, 8% { transform: rotate(0deg); }
+  18%, 26% { transform: rotate(-7deg) translateX(-1px); }
+  36%, 44% { transform: rotate(7deg) translateX(1px); }
+  54% { transform: rotate(0deg); }
+  64%, 80% { transform: rotate(-13deg); }
+  90%, 100% { transform: rotate(0deg); }
+}
+@keyframes rb-arm-swing {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+@keyframes rb-wave {
+  0%, 58%, 100% { transform: rotate(0deg); }
+  64% { transform: rotate(-140deg); }
+  69% { transform: rotate(-110deg); }
+  74% { transform: rotate(-140deg); }
+  79% { transform: rotate(-110deg); }
+  84% { transform: rotate(-140deg); }
+  92% { transform: rotate(0deg); }
+}
+@keyframes rb-step {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .robot-root * { animation: none !important; }
+  .robot-bubble { transform: none !important; transition-property: opacity !important; transition-duration: 400ms !important; }
 }
