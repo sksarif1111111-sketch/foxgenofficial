@@ -153,7 +153,7 @@ export function TrustStatsBand({
               <span className="title-2">Owner checked</span>
             </StatTile>
           )}
-          <div className="trust-card trust-card-accent flex min-w-0 items-center gap-3 p-4 sm:p-5">
+          <div className="trust-card trust-card-accent flex min-w-0 flex-col items-start gap-2 p-4 sm:flex-row sm:items-center sm:gap-3 sm:p-5">
             <DeliveryClock />
             <div className="min-w-0">
               <p className="caption-3 uppercase tracking-wider text-primary">30 minutes delivery</p>

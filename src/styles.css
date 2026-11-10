@@ -852,7 +852,7 @@
 @keyframes trust-flash {
   0% { opacity: 0; }
   30% { opacity: 1; }
-  100% { opacity: 0.35; }
+  100% { opacity: 0; }
 }
 @keyframes trust-sweep {
   from { transform: translateX(-100%); }
@@ -870,5 +870,5 @@
   .trust-count-done {
     animation: none !important;
   }
-  .trust-count-done::after { animation: none !important; opacity: 0.35; }
+  .trust-count-done::after { animation: none !important; opacity: 0; }
 }
