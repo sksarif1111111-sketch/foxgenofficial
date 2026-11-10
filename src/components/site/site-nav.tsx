@@ -36,13 +36,19 @@ export function BrandMark({ compact = false, tone = "default" }: { compact?: boo
 }
 
 /** Primary call to action used everywhere: jumps to the live offers on Home. */
-export function BuyNowLink({ className = "", children = "Buy now", onClick }: { className?: string; children?: ReactNode; onClick?: () => void }) {
+const TONES = {
+  primary: "rounded-full bg-primary px-3 py-2 text-primary-foreground hover:bg-primary/90",
+  navy: "rounded-xl bg-navy px-4 py-2 text-navy-foreground hover:bg-navy/90",
+  glow: "btn-glow rounded-xl px-6 py-3",
+} as const;
+
+export function BuyNowLink({ className = "", children = "Buy now", onClick, tone = "primary" }: { className?: string; children?: ReactNode; onClick?: () => void; tone?: keyof typeof TONES }) {
   return (
     <Link
       to="/"
       hash="offers"
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-full bg-primary px-3 py-2 text-primary-foreground transition duration-300 ${ease} hover:bg-primary/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${className}`}
+      className={`inline-flex items-center justify-center gap-2 transition duration-300 ${ease} active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${TONES[tone]} ${className}`}
     >
       {children}
     </Link>
@@ -125,7 +131,7 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
             >
               <UserCircle size={22} />
             </Link>
-            <BuyNowLink className="button-sm rounded-xl bg-navy px-4 text-navy-foreground hover:bg-navy/90">
+            <BuyNowLink tone="navy" className="button-sm">
               <ShoppingBagOpen size={16} weight="bold" /> Buy now
             </BuyNowLink>
             <MenuToggle open={open} onClick={() => setOpen((v) => !v)} />
