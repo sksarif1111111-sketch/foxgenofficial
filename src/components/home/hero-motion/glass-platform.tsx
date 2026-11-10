@@ -6,13 +6,13 @@ export function GlassPlatform() {
       <div className="hm-plane">
         <div className="hm-plane-reveal hm-anim">
         <div className="hm-plane-idle hm-anim">
-          <div className="hm-ring" style={{ width: "128%", height: "128%" }}>
+          <div className="hm-ring" style={{ width: "118%", height: "118%" }}>
             <div className="hm-ring-spin hm-anim">
               <span className="hm-node" style={{ left: "50%", top: "-4px" }} />
               <span className="hm-node" style={{ left: "6%", top: "70%" }} />
             </div>
           </div>
-          <div className="hm-ring" style={{ width: "104%", height: "104%", borderStyle: "dashed" }}>
+          <div className="hm-ring" style={{ width: "98%", height: "98%", borderStyle: "dashed" }}>
             <div className="hm-ring-spin is-reverse hm-anim">
               <span className="hm-node" style={{ right: "4%", top: "28%" }} />
             </div>
