@@ -21,7 +21,7 @@ function storedThreadId() {
 }
 
 /** Small chat pop-up above the robot. Replies come from the same store AI as before. */
-export default function AssistantChatPopup({ onClose }: { onClose: () => void }) {
+export default function AssistantChatPopup({ onClose, side = "right" }: { onClose: () => void; side?: "left" | "right" }) {
   const [threadId, setThreadId] = useState(storedThreadId);
   const initial = useMemo(() => getThread(threadId)?.messages ?? [], [threadId]);
 
@@ -40,7 +40,8 @@ export default function AssistantChatPopup({ onClose }: { onClose: () => void })
     <div
       role="dialog"
       aria-label="Foxgen AI chat"
-      className="assistant-pop fixed bottom-[84px] right-2 z-40 flex h-[min(520px,calc(100dvh-120px))] w-[min(370px,calc(100vw-1rem))] flex-col overflow-hidden rounded-3xl border border-border bg-card text-foreground shadow-lift sm:bottom-[132px] sm:right-4"
+      data-side={side}
+      className={`assistant-pop fixed bottom-[86px] z-40 ${side === "left" ? "left-2 sm:left-4" : "right-2 sm:right-4"} flex h-[min(520px,calc(100dvh-120px))] w-[min(370px,calc(100vw-1rem))] flex-col overflow-hidden rounded-3xl border border-border bg-card text-foreground shadow-lift sm:bottom-[124px]`}
     >
       <div className="flex items-center gap-3 border-b border-border bg-accent/60 px-4 py-3">
         <span className="relative flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
