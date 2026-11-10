@@ -12,10 +12,13 @@ import {
   MagnifyingGlass,
   PlayCircle,
   SealCheck,
+  Package,
   ShieldCheck,
   Sparkle,
   SquaresFour,
   TelegramLogo,
+  Timer,
+  UsersThree,
   WhatsappLogo,
   Warning,
 } from "@phosphor-icons/react/dist/ssr";
@@ -29,6 +32,7 @@ import type { CatalogProduct } from "@/components/site/product-card";
 import { HomeOfferCard, OfferCardSkeleton } from "@/components/home/home-offer-card";
 import { Reveal } from "@/components/home/reveal";
 import { TaglineReveal } from "@/components/home/tagline-reveal";
+import { ShowcaseMarquee } from "@/components/home/showcase-marquee";
 import { Faq, type FaqItem } from "@/components/home/faq";
 import { FestiveOfferSection, HeroOfferVisual, OfferAnnouncementBar, PrimaryCta, findOfferProduct, useFestiveOffer } from "@/components/home/festive-offer";
 import { categoryOf, type StoreCategoryId } from "@/lib/store-categories";
@@ -113,9 +117,9 @@ function Home() {
   const groups = useMemo(() => GROUPS.map((g) => ({ ...g, count: live.filter((p) => groupOf(p).id === g.id).length })).filter((g) => g.count > 0), [live]);
   const featuredFirst = useMemo(() => [...live].sort((a, b) => Number(b.featured) - Number(a.featured)), [live]);
   const shown = (group === "all" ? featuredFirst : featuredFirst.filter((p) => groupOf(p).id === group)).slice(0, 8);
-  const heroShelf = useMemo(() => {
-    const withLogo = featuredFirst.filter((p) => p.logo_url);
-    return (withLogo.length >= 4 ? withLogo : featuredFirst).slice(0, 4);
+  const showcase = useMemo(() => {
+    const withLogo = featuredFirst.filter((p) => p.logo_url || p.image_url);
+    return (withLogo.length >= 6 ? withLogo : featuredFirst).slice(0, 16);
   }, [featuredFirst]);
   const promos = offers.data?.offers ?? [];
   const festive = useFestiveOffer();
@@ -150,85 +154,78 @@ function Home() {
 
       <main id="main">
         {/* HERO */}
-        <section aria-labelledby="hero-title" className="container-page pb-16 pt-8 sm:pt-16 lg:pb-24">
-          <div className="grid items-center gap-12 lg:grid-cols-[1.3fr_1fr]">
-            <div className="min-w-0">
-              <p className="caption-1 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-muted-foreground">
-                <SealCheck size={16} weight="fill" className="text-primary" /> Every payment checked by a person
-              </p>
-              <h1 id="hero-title" className="heading-3 text-hero-gradient mt-6 max-w-[680px] xl:heading-2">
-                {/* Narrow screens: shorter lines that break where the thought breaks. */}
-                <span className="sm:hidden">
-                  Premium software.
-                  <br />
-                  Better value.
-                  <br />
-                  One place.
-                </span>
-                <span className="hidden sm:inline">
-                  Premium software access.
-                  <br />
-                  Better value. One place.
-                </span>
-              </h1>
-              <p className="title-2 mt-6 max-w-[680px] font-normal text-muted-foreground">
-                Discover current offers for Lovable, ChatGPT, Gemini, AI tools and developer software. Check the real price, then press Buy now to start your order with our team.
-              </p>
-              <div className="mt-8">
-                <PrimaryCta live={festive.live} className="button-md shadow-ember" />
+        <section aria-labelledby="hero-title" className="hero-aura relative -mt-20 overflow-hidden pb-16 pt-28 sm:pt-36 lg:pb-24">
+          <div className="container-page">
+            <div className="grid items-end gap-10 lg:grid-cols-[1.6fr_1fr] lg:gap-12">
+              <div className="min-w-0 animate-fade-up">
+                <p className="caption-1 inline-flex items-center gap-2 rounded-lg border border-border bg-card/90 px-3 py-1.5 text-primary shadow-soft">
+                  <SealCheck size={16} weight="fill" /> Every payment checked by a person
+                </p>
+                <h1 id="hero-title" className="heading-3 text-hero-gradient mt-6 max-w-[760px] pb-1 [text-wrap:wrap] sm:heading-2 sm:leading-[1.1] xl:text-[3.5rem]">
+                  <span className="sm:hidden">
+                    Premium software.
+                    <br />
+                    Better value.
+                    <br />
+                    One place.
+                  </span>
+                  <span className="hidden sm:inline">
+                    Premium software access,
+                    <br />
+                    better value in one place
+                  </span>
+                </h1>
+                {festive.live && (
+                  <p className="title-2 mt-6 max-w-[620px] font-normal text-muted-foreground">
+                    Discover current offers for Lovable, ChatGPT, Gemini, AI tools and developer software, then press Buy now to start your order.
+                  </p>
+                )}
+                <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <PrimaryCta live={festive.live} className="button-md" />
+                  <Link to="/shop" className="button-md inline-flex items-center gap-2 rounded-xl border border-border bg-card/80 px-5 py-3 text-foreground shadow-soft transition duration-300 ease-weighted hover:-translate-y-0.5 hover:bg-card">
+                    Explore all offers <ArrowRight size={16} />
+                  </Link>
+                </div>
               </div>
-              <dl className="mt-10 grid max-w-[680px] grid-cols-3 gap-4 border-t border-border pt-6">
-                <div>
-                  <dt className="caption-5 text-muted-foreground">Products in stock</dt>
-                  <dd className="heading-5 mt-1 tabular-nums">{catalog.data ? live.length : <span className="inline-block h-6 w-10 animate-pulse rounded bg-muted" />}</dd>
-                </div>
-                <div>
-                  <dt className="caption-5 text-muted-foreground">Bot members</dt>
-                  <dd className="heading-5 mt-1 tabular-nums">{members !== null ? members.toLocaleString("en-US") : <span className="inline-block h-6 w-10 animate-pulse rounded bg-muted" />}</dd>
-                </div>
-                <div>
-                  <dt className="caption-5 text-muted-foreground">Typical review</dt>
-                  <dd className="heading-5 mt-1 tabular-nums">{reviewMinutes ? `${reviewMinutes} min` : <span className="inline-block h-6 w-10 animate-pulse rounded bg-muted" />}</dd>
-                </div>
-              </dl>
-            </div>
 
-            {/* Hero visual: the festive offer while it is live, otherwise the live product shelf */}
-            {festive.live ? (
-              <HeroOfferVisual product={festiveProduct} loading={catalog.isLoading} />
-            ) : (
-            <div className="min-w-0 rounded-3xl border border-border bg-card p-2 shadow-lift">
-              <div className="rounded-2xl bg-muted/60 p-4 sm:p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="title-4">Live in the store</p>
-                  <p className="caption-5 text-muted-foreground">{catalog.data?.lastSupplierSync ? `Stock checked ${timeAgo(catalog.data.lastSupplierSync)}` : "Current store prices"}</p>
+              {festive.live ? (
+                <HeroOfferVisual product={festiveProduct} loading={catalog.isLoading} />
+              ) : (
+                <div className="min-w-0 animate-fade-up [animation-delay:150ms]">
+                  <p className="body-3 max-w-[420px] text-muted-foreground lg:title-2 lg:font-normal">
+                    Discover current offers for Lovable, ChatGPT, Gemini, AI tools and developer software. Check the real price, then start your order with our team.
+                  </p>
+                  <dl className="mt-6 grid max-w-[420px] grid-cols-3 gap-4">
+                    {[
+                      { Icon: Package, label: "Products in stock", value: catalog.data ? live.length.toLocaleString("en-US") : null },
+                      { Icon: UsersThree, label: "Bot members", value: members !== null ? members.toLocaleString("en-US") : null },
+                      { Icon: Timer, label: "Typical review", value: reviewMinutes ? `${reviewMinutes} min` : null },
+                    ].map((s) => (
+                      <div key={s.label} className="min-w-0">
+                        <span className="inline-flex size-8 items-center justify-center rounded-lg border border-border bg-card text-foreground shadow-soft">
+                          <s.Icon size={16} weight="bold" />
+                        </span>
+                        <dd className="heading-5 mt-3 tabular-nums sm:heading-4">{s.value ?? <span className="inline-block h-7 w-12 animate-pulse rounded bg-muted" />}</dd>
+                        <dt className="caption-5 mt-1 text-muted-foreground">{s.label}</dt>
+                      </div>
+                    ))}
+                  </dl>
                 </div>
-                <ul className="mt-4 space-y-2">
-                  {catalog.isLoading
-                    ? Array.from({ length: 4 }).map((_, i) => <li key={i} className="h-16 animate-pulse rounded-xl bg-card" />)
-                    : heroShelf.map((p) => (
-                        <li key={p.id}>
-                          <Link
-                            to="/product/$productId"
-                            params={{ productId: p.id }}
-                            className={`flex items-center gap-3 rounded-xl bg-card p-3 transition duration-300 ${ease} hover:-translate-y-0.5 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
-                          >
-                            <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} size="sm" />
-                            <span className="min-w-0 flex-1">
-                              <span className="title-4 block truncate">{p.name}</span>
-                              <span className="caption-5 block truncate text-muted-foreground">{p.duration_label ?? groupOf(p).label}</span>
-                            </span>
-                            <span className="body-4 shrink-0 tabular-nums">{p.price_usdt !== null ? `${p.price_usdt.toFixed(2)} USDT` : "On request"}</span>
-                          </Link>
-                        </li>
-                      ))}
-                </ul>
-                <div className="mt-4 flex items-center gap-2 rounded-xl bg-card p-3">
-                  <ShieldCheck size={18} className="shrink-0 text-success" />
-                  <p className="caption-2 text-muted-foreground">Your order is confirmed only after the owner sees the payment arrive.</p>
-                </div>
-              </div>
+              )}
             </div>
+          </div>
+
+          {/* Moving showcase of real products */}
+          <div className="mt-14 animate-fade-up [animation-delay:300ms] lg:mt-20">
+            <ShowcaseMarquee products={showcase} loading={catalog.isLoading} />
+            {catalog.data?.lastSupplierSync && (
+              <p className="caption-5 container-page mt-4 flex items-center gap-2 text-muted-foreground">
+                <span className="relative inline-flex size-2">
+                  <span className="absolute inset-0 rounded-full bg-success animate-glow-ping" />
+                  <span className="relative size-2 rounded-full bg-success" />
+                </span>
+                Stock checked {timeAgo(catalog.data.lastSupplierSync)}
+              </p>
             )}
           </div>
         </section>
@@ -333,8 +330,8 @@ function Home() {
               { Icon: ShieldCheck, title: "A person checks every payment", body: "Orders are confirmed only after the owner sees your payment arrive. Typed references are never enough." },
               { Icon: Lifebuoy, title: "Help when you need it", body: "Support on WhatsApp and Telegram, plus written setup guides on the Tutorials page." },
             ].map((b, i) => (
-              <Reveal key={b.title} delay={i * 60} className="rounded-2xl border border-border bg-card p-6">
-                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+              <Reveal key={b.title} delay={i * 60} className={`card-sheen rounded-2xl border border-border bg-card p-6 shadow-soft transition duration-500 ${ease} hover:-translate-y-1 hover:shadow-lift`}>
+                <span className={`inline-flex size-11 items-center justify-center rounded-xl text-foreground ${["bg-accent", "bg-tint-violet", "bg-tint-green", "bg-tint-amber"][i]}`}>
                   <b.Icon size={20} weight="duotone" />
                 </span>
                 <h3 className="title-2 mt-4">{b.title}</h3>
@@ -542,7 +539,7 @@ function Home() {
 
         {/* FINAL CTA */}
         <section aria-labelledby="final-title" className="container-page pb-8 pt-16 lg:pt-24">
-          <Reveal className="surface-ink rounded-3xl px-6 py-16 text-center sm:px-12 lg:py-24">
+          <Reveal className="surface-ink tile-night relative overflow-hidden rounded-3xl px-6 py-16 text-center shadow-lift sm:px-12 lg:py-24">
             <h2 id="final-title" className="heading-4 mx-auto max-w-[680px] sm:heading-3 lg:heading-2">Find the software you need.</h2>
             <p className="body-3 mx-auto mt-4 max-w-[680px] text-muted-foreground">Explore the available {BRAND.name} offers and start your order when you are ready.</p>
             <div className="mt-8 flex flex-col items-center gap-4">

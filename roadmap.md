@@ -59,3 +59,8 @@
 ## Festive offer on the landing page (Nov 2026)
 - [x] Config driven offer: top bar with live countdown, hero offer card with animated badge and prices, offer section after benefits; hides itself outside its dates. Tested at 1280 and 390 with temporary values.
 - [ ] Real offer values (name, discount, prices, dates, product, button text and link) — waiting for the owner; the offer stays hidden until they are filled in.
+
+## Reference design pass (Nov 2026)
+- [x] Home like reference 1: floating white nav, blue hero light, big navy heading, live stats, moving rows of real product tiles, livelier product cards.
+- [x] Bot management like reference 2: white sidebar, bot Online pill, quick actions, member tiles, rewards/licences/bot cards.
+- [x] Extension licence center like reference 3: dark violet stage, glowing status tiles, filters, card/table view, sort.

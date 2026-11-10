@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Foxgen AI Store design system (follows the landing-page-design skill).
- * Flat soft-white canvas, near-black ink surfaces (#181818 family) and one refined blue accent.
- * No background gradients; the only gradient is the hero heading text.
+ * Foxgen AI Store design system.
+ * Soft white canvas with a gentle blue light in the hero, deep navy text and one refined blue accent.
+ * Admin uses a clean white sidebar; the Extension licence area uses a dark violet stage.
  * One typeface: Geist (Geist Mono only for numeric/data UI). All colours are oklch tokens.
  */
 
@@ -46,6 +46,13 @@
   --color-ink: var(--ink);
   --color-ink-foreground: var(--ink-foreground);
   --color-brand-violet: var(--brand-violet);
+  --color-navy: var(--navy);
+  --color-navy-foreground: var(--navy-foreground);
+  --color-violet: var(--violet);
+  --color-tint-violet: var(--tint-violet);
+  --color-tint-amber: var(--tint-amber);
+  --color-tint-rose: var(--tint-rose);
+  --color-tint-green: var(--tint-green);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -68,10 +75,10 @@
 :root,
 .surface-light {
   --radius: 0.75rem;
-  --background: oklch(0.985 0.004 255);
-  --foreground: oklch(0.22 0.04 265);
+  --background: oklch(0.982 0.006 262);
+  --foreground: oklch(0.21 0.06 272);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.04 265);
+  --card-foreground: oklch(0.21 0.06 272);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.04 265);
   --primary: oklch(0.52 0.19 262);
@@ -99,14 +106,21 @@
   --chart-3: oklch(0.57 0.12 158);
   --chart-4: oklch(0.74 0.15 75);
   --chart-5: oklch(0.3 0.04 265);
-  --sidebar: oklch(0.2 0.045 266);
-  --sidebar-foreground: oklch(0.84 0.015 260);
-  --sidebar-primary: oklch(0.74 0.13 250);
-  --sidebar-primary-foreground: oklch(0.2 0.045 266);
-  --sidebar-accent: oklch(0.27 0.05 266);
-  --sidebar-accent-foreground: oklch(0.98 0.004 255);
-  --sidebar-border: oklch(1 0 0 / 9%);
-  --sidebar-ring: oklch(0.74 0.13 250);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.42 0.03 265);
+  --sidebar-primary: oklch(0.52 0.19 262);
+  --sidebar-primary-foreground: oklch(0.99 0.003 255);
+  --sidebar-accent: oklch(0.955 0.025 262);
+  --sidebar-accent-foreground: oklch(0.32 0.12 264);
+  --sidebar-border: oklch(0.925 0.01 260);
+  --sidebar-ring: oklch(0.52 0.19 262);
+  --navy: oklch(0.24 0.08 272);
+  --navy-foreground: oklch(0.98 0.004 255);
+  --violet: oklch(0.6 0.22 292);
+  --tint-violet: oklch(0.95 0.03 295);
+  --tint-amber: oklch(0.96 0.04 80);
+  --tint-rose: oklch(0.95 0.03 15);
+  --tint-green: oklch(0.95 0.035 158);
 
   --shadow-soft: 0 1px 2px oklch(0.22 0.04 265 / 5%), 0 6px 20px -12px oklch(0.22 0.04 265 / 14%);
   --shadow-lift: 0 2px 4px oklch(0.22 0.04 265 / 5%), 0 22px 44px -22px oklch(0.22 0.04 265 / 26%);
@@ -133,6 +147,36 @@
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.74 0.13 250);
   background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Dark violet stage for the Extension licence manager. */
+.surface-violet {
+  --background: oklch(0.17 0.04 285);
+  --foreground: oklch(0.96 0.01 290);
+  --card: oklch(0.22 0.045 285 / 70%);
+  --card-foreground: oklch(0.96 0.01 290);
+  --popover: oklch(0.22 0.045 285);
+  --popover-foreground: oklch(0.96 0.01 290);
+  --secondary: oklch(0.27 0.05 285);
+  --secondary-foreground: oklch(0.96 0.01 290);
+  --muted: oklch(0.26 0.045 285);
+  --muted-foreground: oklch(0.72 0.03 285);
+  --accent: oklch(0.3 0.08 290);
+  --accent-foreground: oklch(0.85 0.1 290);
+  --primary: oklch(0.62 0.22 292);
+  --primary-foreground: oklch(0.99 0 0);
+  --success: oklch(0.72 0.15 158);
+  --warning: oklch(0.8 0.15 80);
+  --warning-foreground: oklch(0.85 0.14 80);
+  --destructive: oklch(0.66 0.2 20);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.62 0.22 292);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(60% 50% at 85% 0%, oklch(0.45 0.2 292 / 35%), transparent 70%),
+    radial-gradient(50% 40% at 0% 100%, oklch(0.4 0.18 270 / 25%), transparent 70%);
   color: var(--foreground);
 }
 
@@ -176,6 +220,11 @@
       transition-property: opacity !important;
       transition-duration: 400ms !important;
     }
+    .animate-marquee,
+    .animate-marquee-reverse,
+    .animate-float {
+      animation: none !important;
+    }
     .animate-offer-pop,
     .animate-offer-strike,
     .animate-offer-rise {
@@ -201,9 +250,9 @@
 @utility bg-brand-gradient {
   background-color: var(--primary);
 }
-/* Hero heading text gradient, light theme: #000000 → #666666 (left to right). */
+/* Hero heading text: deep navy with a soft fade. */
 @utility text-hero-gradient {
-  background-image: linear-gradient(90deg, #000000, #666666);
+  background-image: linear-gradient(180deg, oklch(0.2 0.08 272), oklch(0.3 0.1 268));
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -296,5 +345,111 @@
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* ---------- Lighting, glow and motion (reference driven) ---------- */
+/* Soft blue light behind the hero with a faint star field. */
+@utility hero-aura {
+  background-image:
+    radial-gradient(45% 55% at 50% 0%, oklch(0.82 0.1 262 / 55%), transparent 70%),
+    radial-gradient(30% 35% at 88% 18%, oklch(0.86 0.08 295 / 45%), transparent 70%),
+    radial-gradient(oklch(0.55 0.15 262 / 14%) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 26px 26px;
+}
+/* Glossy blue call to action like the reference Get started button. */
+@utility btn-glow {
+  background-image: linear-gradient(180deg, oklch(0.62 0.19 258), oklch(0.5 0.21 264));
+  color: var(--primary-foreground);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 35%), 0 10px 28px -10px oklch(0.52 0.21 262 / 70%);
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 35%), 0 16px 34px -12px oklch(0.52 0.21 262 / 80%);
+  }
+  &:active {
+    transform: scale(0.98);
+  }
+}
+@utility btn-violet {
+  background-image: linear-gradient(180deg, oklch(0.62 0.22 292), oklch(0.52 0.24 285));
+  color: oklch(0.99 0 0);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 25%), 0 10px 26px -10px oklch(0.55 0.24 290 / 70%);
+}
+/* Showcase tiles: coloured lighting behind each product. */
+@utility tile-night {
+  background-image: radial-gradient(70% 80% at 30% 0%, oklch(0.45 0.22 300 / 80%), transparent 70%), linear-gradient(160deg, oklch(0.2 0.06 285), oklch(0.14 0.03 280));
+  color: oklch(0.98 0 0);
+}
+@utility tile-lavender {
+  background-image: radial-gradient(70% 90% at 80% 10%, oklch(0.85 0.1 300), transparent 70%), linear-gradient(160deg, oklch(0.93 0.05 290), oklch(0.88 0.07 280));
+  color: oklch(0.22 0.07 280);
+}
+@utility tile-sky {
+  background-image: radial-gradient(70% 90% at 20% 0%, oklch(0.9 0.07 230), transparent 70%), linear-gradient(160deg, oklch(0.86 0.08 245), oklch(0.78 0.11 255));
+  color: oklch(0.2 0.07 265);
+}
+@utility tile-ember {
+  background-image: radial-gradient(60% 70% at 50% 100%, oklch(0.62 0.2 45 / 85%), transparent 70%), linear-gradient(160deg, oklch(0.17 0.02 40), oklch(0.12 0.01 40));
+  color: oklch(0.98 0 0);
+}
+@utility tile-blush {
+  background-image: radial-gradient(70% 90% at 70% 100%, oklch(0.82 0.12 340), transparent 70%), linear-gradient(160deg, oklch(0.97 0.02 340), oklch(0.92 0.05 320));
+  color: oklch(0.24 0.08 330);
+}
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes glow-ping {
+  0% { transform: scale(1); opacity: 0.7; }
+  80%, 100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@utility animate-marquee {
+  animation: marquee-x 55s linear infinite;
+}
+@utility animate-marquee-reverse {
+  animation: marquee-x 60s linear infinite reverse;
+}
+@utility animate-float {
+  animation: float-y 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@utility animate-glow-ping {
+  animation: glow-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@utility animate-fade-up {
+  animation: fade-up 800ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@utility pause-on-hover {
+  &:hover {
+    animation-play-state: paused;
+  }
+}
+@utility mask-fade-x {
+  mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+}
+/* Light sweep across a card on hover. */
+@utility card-sheen {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 35%, oklch(1 0 0 / 35%) 50%, transparent 65%);
+    transform: translateX(-120%);
+    transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+  &:hover::after {
+    transform: translateX(120%);
   }
 }

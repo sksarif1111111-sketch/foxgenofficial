@@ -24,7 +24,7 @@ const ease = "ease-[cubic-bezier(0.22,1,0.36,1)]";
 export function BrandMark({ compact = false, tone = "default" }: { compact?: boolean; tone?: "default" | "inverse" }) {
   return (
     <Link to="/" className="flex shrink-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${BRAND.name} home`}>
-      <img src={BRAND.mark} alt="" width={32} height={32} className="size-8 rounded-lg bg-ink object-cover" />
+      <img src={BRAND.mark} alt="" width={40} height={40} className="size-10 rounded-xl bg-ink object-cover shadow-ember" />
       {!compact && (
         <span className="flex flex-col">
           <span className="title-4 font-semibold tracking-tight">{BRAND.short}</span>
@@ -36,13 +36,19 @@ export function BrandMark({ compact = false, tone = "default" }: { compact?: boo
 }
 
 /** Primary call to action used everywhere: jumps to the live offers on Home. */
-export function BuyNowLink({ className = "", children = "Buy now", onClick }: { className?: string; children?: ReactNode; onClick?: () => void }) {
+const TONES = {
+  primary: "rounded-full bg-primary px-3 py-2 text-primary-foreground hover:bg-primary/90",
+  navy: "rounded-xl bg-navy px-4 py-2 text-navy-foreground hover:bg-navy/90",
+  glow: "btn-glow rounded-xl px-6 py-3",
+} as const;
+
+export function BuyNowLink({ className = "", children = "Buy now", onClick, tone = "primary" }: { className?: string; children?: ReactNode; onClick?: () => void; tone?: keyof typeof TONES }) {
   return (
     <Link
       to="/"
       hash="offers"
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-full bg-primary px-3 py-2 text-primary-foreground transition duration-300 ${ease} hover:bg-primary/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${className}`}
+      className={`inline-flex items-center justify-center gap-2 transition duration-300 ${ease} active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${TONES[tone]} ${className}`}
     >
       {children}
     </Link>
@@ -97,17 +103,17 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
         <div className="flex justify-center px-4 pt-4">
         <nav
           aria-label="Main"
-          className="pointer-events-auto flex w-full max-w-full items-center gap-2 rounded-full border border-border bg-background/75 py-2 pl-4 pr-2 shadow-soft backdrop-blur-xl sm:w-fit sm:gap-4"
+          className="pointer-events-auto flex w-full max-w-5xl items-center gap-2 rounded-2xl border border-border/80 bg-card/85 py-2 pl-3 pr-2 shadow-lift backdrop-blur-xl animate-fade-up sm:gap-4 sm:pl-4"
         >
           <BrandMark />
-          <ul className="hidden items-center gap-1 lg:flex">
+          <ul className="mx-auto hidden items-center gap-1 lg:flex">
             {LINKS.map((l) => (
               <li key={l.to}>
                 <Link
                   to={l.to}
                   aria-current={isActive(l.to) ? "page" : undefined}
                   className={`title-4 rounded-full px-3 py-2 transition duration-300 ${ease} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    isActive(l.to) ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                    isActive(l.to) ? "bg-accent text-accent-foreground" : "text-foreground/75 hover:bg-muted/70 hover:text-foreground"
                   }`}
                 >
                   {l.label}
@@ -115,7 +121,7 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
               </li>
             ))}
           </ul>
-          <div className="ml-auto flex items-center gap-1 sm:ml-0">
+          <div className="ml-auto flex items-center gap-1 lg:ml-0">
             {right}
             <Link
               to="/account"
@@ -125,7 +131,7 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
             >
               <UserCircle size={22} />
             </Link>
-            <BuyNowLink className="button-sm">
+            <BuyNowLink tone="navy" className="button-sm">
               <ShoppingBagOpen size={16} weight="bold" /> Buy now
             </BuyNowLink>
             <MenuToggle open={open} onClick={() => setOpen((v) => !v)} />
