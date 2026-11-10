@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ShoppingBagOpen, Sparkle, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import { AdminAccessDialog } from "@/components/admin/admin-access-form";
 import { BRAND } from "@/lib/brand";
+import { AssistantRobot } from "@/components/site/assistant-robot";
 
 const LINKS = [
   { to: "/", label: "Home" },
@@ -184,16 +185,7 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
         </div>
       </div>
 
-      {!onChat && !open && (
-        <Link
-          to="/chat"
-          aria-label="Ask Foxgen AI"
-          className={`button-sm fixed bottom-4 right-4 z-30 inline-flex items-center gap-2 rounded-full bg-ink px-3 py-3 text-ink-foreground shadow-lift transition duration-300 ${ease} hover:-translate-y-0.5 active:scale-[0.98] sm:bottom-6 sm:right-6 sm:px-4`}
-        >
-          <Sparkle size={18} weight="fill" />
-          <span className="hidden sm:inline">Ask Foxgen AI</span>
-        </Link>
-      )}
+      {!onChat && !open && <AssistantRobot />}
     </>
   );
 }
