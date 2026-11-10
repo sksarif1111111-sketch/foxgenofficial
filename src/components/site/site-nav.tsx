@@ -24,11 +24,11 @@ const ease = "ease-[cubic-bezier(0.22,1,0.36,1)]";
 export function BrandMark({ compact = false, tone = "default" }: { compact?: boolean; tone?: "default" | "inverse" }) {
   return (
     <Link to="/" className="flex shrink-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${BRAND.name} home`}>
-      <img src={BRAND.mark} alt="" width={40} height={40} className="size-10 rounded-xl bg-ink object-cover shadow-ember" />
+      <img src={BRAND.mark} alt="" width={44} height={44} decoding="async" className="size-11 rounded-xl bg-ink object-cover shadow-soft ring-1 ring-border" />
       {!compact && (
-        <span className="flex flex-col">
-          <span className="title-4 font-semibold tracking-tight">{BRAND.short}</span>
-          <span className={`caption-5 ${tone === "inverse" ? "text-muted-foreground" : "text-muted-foreground"}`}>{BRAND.suffix}</span>
+        <span className="flex flex-col leading-none">
+          <span className="title-3 font-bold tracking-tight">{BRAND.short}</span>
+          <span className={`caption-4 mt-0.5 ${tone === "inverse" ? "text-muted-foreground" : "text-muted-foreground"}`}>{BRAND.suffix}</span>
         </span>
       )}
     </Link>
