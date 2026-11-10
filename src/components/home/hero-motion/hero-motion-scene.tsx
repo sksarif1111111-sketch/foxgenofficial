@@ -88,7 +88,7 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
         <div className="hm-stage">
           <div className="hm-world">
             <GlassPlatform />
-            {floating.map((p, i) => (children && TILE_SLOTS[i]!.tier === "front" && i === 2 ? null : <FloatingProductTile key={p.id} product={p} slot={TILE_SLOTS[i]!} />))}
+            {floating.map((p, i) => <FloatingProductTile key={p.id} product={p} slot={TILE_SLOTS[i]!} />)}
             {groups.slice(0, CATEGORY_SLOTS.length).map((g, i) => (
               <FloatingCategoryCard key={g.id} id={g.id} label={g.label} count={g.count} slot={CATEGORY_SLOTS[i]!} />
             ))}
