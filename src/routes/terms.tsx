@@ -29,11 +29,12 @@ function TermsPage() {
       <section>
         <h2>Delivery</h2>
         <p>After your payment is confirmed, access details are sent to the delivery email on your order, or in Telegram for bot orders. Each product page lists its own delivery steps and terms.</p>
+        <p>We guarantee delivery within 30 minutes after successful payment confirmation, subject to product availability and order verification. If your order is not delivered within 30 minutes, our team will personally contact you and work to complete your delivery as soon as possible.</p>
       </section>
       <section>
         <h2>Refunds and cancellations</h2>
         <p>
-          Refund and cancellation terms have not been published yet. Please contact <Link to="/support" className="text-primary underline">support</Link> before you buy if you have questions.
+          If we are unable to provide the purchased product, you will receive a full refund. An order that arrives late but is delivered and accepted is not refunded. Please contact <Link to="/support" className="text-primary underline">support</Link> if you have questions about an order.
         </p>
       </section>
       <section>

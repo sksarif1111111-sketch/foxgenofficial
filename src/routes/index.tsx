@@ -12,13 +12,10 @@ import {
   MagnifyingGlass,
   PlayCircle,
   SealCheck,
-  Package,
   ShieldCheck,
   Sparkle,
   SquaresFour,
   TelegramLogo,
-  Timer,
-  UsersThree,
   WhatsappLogo,
   Warning,
 } from "@phosphor-icons/react/dist/ssr";
@@ -33,6 +30,7 @@ import { HomeOfferCard, OfferCardSkeleton } from "@/components/home/home-offer-c
 import { Reveal } from "@/components/home/reveal";
 import { TaglineReveal } from "@/components/home/tagline-reveal";
 import { ShowcaseMarquee } from "@/components/home/showcase-marquee";
+import { TrustStatsBand } from "@/components/home/trust-stats-band";
 import { HeroMotionScene } from "@/components/home/hero-motion/hero-motion-scene";
 import { pickShowcaseProducts } from "@/lib/hero-scene";
 import { Faq, type FaqItem } from "@/components/home/faq";
@@ -61,10 +59,10 @@ export const Route = createFileRoute("/")({
       { title: "Foxgen AI Store — Lovable, ChatGPT and Gemini offers in one place" },
       {
         name: "description",
-        content: "Browse current offers for Lovable, ChatGPT, Gemini, AI and developer tools. See real prices and stock, press Buy now, and get access after a person checks your payment.",
+        content: "Premium software marketplace for Lovable, ChatGPT, Gemini and developer tools. Genuine digital products, real prices and stock, with delivery guaranteed within 30 minutes of payment confirmation.",
       },
       { property: "og:title", content: "Foxgen AI Store — Premium software access, better value, one place" },
-      { property: "og:description", content: "Current offers for Lovable, ChatGPT, Gemini and developer tools with real prices and owner checked payments." },
+      { property: "og:description", content: "Genuine digital products for Lovable, ChatGPT, Gemini and developer tools, with fast order processing and a 30 minute delivery guarantee." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Foxgen AI Store — Premium software access" },
@@ -139,13 +137,13 @@ function Home() {
     { q: FAQ_SCHEMA[0]!.q, a: <>{FAQ_SCHEMA[0]!.a} Right now {catalog.data ? `${live.length} products are in stock` : "the catalogue is loading"}. <Link to="/shop" className="text-primary underline">Explore all offers</Link>.</> },
     { q: FAQ_SCHEMA[1]!.q, a: <>{FAQ_SCHEMA[1]!.a}{methods.length > 0 && <> Current payment methods: {methods.join(", ")}.</>}</> },
     { q: FAQ_SCHEMA[2]!.q, a: FAQ_SCHEMA[2]!.a },
-    { q: "How long does delivery take?", a: reviewMinutes ? `The typical payment review time is about ${reviewMinutes} minutes. Access details are then sent to your delivery email, or in Telegram for bot orders.` : "Access details are sent after the owner confirms your payment." },
+    { q: "How long does delivery take?", a: "We guarantee delivery within 30 minutes after successful payment confirmation, subject to product availability and order verification. Access details are sent to your delivery email, or in Telegram for bot orders. If your order is not delivered within 30 minutes, our team will personally contact you and complete your delivery as soon as possible." },
     { q: FAQ_SCHEMA[3]!.q, a: FAQ_SCHEMA[3]!.a },
     { q: FAQ_SCHEMA[4]!.q, a: FAQ_SCHEMA[4]!.a },
     { q: FAQ_SCHEMA[7]!.q, a: FAQ_SCHEMA[7]!.a },
     { q: FAQ_SCHEMA[5]!.q, a: <>{FAQ_SCHEMA[5]!.a} <Link to="/support" className="text-primary underline">Open support</Link>.</> },
     { q: FAQ_SCHEMA[6]!.q, a: <>{FAQ_SCHEMA[6]!.a} <Link to="/tutorials" className="text-primary underline">Open tutorials</Link>.</> },
-    { q: "What are your refund terms?", a: <>Refund and cancellation terms have not been published yet. Please <Link to="/support" className="text-primary underline">ask support</Link> before you buy.</> },
+    { q: "What are your refund terms?", a: <>If we are unable to provide the purchased product, you will receive a full refund. An order that arrives late but is delivered and accepted is not refunded. Questions? <Link to="/support" className="text-primary underline">Ask support</Link>.</> },
   ];
 
   return (
@@ -190,23 +188,6 @@ function Home() {
                     Explore all offers <ArrowRight size={16} />
                   </Link>
                 </div>
-                {!festive.live && (
-                  <dl className="mt-10 grid max-w-[460px] grid-cols-3 gap-4">
-                    {[
-                      { Icon: Package, label: "Products in stock", value: catalog.data ? live.length.toLocaleString("en-US") : null },
-                      { Icon: UsersThree, label: "Bot members", value: members !== null ? members.toLocaleString("en-US") : null },
-                      { Icon: Timer, label: "Typical review", value: reviewMinutes ? `${reviewMinutes} min` : null },
-                    ].map((s) => (
-                      <div key={s.label} className="min-w-0">
-                        <span className="inline-flex size-8 items-center justify-center rounded-lg border border-border bg-card text-foreground shadow-soft">
-                          <s.Icon size={16} weight="bold" />
-                        </span>
-                        <dd className="heading-5 mt-3 tabular-nums sm:heading-4">{s.value ?? <span className="inline-block h-7 w-12 animate-pulse rounded bg-muted" />}</dd>
-                        <dt className="caption-5 mt-1 text-muted-foreground">{s.label}</dt>
-                      </div>
-                    ))}
-                  </dl>
-                )}
               </div>
 
               <HeroMotionScene products={live} loading={catalog.isLoading}>
@@ -229,6 +210,14 @@ function Home() {
             )}
           </div>
         </section>
+
+        {/* FULL WIDTH TRUST BAND — real member count, 30 minute delivery and refund promise */}
+        <TrustStatsBand
+          members={members}
+          membersError={site.isError}
+          inStock={catalog.data ? live.length : null}
+          reviewMinutes={reviewMinutes}
+        />
 
         {/* AVAILABLE OFFERS */}
         <section id="offers" aria-labelledby="offers-title" className="scroll-mt-24 border-y border-border bg-card py-16 lg:py-24">
