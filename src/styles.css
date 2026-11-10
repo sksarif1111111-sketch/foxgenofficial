@@ -168,6 +168,19 @@
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
+    /* Reduced motion: no movement, the final state arrives with a plain opacity change. */
+    .reveal-fade {
+      translate: none !important;
+      scale: none !important;
+      transform: none !important;
+      transition-property: opacity !important;
+      transition-duration: 400ms !important;
+    }
+    .animate-offer-pop,
+    .animate-offer-strike,
+    .animate-offer-rise {
+      animation: offer-fade 400ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+    }
   }
 
   ::selection {
@@ -222,6 +235,32 @@
 @utility caption-3 { font-size: 0.75rem; line-height: 1rem; font-weight: 600; }
 @utility caption-4 { font-size: 0.75rem; line-height: 1rem; font-weight: 500; }
 @utility caption-5 { font-size: 0.75rem; line-height: 1rem; font-weight: 400; }
+/* Festive offer hero motion (transform and opacity only, base curve). */
+@keyframes offer-pop {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes offer-strike {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes offer-rise {
+  from { opacity: 0; transform: translateY(32px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes offer-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@utility animate-offer-pop {
+  animation: offer-pop 500ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+}
+@utility animate-offer-strike {
+  animation: offer-strike 500ms cubic-bezier(0.22, 1, 0.36, 1) 450ms both;
+}
+@utility animate-offer-rise {
+  animation: offer-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) 650ms both;
+}
 /* Skill base motion curve. */
 @utility ease-weighted {
   transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);

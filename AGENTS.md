@@ -26,3 +26,4 @@
 - Brand name and logo come from `src/lib/brand.ts`; never hardcode the store name or logo path in components.
 - Public pages follow the user's landing-page design rules via named text-style utilities in `src/styles.css` (`heading-*`, `title-*`, `body-*`, `button-*`, `caption-*`) and Phosphor icons from `@phosphor-icons/react/dist/ssr` (SSR-safe); admin screens keep lucide.
 - Every primary "Buy now" on public pages uses `BuyNowLink` (Home `#offers`); product-level Buy now opens the existing checkout via `/shop?product=<id>&buy=true`, so there is one purchase flow.
+- The landing-page festive offer is config only (`src/config/offers.ts`, rules in `src/lib/festive-offer.ts`): every offer element hides while any `{{placeholder}}` remains or outside startsAt/endsAt, and the countdown renders after mount; keeps switching festivals a config edit and avoids hydration mismatch.

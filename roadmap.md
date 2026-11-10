@@ -55,3 +55,7 @@
 - [x] Build DigiExtension Reseller 3 from the 5.1.5 feature set with Krishna Gupta branding, light-pink styling, supplied logo, two requested channels, and separate downloads.
 - [x] Rename every visible Reseller 3 label to DG Extension, replace legacy startup artwork, and keep Made by Krishna Gupta attribution.
 - [x] Build FoxGEN Pro 6.10 from the uploaded extension with FoxGEN licensing, branding and premium styling; add a separate download.
+
+## Festive offer on the landing page (Nov 2026)
+- [x] Config driven offer: top bar with live countdown, hero offer card with animated badge and prices, offer section after benefits; hides itself outside its dates. Tested at 1280 and 390 with temporary values.
+- [ ] Real offer values (name, discount, prices, dates, product, button text and link) — waiting for the owner; the offer stays hidden until they are filled in.

@@ -13,7 +13,6 @@ import {
   PlayCircle,
   SealCheck,
   ShieldCheck,
-  ShoppingBagOpen,
   Sparkle,
   SquaresFour,
   TelegramLogo,
@@ -23,7 +22,7 @@ import {
 import { shopCatalog } from "@/lib/shop.functions";
 import { publicOffers } from "@/lib/offers.functions";
 import { publicSiteInfo } from "@/lib/site.functions";
-import { SiteNav, BuyNowLink } from "@/components/site/site-nav";
+import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
 import { ProductLogo } from "@/components/site/product-logo";
 import type { CatalogProduct } from "@/components/site/product-card";
@@ -31,6 +30,7 @@ import { HomeOfferCard, OfferCardSkeleton } from "@/components/home/home-offer-c
 import { Reveal } from "@/components/home/reveal";
 import { TaglineReveal } from "@/components/home/tagline-reveal";
 import { Faq, type FaqItem } from "@/components/home/faq";
+import { FestiveOfferSection, HeroOfferVisual, OfferAnnouncementBar, PrimaryCta, findOfferProduct, useFestiveOffer } from "@/components/home/festive-offer";
 import { categoryOf, type StoreCategoryId } from "@/lib/store-categories";
 import { timeAgo } from "@/lib/format";
 import { BRAND } from "@/lib/brand";
@@ -118,6 +118,8 @@ function Home() {
     return (withLogo.length >= 4 ? withLogo : featuredFirst).slice(0, 4);
   }, [featuredFirst]);
   const promos = offers.data?.offers ?? [];
+  const festive = useFestiveOffer();
+  const festiveProduct = useMemo(() => (festive.live ? findOfferProduct(products, festive.offer.productName) : null), [festive.live, festive.offer.productName, products]);
 
   const links = site.data?.links ?? {};
   const botUser = links.bot_username?.replace(/^@/, "");
@@ -144,7 +146,7 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <SiteNav />
+      <SiteNav announcement={festive.live ? <OfferAnnouncementBar /> : undefined} />
 
       <main id="main">
         {/* HERO */}
@@ -172,13 +174,8 @@ function Home() {
               <p className="title-2 mt-6 max-w-[680px] font-normal text-muted-foreground">
                 Discover current offers for Lovable, ChatGPT, Gemini, AI tools and developer software. Check the real price, then press Buy now to start your order with our team.
               </p>
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <BuyNowLink className="button-md shadow-ember">
-                  <ShoppingBagOpen size={18} weight="bold" /> Buy now
-                </BuyNowLink>
-                <Link to="/shop" className="body-5 inline-flex items-center gap-1 rounded-full px-3 py-2 text-muted-foreground transition duration-300 hover:text-foreground">
-                  Browse every product <ArrowRight size={14} />
-                </Link>
+              <div className="mt-8">
+                <PrimaryCta live={festive.live} className="button-md shadow-ember" />
               </div>
               <dl className="mt-10 grid max-w-[680px] grid-cols-3 gap-4 border-t border-border pt-6">
                 <div>
@@ -196,7 +193,10 @@ function Home() {
               </dl>
             </div>
 
-            {/* Hero visual: live product shelf from the real catalogue */}
+            {/* Hero visual: the festive offer while it is live, otherwise the live product shelf */}
+            {festive.live ? (
+              <HeroOfferVisual product={festiveProduct} loading={catalog.isLoading} />
+            ) : (
             <div className="min-w-0 rounded-3xl border border-border bg-card p-2 shadow-lift">
               <div className="rounded-2xl bg-muted/60 p-4 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
@@ -229,6 +229,7 @@ function Home() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </section>
 
@@ -342,6 +343,9 @@ function Home() {
             ))}
           </div>
         </section>
+
+        {/* FESTIVE OFFER (config driven, hidden outside its dates) */}
+        {festive.live && <FestiveOfferSection product={festiveProduct} loading={catalog.isLoading} />}
 
         {/* HOW IT WORKS */}
         <section aria-labelledby="how-title" className="container-page pb-16 lg:pb-24">
@@ -542,9 +546,7 @@ function Home() {
             <h2 id="final-title" className="heading-4 mx-auto max-w-[680px] sm:heading-3 lg:heading-2">Find the software you need.</h2>
             <p className="body-3 mx-auto mt-4 max-w-[680px] text-muted-foreground">Explore the available {BRAND.name} offers and start your order when you are ready.</p>
             <div className="mt-8 flex flex-col items-center gap-4">
-              <BuyNowLink className="button-md">
-                <ShoppingBagOpen size={18} weight="bold" /> Buy now
-              </BuyNowLink>
+              <PrimaryCta live={festive.live} className="button-md" />
               <p className="caption-2 inline-flex items-center gap-2 text-muted-foreground">
                 <CheckCircle size={16} /> You pay only the amount shown on your order, checked by a person.
               </p>
