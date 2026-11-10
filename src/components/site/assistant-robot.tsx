@@ -64,7 +64,7 @@ export function AssistantRobot() {
       {/* Speech bubble: decorative, never catches clicks meant for the page. */}
       <span
         aria-hidden="true"
-        className={`robot-bubble caption-1 pointer-events-none absolute bottom-[78%] right-[62%] w-max max-w-[150px] rounded-2xl rounded-br-md border border-border bg-card px-3 py-2 text-foreground shadow-lift transition duration-500 ease-weighted sm:max-w-[200px] ${
+        className={`robot-bubble caption-4 sm:caption-1 pointer-events-none absolute bottom-[78%] right-[62%] w-max max-w-[170px] rounded-2xl rounded-br-md border border-border bg-card px-3 py-2 text-foreground shadow-lift transition duration-500 ease-weighted sm:max-w-[200px] ${
           bubble ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-90 opacity-0 group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100"
         }`}
       >
