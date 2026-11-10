@@ -14,6 +14,8 @@ export const ROBOT_MOTION = {
   fallGapMs: 50000,
   desktopSpeed: 70,
   mobileSpeed: 42,
+  /** Pointing at a product that just came into view: at most once per gap. */
+  pointGapMs: 9000,
   /** Lying down, the robot reaches this many robot-widths past its centre. */
   lyingReach: 1.2,
 } as const;
@@ -64,4 +66,14 @@ export function hasRoomToFall(x: number, dir: 1 | -1, vw: number) {
   const centre = x + w / 2;
   const reach = w * ROBOT_MOTION.lyingReach;
   return dir === 1 ? centre + reach <= vw - 4 : centre - reach >= 4;
+}
+
+/** Point at a newly visible product only now and then, so it never feels pushy. */
+export function canPoint(now: number, lastPointAt: number | null) {
+  return lastPointAt === null || now - lastPointAt >= ROBOT_MOTION.pointGapMs;
+}
+
+/** Which way to point: towards the product's horizontal centre. */
+export function pointDirection(robotCentre: number, targetCentre: number): 1 | -1 {
+  return targetCentre >= robotCentre ? 1 : -1;
 }

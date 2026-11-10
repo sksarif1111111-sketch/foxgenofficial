@@ -144,7 +144,7 @@ function ProductPage() {
           </div>
 
           <aside className="order-first lg:order-none lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-lift">
+            <div data-robot-point="" className="rounded-2xl border border-border bg-card p-6 shadow-lift">
               <div className="flex items-center justify-between gap-3">
                 <span className="eyebrow text-muted-foreground">{categoryLabel(category)}</span>
                 <StockPill product={p} />

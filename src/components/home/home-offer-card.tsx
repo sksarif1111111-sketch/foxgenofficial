@@ -21,7 +21,7 @@ export function Availability({ p }: { p: CatalogProduct }) {
 /** Homepage product card: verified data only, Buy now opens the existing checkout with this product selected. */
 export function HomeOfferCard({ product: p, category }: { product: CatalogProduct; category: string }) {
   return (
-    <article className={`group flex h-full flex-col rounded-2xl border border-border bg-card p-2 shadow-soft transition duration-500 ${ease} hover:-translate-y-1.5 hover:border-primary/30 hover:shadow-lift`}>
+    <article data-robot-point="" className={`group flex h-full flex-col rounded-2xl border border-border bg-card p-2 shadow-soft transition duration-500 ${ease} hover:-translate-y-1.5 hover:border-primary/30 hover:shadow-lift`}>
       <Link
         to="/product/$productId"
         params={{ productId: p.id }}
