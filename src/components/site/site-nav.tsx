@@ -66,7 +66,7 @@ function MenuToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
 }
 
 /** Compact floating navigation (skill B7) with a full height mobile panel. */
-export function SiteNav({ right }: { right?: ReactNode }) {
+export function SiteNav({ right, announcement }: { right?: ReactNode; announcement?: ReactNode }) {
   const pathname = useLocation({ select: (l) => l.pathname });
   const [open, setOpen] = useState(false);
   const onChat = pathname.startsWith("/chat");
@@ -92,7 +92,9 @@ export function SiteNav({ right }: { right?: ReactNode }) {
       <a href="#main" className="sr-only z-[60] rounded-lg bg-primary px-3 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         Skip to content
       </a>
-      <header className="pointer-events-none fixed inset-x-0 top-4 z-50 flex justify-center px-4">
+      <header className="pointer-events-none fixed inset-x-0 top-0 z-50">
+        {announcement && <div className="pointer-events-auto">{announcement}</div>}
+        <div className="flex justify-center px-4 pt-4">
         <nav
           aria-label="Main"
           className="pointer-events-auto flex w-full max-w-full items-center gap-2 rounded-full border border-border bg-background/75 py-2 pl-4 pr-2 shadow-soft backdrop-blur-xl sm:w-fit sm:gap-4"
@@ -129,7 +131,9 @@ export function SiteNav({ right }: { right?: ReactNode }) {
             <MenuToggle open={open} onClick={() => setOpen((v) => !v)} />
           </div>
         </nav>
+        </div>
       </header>
+      {announcement && <div aria-hidden="true" className="h-9" />}
       <div aria-hidden="true" className="h-20" />
 
       {/* Full height mobile panel */}
@@ -140,7 +144,7 @@ export function SiteNav({ right }: { right?: ReactNode }) {
         aria-label="Menu"
         className={`fixed inset-0 z-40 bg-background/95 backdrop-blur-2xl transition-opacity duration-300 ${ease} lg:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
       >
-        <div className="flex h-full flex-col overflow-y-auto px-6 pb-8 pt-24">
+        <div className={`flex h-full flex-col overflow-y-auto px-6 pb-8 ${announcement ? "pt-32" : "pt-24"}`}>
           <ul className="flex flex-col gap-1">
             {mobileItems.map((l, i) => (
               <li
