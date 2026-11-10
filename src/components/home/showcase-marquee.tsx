@@ -16,9 +16,9 @@ function ShowcaseTile({ product: p, index }: { product: CatalogProduct; index: n
       aria-label={`${name} details`}
       className="group block shrink-0 rounded-2xl border border-border/70 bg-card p-1.5 shadow-soft transition duration-500 ease-weighted hover:-translate-y-1 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className={`${tile} card-sheen relative flex h-44 w-[272px] flex-col justify-between overflow-hidden rounded-xl p-5 sm:h-52 sm:w-[340px]`}>
+      <div className={`${tile} card-sheen relative flex h-52 w-[272px] flex-col justify-between overflow-hidden rounded-xl p-5 sm:h-60 sm:w-[340px]`}>
         <span className="w-fit transition-transform duration-500 ease-weighted group-hover:scale-110">
-          <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} size="lg" />
+          <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} size="showcase" />
         </span>
         <p className="heading-6 line-clamp-2 sm:text-2xl sm:leading-8">{name}</p>
       </div>
@@ -45,7 +45,7 @@ export function ShowcaseMarquee({ products, loading }: { products: CatalogProduc
   if (loading) {
     return (
       <div className="flex gap-4 overflow-hidden" aria-hidden="true">
-        {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-[188px] w-[284px] shrink-0 animate-pulse rounded-2xl bg-muted sm:h-[220px] sm:w-[352px]" />)}
+        {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-[220px] w-[284px] shrink-0 animate-pulse rounded-2xl bg-muted sm:h-[252px] sm:w-[352px]" />)}
       </div>
     );
   }
