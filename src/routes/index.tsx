@@ -13,7 +13,6 @@ import {
   PlayCircle,
   SealCheck,
   ShieldCheck,
-  ShoppingBagOpen,
   Sparkle,
   SquaresFour,
   TelegramLogo,
@@ -23,7 +22,7 @@ import {
 import { shopCatalog } from "@/lib/shop.functions";
 import { publicOffers } from "@/lib/offers.functions";
 import { publicSiteInfo } from "@/lib/site.functions";
-import { SiteNav, BuyNowLink } from "@/components/site/site-nav";
+import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
 import { ProductLogo } from "@/components/site/product-logo";
 import type { CatalogProduct } from "@/components/site/product-card";
