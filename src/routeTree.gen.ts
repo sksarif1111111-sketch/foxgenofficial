@@ -26,8 +26,6 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TutorialsRouteImport } from './routes/tutorials'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
-import { Route as ChatIndexRouteImport } from './routes/chat.index'
-import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
 import { Route as ApiPublicCronSupplierSyncRouteImport } from './routes/api/public/cron/supplier-sync'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
@@ -123,16 +121,6 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChatIndexRoute = ChatIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ChatRoute,
-} as any)
-const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
-  id: '/$threadId',
-  path: '/$threadId',
-  getParentRoute: () => ChatRoute,
-} as any)
 const ProductProductIdRoute = ProductProductIdRouteImport.update({
   id: '/product/$productId',
   path: '/product/$productId',
@@ -187,7 +175,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRouteWithChildren
+  '/chat': typeof ChatRoute
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
@@ -199,9 +187,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
   '/product/$productId': typeof ProductProductIdRoute
-  '/chat/': typeof ChatIndexRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
@@ -217,6 +203,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
+  '/chat': typeof ChatRoute
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
@@ -228,9 +215,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
   '/product/$productId': typeof ProductProductIdRoute
-  '/chat': typeof ChatIndexRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
@@ -247,7 +232,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/admin-access': typeof AdminAccessRoute
   '/auth': typeof AuthRoute
-  '/chat': typeof ChatRouteWithChildren
+  '/chat': typeof ChatRoute
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
@@ -259,9 +244,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
   '/product/$productId': typeof ProductProductIdRoute
-  '/chat/': typeof ChatIndexRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
@@ -291,9 +274,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/tutorials'
     | '/api/chat'
-    | '/chat/$threadId'
     | '/product/$productId'
-    | '/chat/'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
@@ -309,6 +290,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-access'
     | '/auth'
+    | '/chat'
     | '/extension'
     | '/hub'
     | '/hub-admin'
@@ -320,9 +302,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/tutorials'
     | '/api/chat'
-    | '/chat/$threadId'
     | '/product/$productId'
-    | '/chat'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
@@ -350,9 +330,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/tutorials'
     | '/api/chat'
-    | '/chat/$threadId'
     | '/product/$productId'
-    | '/chat/'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
@@ -369,7 +347,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AdminAccessRoute: typeof AdminAccessRoute
   AuthRoute: typeof AuthRoute
-  ChatRoute: typeof ChatRouteWithChildren
+  ChatRoute: typeof ChatRoute
   ExtensionRoute: typeof ExtensionRoute
   HubRoute: typeof HubRoute
   HubAdminRoute: typeof HubAdminRoute
@@ -513,20 +491,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/chat/': {
-      id: '/chat/'
-      path: '/'
-      fullPath: '/chat/'
-      preLoaderRoute: typeof ChatIndexRouteImport
-      parentRoute: typeof ChatRoute
-    }
-    '/chat/$threadId': {
-      id: '/chat/$threadId'
-      path: '/$threadId'
-      fullPath: '/chat/$threadId'
-      preLoaderRoute: typeof ChatThreadIdRouteImport
-      parentRoute: typeof ChatRoute
-    }
     '/product/$productId': {
       id: '/product/$productId'
       path: '/product/$productId'
@@ -593,25 +557,13 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ChatRouteChildren {
-  ChatThreadIdRoute: typeof ChatThreadIdRoute
-  ChatIndexRoute: typeof ChatIndexRoute
-}
-
-const ChatRouteChildren: ChatRouteChildren = {
-  ChatThreadIdRoute: ChatThreadIdRoute,
-  ChatIndexRoute: ChatIndexRoute,
-}
-
-const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   AdminAccessRoute: AdminAccessRoute,
   AuthRoute: AuthRoute,
-  ChatRoute: ChatRouteWithChildren,
+  ChatRoute: ChatRoute,
   ExtensionRoute: ExtensionRoute,
   HubRoute: HubRoute,
   HubAdminRoute: HubAdminRoute,

@@ -38,6 +38,7 @@ import { FestiveOfferSection, HeroOfferVisual, OfferAnnouncementBar, PrimaryCta,
 import { categoryOf, type StoreCategoryId } from "@/lib/store-categories";
 import { timeAgo } from "@/lib/format";
 import { BRAND } from "@/lib/brand";
+import { openAssistant } from "@/lib/assistant-events";
 
 const ease = "ease-[cubic-bezier(0.22,1,0.36,1)]";
 
@@ -493,11 +494,11 @@ function Home() {
                 );
               })}
             <Reveal delay={120}>
-              <Link to="/chat" className={`flex h-full flex-col rounded-2xl border border-border bg-card p-6 transition duration-500 ${ease} hover:-translate-y-1 hover:shadow-soft`}>
+              <button type="button" onClick={openAssistant} className={`flex h-full w-full flex-col rounded-2xl border border-border bg-card p-6 text-left transition duration-500 ${ease} hover:-translate-y-1 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}>
                 <Sparkle size={28} weight="fill" className="text-primary" />
                 <h3 className="title-3 mt-4">Ask Foxgen AI</h3>
                 <p className="body-6 mt-1 text-muted-foreground">Quick answers about products and prices.</p>
-              </Link>
+              </button>
             </Reveal>
             <Reveal delay={180}>
               <Link to="/support" className={`flex h-full flex-col rounded-2xl border border-border bg-card p-6 transition duration-500 ${ease} hover:-translate-y-1 hover:shadow-soft`}>

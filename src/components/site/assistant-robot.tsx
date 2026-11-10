@@ -1,5 +1,8 @@
-import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { ASSISTANT_OPEN_EVENT } from "@/lib/assistant-events";
+
+/** Loaded only when the visitor first opens the chat, so pages stay light. */
+const AssistantChatPopup = lazy(() => import("@/components/site/assistant-chat-popup"));
 
 /** "How can I help you?" returns between every other greeting, so the robot keeps asking it. */
 const GREETINGS = [
@@ -18,14 +21,34 @@ const HIDE_MS = 7000;
 
 /**
  * Foxgen's cute AI robot (blue and white, little fox ears). Pure SVG + CSS animation: it bounces,
- * sways, turns and tilts its head, blinks, waves and steps. Clicking it opens the existing AI chat.
+ * sways, turns and tilts its head, blinks, waves and steps. Clicking it opens a small chat pop-up.
  * Animations pause while the tab is hidden; reduced motion shows a still robot.
  */
 export function AssistantRobot() {
   const [line, setLine] = useState(0);
   const [bubble, setBubble] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const timer = useRef<number | undefined>(undefined);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const closeChat = useCallback(() => {
+    setChatOpen(false);
+    buttonRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const open = () => setChatOpen(true);
+    window.addEventListener(ASSISTANT_OPEN_EVENT, open);
+    return () => window.removeEventListener(ASSISTANT_OPEN_EVENT, open);
+  }, []);
+
+  useEffect(() => {
+    if (!chatOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeChat();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [chatOpen, closeChat]);
 
   useEffect(() => {
     const onVis = () => setPaused(document.hidden);
@@ -54,9 +77,18 @@ export function AssistantRobot() {
   }, [paused]);
 
   return (
-    <Link
-      to="/chat"
-      aria-label="Ask Foxgen AI: open the AI chat"
+    <>
+    {chatOpen && (
+      <Suspense fallback={null}>
+        <AssistantChatPopup onClose={closeChat} />
+      </Suspense>
+    )}
+    <button
+      ref={buttonRef}
+      type="button"
+      onClick={() => setChatOpen((v) => !v)}
+      aria-label={chatOpen ? "Close Foxgen AI chat" : "Ask Foxgen AI: open the chat"}
+      aria-expanded={chatOpen}
       title="Ask Foxgen AI"
       data-paused={paused ? "true" : undefined}
       className="robot-root group fixed bottom-3 right-2 z-30 block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:bottom-5 sm:right-4"
@@ -65,7 +97,7 @@ export function AssistantRobot() {
       <span
         aria-hidden="true"
         className={`robot-bubble caption-4 sm:caption-1 pointer-events-none absolute bottom-[78%] right-[62%] w-max max-w-[170px] rounded-2xl rounded-br-md border border-border bg-card px-3 py-2 text-foreground shadow-lift transition duration-500 ease-weighted sm:max-w-[200px] ${
-          bubble ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-90 opacity-0 group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100"
+          chatOpen ? "hidden" : bubble ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-90 opacity-0 group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100"
         }`}
       >
         {GREETINGS[line]}
@@ -146,6 +178,7 @@ export function AssistantRobot() {
           </g>
         </svg>
       </span>
-    </Link>
+    </button>
+    </>
   );
 }

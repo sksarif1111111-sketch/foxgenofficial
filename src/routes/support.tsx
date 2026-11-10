@@ -1,10 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Bot, ExternalLink, Globe, MessageCircle, PlayCircle, Send, Sparkles, Users } from "lucide-react";
 import { publicSiteInfo } from "@/lib/site.functions";
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
+import { openAssistant } from "@/lib/assistant-events";
 
 export const Route = createFileRoute("/support")({
   head: () => ({
@@ -68,10 +69,10 @@ function SupportPage() {
               <ExternalLink className="size-4 text-muted-foreground" />
             </a>
           ))}
-          <Link to="/chat" className="flex items-start gap-4 rounded-2xl bg-ink p-5 text-ink-foreground shadow-soft">
+          <button type="button" onClick={openAssistant} className="flex items-start gap-4 rounded-2xl bg-ink p-5 text-left text-ink-foreground shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <span className="flex size-11 items-center justify-center rounded-xl bg-card/10"><Sparkles className="size-5" /></span>
             <span><span className="block font-semibold">Ask Foxgen AI</span><span className="text-sm opacity-80">Instant answers about products and prices</span></span>
-          </Link>
+          </button>
         </section>
 
         <section>
