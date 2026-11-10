@@ -1,13 +1,15 @@
 import { useState, type CSSProperties } from "react";
 import { shortProductName, type HeroSceneProduct } from "@/lib/hero-scene";
+import { resolveProductLogo } from "@/lib/brand-logos";
 
 export const ORBIT_SECONDS = 46;
 
-/** Real brand logo when the store has one; otherwise the product emoji or first letter. */
+/** Official brand logo when the brand is known; otherwise the product emoji or first letter. */
 export function LogoMark({ product, className }: { product: HeroSceneProduct; className: string }) {
   const [broken, setBroken] = useState(false);
-  if (product.logo_url && !broken) {
-    return <img src={product.logo_url} alt="" loading="lazy" decoding="async" width={44} height={44} className={`${className} rounded-lg object-contain`} onError={() => setBroken(true)} />;
+  const src = resolveProductLogo(product.name, product.logo_url);
+  if (src && !broken) {
+    return <img src={src} alt="" loading="lazy" decoding="async" width={44} height={44} className={`${className} rounded-lg object-contain`} onError={() => setBroken(true)} />;
   }
   if (product.emoji) return <span className="text-2xl leading-none">{product.emoji}</span>;
   return <span className="text-xl font-semibold leading-none text-studio-ink">{shortProductName(product.name).charAt(0).toUpperCase()}</span>;

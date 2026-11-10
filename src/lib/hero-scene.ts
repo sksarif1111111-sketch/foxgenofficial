@@ -1,4 +1,7 @@
 import { categoryOf, type StoreCategoryId } from "./store-categories";
+import { resolveProductLogo } from "./brand-logos";
+
+const logoOf = (p: HeroSceneProduct) => resolveProductLogo(p.name, p.logo_url);
 
 /**
  * Pure rules for the homepage hero 3D scene. The scene only ever shows real catalogue
@@ -44,12 +47,13 @@ export function shortProductName(name: string): string {
 
 /**
  * Products for the moving showcase rows under the hero: purchasable only, one tile per product
- * name (plans that differ only by length collapse into one), products with a logo or emoji first,
+ * name (plans that differ only by length collapse into one), products with an official logo first,
+ * then emoji,
  * featured before the rest. Reads straight from the live catalogue, so edits appear automatically.
  */
 export function pickShowcaseProducts<T extends HeroSceneProduct>(products: T[], count: number): T[] {
   const seen = new Set<string>();
-  const rank = (p: T) => (p.logo_url || p.emoji ? 0 : 2) + (p.featured ? 0 : 1);
+  const rank = (p: T) => (logoOf(p) ? 0 : p.emoji ? 1 : 2) * 2 + (p.featured ? 0 : 1);
   return products
     .filter((p) => p.purchasable)
     .map((p, i) => ({ p, i }))
@@ -66,7 +70,7 @@ export function pickShowcaseProducts<T extends HeroSceneProduct>(products: T[], 
 
 /** Brand key used to avoid showing the same brand twice (e.g. two Mobbin plans). */
 function brandKey(p: HeroSceneProduct) {
-  return (p.logo_url ?? shortProductName(p.name).split(" ")[0] ?? p.name).toLowerCase();
+  return (logoOf(p) ?? shortProductName(p.name).split(" ")[0] ?? p.name).toLowerCase();
 }
 
 /**
@@ -75,7 +79,7 @@ function brandKey(p: HeroSceneProduct) {
  */
 export function pickHeroProducts<T extends HeroSceneProduct>(products: T[], count: number): T[] {
   const seen = new Set<string>();
-  const rank = (p: T) => (p.logo_url ? 0 : 4) + (heroGroupOf(p.name) === "ai" ? 0 : 2) + (p.featured ? 0 : 1);
+  const rank = (p: T) => (logoOf(p) ? 0 : 4) + (heroGroupOf(p.name) === "ai" ? 0 : 2) + (p.featured ? 0 : 1);
   return products
     .filter((p) => p.purchasable)
     .map((p, i) => ({ p, i }))
