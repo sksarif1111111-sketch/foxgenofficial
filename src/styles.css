@@ -784,7 +784,7 @@
 @layer components {
   .trust-card {
     position: relative;
-    border-radius: 1.5rem;
+    border-radius: 1rem;
     border: 1px solid oklch(1 0 0 / 80%);
     background-color: oklch(1 0 0 / 78%);
     box-shadow: var(--shadow-lift);

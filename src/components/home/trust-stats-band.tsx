@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { CheckCircle, Headset, Package, ReceiptX, ShieldCheck, Timer, UsersThree } from "@phosphor-icons/react/dist/ssr";
+import { Headset, Package, ReceiptX, ShieldCheck, Timer, UsersThree } from "@phosphor-icons/react/dist/ssr";
 import { countUpValue } from "@/lib/count-up";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -74,10 +74,10 @@ function CountUp({ value, error, className, suffix }: { value: number | null; er
 /** Animated clock: the minute hand sweeps, the hour hand creeps, a soft glow breathes behind it. */
 function DeliveryClock() {
   return (
-    <span className="relative inline-flex size-20 shrink-0 items-center justify-center sm:size-24" aria-hidden="true">
+    <span className="relative inline-flex size-12 shrink-0 items-center justify-center" aria-hidden="true">
       <span className="trust-clock-glow absolute inset-0 rounded-full" />
-      <span className="relative flex size-full items-center justify-center rounded-full border border-primary/20 bg-card shadow-lift">
-        <svg viewBox="0 0 64 64" className="size-14 text-primary sm:size-16">
+      <span className="relative flex size-full items-center justify-center rounded-full border border-primary/20 bg-card shadow-soft">
+        <svg viewBox="0 0 64 64" className="size-9 text-primary">
           <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" strokeOpacity="0.18" strokeWidth="3" />
           <circle className="trust-clock-arc" cx="32" cy="32" r="27" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" pathLength="100" strokeDasharray="50 100" transform="rotate(-90 32 32)" />
           {[0, 90, 180, 270].map((a) => (
@@ -96,9 +96,29 @@ function DeliveryClock() {
   );
 }
 
+/** One compact statistic: icon, uppercase label, value, one line of context. */
+function StatTile({ Icon, label, note, children }: { Icon: typeof Package; label: string; note: string; children: ReactNode }) {
+  return (
+    <div className="trust-card flex min-w-0 flex-col gap-2 p-4 sm:p-5">
+      <p className="caption-3 flex items-center gap-2 uppercase tracking-wider text-primary">
+        <span className="inline-flex size-6 items-center justify-center rounded-md bg-accent"><Icon size={14} weight="bold" /></span>
+        {label}
+      </p>
+      <p className="heading-4 tabular-nums leading-none">{children}</p>
+      <p className="caption-5 text-muted-foreground">{note}</p>
+    </div>
+  );
+}
+
+const PROMISE = [
+  { Icon: Timer, title: "Delivered within 30 minutes", body: "We guarantee delivery within 30 minutes after successful payment confirmation, subject to product availability and order verification." },
+  { Icon: Headset, title: "Personal follow up if late", body: "If your order is not delivered within 30 minutes, our team will personally contact you and work to complete your delivery as soon as possible." },
+  { Icon: ReceiptX, title: "Full refund if we cannot deliver", body: "If we are unable to provide the purchased product, you will receive a full refund. An order that arrives late but is delivered and accepted is not refunded." },
+];
+
 /**
- * Full width trust band under the hero: real member count (count up from 0), products in stock,
- * typical review time, the 30 minute delivery guarantee and the delivery and refund promise.
+ * Full width trust band under the hero, kept compact: real member count (count up from 0),
+ * products in stock, typical review time, the 30 minute delivery guarantee and the refund promise.
  */
 export function TrustStatsBand({
   members,
@@ -116,88 +136,60 @@ export function TrustStatsBand({
       <span className="trust-line top-0" aria-hidden="true"><span className="trust-line-glow" /></span>
       <span className="trust-line bottom-0" aria-hidden="true"><span className="trust-line-glow [animation-delay:-4s]" /></span>
 
-      <div className="mx-auto w-full max-w-[96rem] px-4 py-16 sm:px-6 lg:px-12 lg:py-20">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-8">
-          {/* Member statistics */}
-          <div className="trust-card flex flex-col justify-between gap-10 p-6 sm:p-10">
-            <div>
-              <p className="caption-3 inline-flex items-center gap-2 uppercase tracking-widest text-primary">
-                <UsersThree size={16} weight="bold" /> Total members
-              </p>
-              <p className="mt-4 font-display text-6xl font-bold leading-none tracking-tight tabular-nums sm:text-7xl lg:text-8xl">
-                <CountUp value={members} error={membersError} className="trust-number" />
-              </p>
-              <p className="body-3 mt-4 max-w-[520px] text-muted-foreground">
-                {membersError
-                  ? "The member count could not load right now. Please refresh the page in a moment."
-                  : "People who have joined Foxgen through our Telegram bot to shop genuine digital products and premium software."}
-              </p>
+      <div className="mx-auto w-full max-w-[96rem] px-4 py-8 sm:px-6 lg:px-12 lg:py-12">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatTile Icon={UsersThree} label="Total members" note={membersError ? "Could not load, refresh in a moment" : "Joined through our Telegram bot"}>
+            <CountUp value={members} error={membersError} className="trust-number" />
+          </StatTile>
+          <StatTile Icon={Package} label="In stock" note="Genuine digital products">
+            <CountUp value={inStock} className="" />
+          </StatTile>
+          {reviewMinutes ? (
+            <StatTile Icon={ShieldCheck} label="Payment review" note="Every payment checked by a person">
+              <CountUp value={reviewMinutes} suffix="min" className="" />
+            </StatTile>
+          ) : (
+            <StatTile Icon={ShieldCheck} label="Payments" note="Every payment checked by a person">
+              <span className="title-2">Owner checked</span>
+            </StatTile>
+          )}
+          <div className="trust-card trust-card-accent flex min-w-0 items-center gap-3 p-4 sm:p-5">
+            <DeliveryClock />
+            <div className="min-w-0">
+              <p className="caption-3 uppercase tracking-wider text-primary">30 minutes delivery</p>
+              <p className="title-3 mt-1">Guaranteed delivery</p>
+              <p className="caption-5 text-muted-foreground">After payment confirmation</p>
             </div>
-            <dl className="grid grid-cols-2 gap-4 border-t border-border pt-6">
-              <div className="min-w-0">
-                <dt className="caption-4 flex items-center gap-2 text-muted-foreground"><Package size={16} weight="bold" className="text-primary" /> Products in stock</dt>
-                <dd className="heading-4 mt-2 tabular-nums sm:heading-3"><CountUp value={inStock} className="" /></dd>
-              </div>
-              {reviewMinutes ? (
-                <div className="min-w-0">
-                  <dt className="caption-4 flex items-center gap-2 text-muted-foreground"><Timer size={16} weight="bold" className="text-primary" /> Typical payment review</dt>
-                  <dd className="heading-4 mt-2 tabular-nums sm:heading-3"><CountUp value={reviewMinutes} suffix="min" className="" /></dd>
-                </div>
-              ) : (
-                <div className="min-w-0">
-                  <dt className="caption-4 flex items-center gap-2 text-muted-foreground"><ShieldCheck size={16} weight="bold" className="text-primary" /> Payments</dt>
-                  <dd className="title-2 mt-2">Checked by a person</dd>
-                </div>
-              )}
-            </dl>
-          </div>
-
-          {/* 30 minute delivery guarantee */}
-          <div className="trust-card trust-card-accent flex flex-col gap-6 p-6 sm:p-10">
-            <div className="flex items-center gap-5">
-              <DeliveryClock />
-              <div className="min-w-0">
-                <p className="caption-3 uppercase tracking-widest text-primary">30 minutes delivery</p>
-                <h2 id="delivery-title" className="heading-5 mt-2 sm:heading-4">Guaranteed delivery within 30 minutes</h2>
-              </div>
-            </div>
-            <p className="body-3 text-muted-foreground">
-              We aim to deliver your purchased digital products and software within 30 minutes of successful payment confirmation.
-            </p>
-            <ul className="mt-auto grid gap-3 sm:grid-cols-2">
-              {["Fast order processing after payment", "Genuine digital products only"].map((t) => (
-                <li key={t} className="body-5 flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2">
-                  <CheckCircle size={18} weight="fill" className="shrink-0 text-success" /> {t}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
 
         {/* Delivery promise and refund policy */}
-        <div className="trust-card mt-6 p-6 sm:p-10 lg:mt-8">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,2fr)] lg:gap-12">
-            <div>
-              <p className="caption-3 uppercase tracking-widest text-primary">Our delivery promise</p>
-              <h3 className="heading-5 mt-2">Customer support and refund policy</h3>
-              <p className="body-6 mt-3 text-muted-foreground">
-                Full details are in our <Link to="/terms" className="text-primary underline">terms</Link>. Questions about an order? <Link to="/support" className="text-primary underline">Contact support</Link>.
+        <div className="trust-card mt-3 p-4 sm:p-6">
+          <div className="flex flex-col gap-1 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+            <div className="min-w-0">
+              <p className="caption-3 uppercase tracking-wider text-primary">Our delivery promise</p>
+              <h2 id="delivery-title" className="heading-6 mt-1">Guaranteed delivery within 30 minutes</h2>
+              <p className="body-6 mt-1 max-w-[640px] text-muted-foreground">
+                We aim to deliver your purchased digital products and software within 30 minutes of successful payment confirmation.
               </p>
             </div>
-            <ul className="grid gap-4 md:grid-cols-3">
-              {[
-                { Icon: Timer, title: "Delivered within 30 minutes", body: "We guarantee delivery within 30 minutes after successful payment confirmation, subject to product availability and order verification." },
-                { Icon: Headset, title: "Personal follow up if late", body: "If your order is not delivered within 30 minutes, our team will personally contact you and work to complete your delivery as soon as possible." },
-                { Icon: ReceiptX, title: "Full refund if we cannot deliver", body: "If we are unable to provide the purchased product, you will receive a full refund. An order that arrives late but is delivered and accepted is not refunded." },
-              ].map(({ Icon, title, body }) => (
-                <li key={title} className="rounded-2xl border border-border bg-background/60 p-5">
-                  <span className="inline-flex size-10 items-center justify-center rounded-xl bg-accent text-primary"><Icon size={20} weight="bold" /></span>
-                  <p className="title-3 mt-4">{title}</p>
-                  <p className="body-6 mt-2 text-muted-foreground">{body}</p>
-                </li>
-              ))}
-            </ul>
+            <p className="caption-4 shrink-0 text-muted-foreground">
+              <Link to="/terms" className="text-primary underline">Refund policy</Link>
+              <span aria-hidden="true"> · </span>
+              <Link to="/support" className="text-primary underline">Contact support</Link>
+            </p>
           </div>
+          <ul className="mt-4 grid gap-4 md:grid-cols-3">
+            {PROMISE.map(({ Icon, title, body }) => (
+              <li key={title} className="flex gap-3">
+                <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-primary"><Icon size={16} weight="bold" /></span>
+                <span className="min-w-0">
+                  <span className="title-4 block">{title}</span>
+                  <span className="caption-2 mt-1 block text-muted-foreground">{body}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>
