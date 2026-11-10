@@ -52,7 +52,7 @@ function AccountPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SiteNav />
-      <main className="container-page py-10 sm:py-14">
+      <main id="main" className="container-page py-10 sm:py-14">
         {token === null || (token && hub.isLoading) ? (
           <div className="h-64 animate-pulse rounded-3xl border border-border bg-card" />
         ) : !signedIn ? (

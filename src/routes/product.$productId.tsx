@@ -43,7 +43,7 @@ function ProductMissing() {
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
-      <main className="container-page flex flex-col items-center py-24 text-center">
+      <main id="main" className="container-page flex flex-col items-center py-24 text-center">
         <PackageX className="size-12 text-muted-foreground" />
         <h1 className="mt-5 text-3xl font-bold">This product isn't available</h1>
         <p className="mt-2 max-w-md text-muted-foreground">It may have been removed or is no longer listed. Browse the store for current offers.</p>
@@ -74,7 +74,7 @@ function ProductPage() {
         </nav>
       </div>
 
-      <main className="container-page py-8 sm:py-12">
+      <main id="main" className="container-page py-8 sm:py-12">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_1fr] lg:gap-12">
           <div className="space-y-6">
             <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-3xl border border-border bg-ink">

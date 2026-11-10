@@ -90,7 +90,7 @@ function HubPage() {
     return (
       <div className="min-h-screen bg-background">
       <SiteNav />
-      <main className="container-page flex justify-center py-16 sm:py-24">
+      <main id="main" className="container-page flex justify-center py-16 sm:py-24">
         <div className="w-full max-w-md rounded-3xl border border-border bg-card p-7 shadow-lift sm:p-9">
         <span className="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-ember">
           <Gift className="size-6" />
@@ -124,7 +124,7 @@ function HubPage() {
     return (
       <div className="min-h-screen bg-background">
         <SiteNav />
-        <main className="container-page py-12">
+        <main id="main" className="container-page py-12">
           <div className="h-24 animate-pulse rounded-2xl bg-muted" />
           <div className="mt-6 grid gap-4 sm:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -157,7 +157,7 @@ function HubPage() {
   return (
     <div className="min-h-screen bg-background">
     <SiteNav />
-    <main className="container-page max-w-6xl py-10">
+    <main id="main" className="container-page max-w-6xl py-10">
       <header className="mb-8 rounded-3xl border border-border bg-card p-6 shadow-soft sm:p-8">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary/40 bg-primary/10 text-lg font-black text-primary">

@@ -403,7 +403,7 @@ function ShopPage() {
         </div>
       </div>
 
-      <main className="container-page py-8 sm:py-10">
+      <main id="main" className="container-page py-8 sm:py-10">
         {error && (
           <p role="alert" className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}

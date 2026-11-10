@@ -36,7 +36,7 @@ function TutorialsPage() {
           <p className="mt-3 max-w-2xl text-muted-foreground">Install the FoxGEN Pro extension, activate your licence and get the most from your products.</p>
         </div>
       </header>
-      <main className="container-page grid gap-8 py-10 lg:grid-cols-[1fr_320px] sm:py-14">
+      <main id="main" className="container-page grid gap-8 py-10 lg:grid-cols-[1fr_320px] sm:py-14">
         <section className="space-y-4">
           {isLoading && Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-32 animate-pulse rounded-2xl border border-border bg-card" />)}
           {isError && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">Guides could not be loaded. Please refresh.</p>}
