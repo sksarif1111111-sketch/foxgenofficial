@@ -675,11 +675,50 @@
     animation: hm-swap 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  /* Orbit ring: tiles circle the showcase card, seen from slightly above, always facing the viewer. */
+  .hm-root { --orbit-r: 128px; --orbit-tilt: -12deg; --orbit-y: 44%; }
+  @media (width >= 640px) { .hm-root { --orbit-r: 215px; } }
+  @media (width >= 1024px) { .hm-root { --orbit-r: 235px; --orbit-tilt: -14deg; } }
+  .hm-orbit {
+    position: absolute;
+    left: 50%;
+    top: var(--orbit-y);
+    width: 0;
+    height: 0;
+    transform: rotateX(var(--orbit-tilt));
+  }
+  .hm-orbit-spin {
+    position: absolute;
+    inset: 0;
+    animation: hm-spin-y var(--orbit-dur, 46s) linear infinite;
+  }
+  .hm-orbit-slot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: rotateY(var(--a)) translateZ(var(--orbit-r)) rotateY(calc(var(--a) * -1));
+  }
+  .hm-orbit-counter {
+    animation: hm-spin-y var(--orbit-dur, 46s) linear infinite reverse;
+  }
+  .hm-orbit-untilt {
+    transform: rotateX(calc(var(--orbit-tilt) * -1));
+  }
+  .hm-orbit-fade {
+    animation: hm-orbit-fade var(--orbit-dur, 46s) linear var(--fade-delay, 0s) infinite;
+  }
+  .hm-orbit-face {
+    transform: translate(-50%, -50%);
+  }
+
   .hm-root[data-paused] .hm-anim { animation-play-state: paused; }
   .hm-root[data-lite] .hm-idle,
   .hm-root[data-lite] .hm-shadow,
   .hm-root[data-lite] .hm-approach,
   .hm-root[data-lite] .hm-ring-spin,
+  .hm-root[data-lite] .hm-orbit-spin,
+  .hm-root[data-lite] .hm-orbit-counter,
+  .hm-root[data-lite] .hm-orbit-fade,
   .hm-root[data-lite] .hm-plane-idle { animation: none; }
 }
 
@@ -718,6 +757,15 @@
 @keyframes hm-orbit {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+@keyframes hm-spin-y {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+/* Tiles dim a little while passing behind the showcase (phase set per tile by its angle). */
+@keyframes hm-orbit-fade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 @keyframes hm-swap {
   from { opacity: 0; transform: translateY(10px); }
