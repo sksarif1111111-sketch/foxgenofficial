@@ -1,37 +1,26 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight } from "@phosphor-icons/react/dist/ssr";
 import type { CatalogProduct } from "@/components/site/product-card";
 import { ProductLogo } from "@/components/site/product-logo";
+import { shortProductName } from "@/lib/hero-scene";
 
 const TILES = ["tile-night", "tile-lavender", "tile-sky", "tile-ember", "tile-blush"] as const;
 
+/** Logo (or emoji) and the clean product name only: no price, plan length or badges. */
 function ShowcaseTile({ product: p, index }: { product: CatalogProduct; index: number }) {
   const tile = TILES[index % TILES.length]!;
+  const name = shortProductName(p.name);
   return (
     <Link
       to="/product/$productId"
       params={{ productId: p.id }}
-      aria-label={`${p.name} details`}
+      aria-label={`${name} details`}
       className="group block shrink-0 rounded-2xl border border-border/70 bg-card p-1.5 shadow-soft transition duration-500 ease-weighted hover:-translate-y-1 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className={`${tile} card-sheen relative flex h-44 w-[272px] flex-col justify-between overflow-hidden rounded-xl p-5 sm:h-52 sm:w-[340px]`}>
-        <div className="flex items-start justify-between gap-3">
-          <span className="transition-transform duration-500 ease-weighted group-hover:scale-110">
-            <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} size="lg" />
-          </span>
-          {p.featured && <span className="caption-4 rounded-full bg-card/90 px-2 py-0.5 text-foreground shadow-soft">Featured</span>}
-        </div>
-        <div className="min-w-0">
-          <p className="heading-6 line-clamp-2 sm:text-2xl sm:leading-8">{p.name}</p>
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <span className="caption-1 rounded-full bg-card/90 px-3 py-1 tabular-nums text-foreground shadow-soft">
-              {p.price_usdt !== null ? `${p.price_usdt.toFixed(2)} USDT` : "Price on request"}
-            </span>
-            <span className="inline-flex size-8 items-center justify-center rounded-full bg-card/90 text-foreground opacity-0 shadow-soft transition duration-500 ease-weighted group-hover:opacity-100">
-              <ArrowUpRight size={16} weight="bold" />
-            </span>
-          </div>
-        </div>
+        <span className="w-fit transition-transform duration-500 ease-weighted group-hover:scale-110">
+          <ProductLogo name={p.name} logoUrl={p.logo_url} emoji={p.emoji} size="lg" />
+        </span>
+        <p className="heading-6 line-clamp-2 sm:text-2xl sm:leading-8">{name}</p>
       </div>
     </Link>
   );

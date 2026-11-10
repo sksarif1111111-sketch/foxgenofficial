@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HERO_GROUPS, heroGroupCounts, heroGroupOf, pickHeroProducts, shortProductName, type HeroSceneProduct } from "@/lib/hero-scene";
 import { GlassPlatform } from "./glass-platform";
-import { FloatingProductTile, LogoMark } from "./floating-product-tile";
+import { FloatingProductTile, LogoMark, ORBIT_SECONDS } from "./floating-product-tile";
 import { FloatingCategoryCard } from "./floating-category-card";
-import { CATEGORY_SLOTS, TILE_SLOTS } from "./slots";
+import { CATEGORY_SLOTS } from "./slots";
+
+const ORBIT_TILES = 8;
 
 const CYCLE_MS = 6500;
 const clamp = (v: number) => Math.max(-1, Math.min(1, v));
@@ -16,11 +18,13 @@ const clamp = (v: number) => Math.max(-1, Math.min(1, v));
  */
 export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading, children }: { products: T[]; loading: boolean; children?: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const tiles = useMemo(() => pickHeroProducts(products, TILE_SLOTS.length + 5), [products]);
+  const tiles = useMemo(() => pickHeroProducts(products, ORBIT_TILES + 5), [products]);
   const groups = useMemo(() => heroGroupCounts(products), [products]);
   // The first few picks rotate slowly on the showcase card; the rest float as tiles.
-  const featured = tiles.slice(0, children ? 0 : Math.min(5, Math.max(1, tiles.length - TILE_SLOTS.length)));
-  const floating = tiles.slice(featured.length, featured.length + TILE_SLOTS.length);
+  const featured = tiles.slice(0, children ? 0 : Math.min(5, Math.max(1, tiles.length - ORBIT_TILES)));
+  const ring = tiles.slice(featured.length, featured.length + ORBIT_TILES);
+  // Keep an even count so hiding every second tile on phones still leaves them evenly spaced.
+  const floating = ring.length > 2 && ring.length % 2 === 1 ? ring.slice(0, -1) : ring;
   const [index, setIndex] = useState(0);
 
   // Visibility pause, low power mode and desktop mouse parallax. Writes CSS variables only (no React state per frame).
@@ -88,13 +92,19 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
         <div className="hm-stage">
           <div className="hm-world">
             <GlassPlatform />
-            {floating.map((p, i) => <FloatingProductTile key={p.id} product={p} slot={TILE_SLOTS[i]!} />)}
+            {floating.length > 0 && (
+              <div className="hm-orbit" style={{ ["--orbit-dur" as string]: `${ORBIT_SECONDS}s` }}>
+                <div className="hm-orbit-spin hm-anim">
+                  {floating.map((p, i) => <FloatingProductTile key={p.id} product={p} index={i} total={floating.length} />)}
+                </div>
+              </div>
+            )}
             {groups.slice(0, CATEGORY_SLOTS.length).map((g, i) => (
               <FloatingCategoryCard key={g.id} id={g.id} label={g.label} count={g.count} slot={CATEGORY_SLOTS[i]!} />
             ))}
 
             {!children && (
-              <div className="hm-slot" style={{ left: "50%", top: "41%", ["--z" as string]: "60px", ["--dur" as string]: "12s", ["--delay" as string]: "-2s", ["--amp" as string]: "6px", ["--rot" as string]: "1deg", ["--enter-delay" as string]: "800ms", ["--enter-dur" as string]: "1200ms", ["--from-y" as string]: "60px", ["--from-z" as string]: "-60px" }}>
+              <div className="hm-slot" style={{ left: "50%", top: "38%", ["--z" as string]: "0px", ["--dur" as string]: "12s", ["--delay" as string]: "-2s", ["--amp" as string]: "6px", ["--rot" as string]: "1deg", ["--enter-delay" as string]: "800ms", ["--enter-dur" as string]: "1200ms", ["--from-y" as string]: "60px", ["--from-z" as string]: "-60px" }}>
                 <div className="hm-enter hm-anim">
                   <div className="hm-shadow hm-anim" style={{ ["--shadow-gap" as string]: "26px" }} />
                   <div className="hm-idle hm-anim">

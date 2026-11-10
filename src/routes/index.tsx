@@ -34,6 +34,7 @@ import { Reveal } from "@/components/home/reveal";
 import { TaglineReveal } from "@/components/home/tagline-reveal";
 import { ShowcaseMarquee } from "@/components/home/showcase-marquee";
 import { HeroMotionScene } from "@/components/home/hero-motion/hero-motion-scene";
+import { pickShowcaseProducts } from "@/lib/hero-scene";
 import { Faq, type FaqItem } from "@/components/home/faq";
 import { FestiveOfferSection, HeroOfferVisual, OfferAnnouncementBar, PrimaryCta, findOfferProduct, useFestiveOffer } from "@/components/home/festive-offer";
 import { categoryOf, type StoreCategoryId } from "@/lib/store-categories";
@@ -108,7 +109,7 @@ function Home() {
   const loadCatalog = useServerFn(shopCatalog);
   const loadOffers = useServerFn(publicOffers);
   const loadSite = useServerFn(publicSiteInfo);
-  const catalog = useQuery({ queryKey: ["home-catalog"], queryFn: () => loadCatalog() });
+  const catalog = useQuery({ queryKey: ["home-catalog"], queryFn: () => loadCatalog(), refetchInterval: 60_000 });
   const offers = useQuery({ queryKey: ["public-offers"], queryFn: () => loadOffers() });
   const site = useQuery({ queryKey: ["site-info"], queryFn: () => loadSite() });
   const [group, setGroup] = useState("all");
@@ -118,10 +119,8 @@ function Home() {
   const groups = useMemo(() => GROUPS.map((g) => ({ ...g, count: live.filter((p) => groupOf(p).id === g.id).length })).filter((g) => g.count > 0), [live]);
   const featuredFirst = useMemo(() => [...live].sort((a, b) => Number(b.featured) - Number(a.featured)), [live]);
   const shown = (group === "all" ? featuredFirst : featuredFirst.filter((p) => groupOf(p).id === group)).slice(0, 8);
-  const showcase = useMemo(() => {
-    const withLogo = featuredFirst.filter((p) => p.logo_url || p.image_url);
-    return (withLogo.length >= 6 ? withLogo : featuredFirst).slice(0, 16);
-  }, [featuredFirst]);
+  // Sliding rows follow the live catalogue: add, rename, restock or remove a product and the rows update.
+  const showcase = useMemo(() => pickShowcaseProducts(products, 16), [products]);
   const promos = offers.data?.offers ?? [];
   const festive = useFestiveOffer();
   const festiveProduct = useMemo(() => (festive.live ? findOfferProduct(products, festive.offer.productName) : null), [festive.live, festive.offer.productName, products]);

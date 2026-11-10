@@ -1,13 +1,7 @@
-import { useState } from "react";
-import { heroGroupOf, shortProductName, type HeroSceneProduct } from "@/lib/hero-scene";
-import { slotStyle, visibility, type Slot } from "./slots";
+import { useState, type CSSProperties } from "react";
+import { shortProductName, type HeroSceneProduct } from "@/lib/hero-scene";
 
-const IDLE = { ai: "hm-float", ott: "hm-depth", dev: "hm-tilt", productivity: "hm-float", software: "hm-depth" } as const;
-const SIZE = {
-  front: { box: "size-16 sm:size-20 lg:size-[92px]", img: "size-8 sm:size-10 lg:size-11", amp: 12, rot: 2.4, gap: 40 },
-  mid: { box: "size-14 sm:size-16 lg:size-[72px]", img: "size-7 sm:size-8", amp: 9, rot: 3, gap: 34 },
-  back: { box: "size-[54px]", img: "size-6", amp: 7, rot: 2, gap: 16 },
-} as const;
+export const ORBIT_SECONDS = 46;
 
 /** Real brand logo when the store has one; otherwise the product emoji or first letter. */
 export function LogoMark({ product, className }: { product: HeroSceneProduct; className: string }) {
@@ -19,24 +13,39 @@ export function LogoMark({ product, className }: { product: HeroSceneProduct; cl
   return <span className="text-xl font-semibold leading-none text-studio-ink">{shortProductName(product.name).charAt(0).toUpperCase()}</span>;
 }
 
-/** One floating app tile: entrance, idle drift and its own soft floor shadow run on separate layers. */
-export function FloatingProductTile({ product, slot }: { product: HeroSceneProduct; slot: Slot }) {
-  const size = SIZE[slot.tier];
-  const style = { ...slotStyle(slot, IDLE[heroGroupOf(product.name)]), ["--amp" as string]: `${size.amp}px`, ["--rot" as string]: `${size.rot}deg`, ["--shadow-gap" as string]: `${size.gap}px` };
-  const tile = (
-    <div className={`hm-tile ${slot.tier === "back" ? "is-glass opacity-80" : ""} ${size.box}`}>
-      <LogoMark product={product} className={size.img} />
-    </div>
-  );
+/**
+ * One app tile on the orbit ring. Layers: place on the ring → cancel the ring spin and tilt so the
+ * tile always faces the viewer → dim while passing behind → entrance → gentle bob → tile.
+ * Every second tile is hidden on phones, which keeps the rest evenly spaced. The product name
+ * shows on the showcase card; ring tiles carry the logo only so passing tiles never overlap text.
+ */
+export function FloatingProductTile({ product, index, total }: { product: HeroSceneProduct; index: number; total: number }) {
+  const angle = (360 / total) * index;
+  const style = {
+    ["--a" as string]: `${angle}deg`,
+    ["--fade-delay" as string]: `${-(angle / 360) * ORBIT_SECONDS}s`,
+    ["--dur" as string]: `${8 + (index % 4) * 1.3}s`,
+    ["--delay" as string]: `${-index * 1.7}s`,
+    ["--amp" as string]: "8px",
+    ["--rot" as string]: "2deg",
+    ["--enter-delay" as string]: `${900 + index * 90}ms`,
+    ["--from-z" as string]: "-160px",
+  } as CSSProperties;
   return (
-    <div className={`hm-slot ${visibility[slot.from]}`} style={style}>
-      <div className="hm-enter hm-anim">
-        <div className="hm-shadow hm-anim" />
-        <div className="hm-idle hm-anim relative">
-          {slot.approach !== undefined ? <div className="hm-approach hm-anim">{tile}</div> : tile}
-          {slot.tier !== "back" && (
-            <p className="caption-5 absolute left-1/2 top-full mt-2 hidden w-[104px] -translate-x-1/2 truncate text-center text-studio-muted lg:block">{shortProductName(product.name)}</p>
-          )}
+    <div className={`hm-orbit-slot ${index % 2 === 1 ? "hidden sm:block" : ""}`} style={style}>
+      <div className="hm-orbit-counter hm-anim">
+        <div className="hm-orbit-untilt">
+          <div className="hm-orbit-fade hm-anim">
+            <div className="hm-orbit-face">
+              <div className="hm-enter hm-anim">
+                <div className="hm-idle hm-anim relative">
+                  <div className="hm-tile size-14 sm:size-[72px] lg:size-20">
+                    <LogoMark product={product} className="size-7 sm:size-9 lg:size-10" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

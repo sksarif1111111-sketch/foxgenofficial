@@ -67,3 +67,5 @@
 
 ## White studio 3D hero motion (Nov 2026)
 - [x] Bright white studio hero with glass platform, floating real product tiles and in-stock category cards; entrance, slow idle drift, mouse tilt on desktop, pause off screen, static under reduced motion. Checked at 1280, 820 and 390 with no overflow or console errors; hero buttons stay clickable.
+- [x] Sliding product rows show only logo/emoji and the clean product name (no price, plan length or badges), follow the live catalogue and refresh every minute.
+- [x] Hero product tiles circle the platform on a slow 3D orbit (always facing the viewer, dimmer behind); category cards moved above the orbit.
