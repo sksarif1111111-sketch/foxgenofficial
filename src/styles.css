@@ -522,6 +522,13 @@
   .hm-plane {
     transform-style: preserve-3d;
   }
+  /* Card faces are flattened so a logo never z-fights with the surface it sits on. */
+  .hm-world .hm-tile,
+  .hm-world .hm-glass,
+  .hm-world .hm-tile *,
+  .hm-world .hm-glass * {
+    transform-style: flat;
+  }
 
   /* Glass platform: stacked discs lying on the studio floor. Flattened into its own layer so the
      rotated discs and rings never slice through the floating tiles. */

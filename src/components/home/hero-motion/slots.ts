@@ -31,8 +31,8 @@ export const TILE_SLOTS: Slot[] = [
 export const CATEGORY_SLOTS: Slot[] = [
   { x: 17, y: 35, z: 70, ry: 12, tier: "mid", from: "sm", dur: 12.2, delay: -2.1, enter: 2000 },
   { x: 80, y: 68, z: 80, ry: -12, tier: "mid", from: "base", dur: 13.6, delay: -6.5, enter: 2200 },
-  { x: 42, y: 96, z: 60, ry: 6, tier: "mid", from: "sm", dur: 11.4, delay: -4.0, enter: 2400 },
-  { x: 69, y: 93, z: 50, ry: -6, tier: "mid", from: "sm", dur: 14.8, delay: -8.8, enter: 2500 },
+  { x: 42, y: 91, z: 60, ry: 6, tier: "mid", from: "sm", dur: 11.4, delay: -4.0, enter: 2400 },
+  { x: 70, y: 89, z: 50, ry: -6, tier: "mid", from: "sm", dur: 14.8, delay: -8.8, enter: 2500 },
   { x: 66, y: 5, z: 10, ry: -4, tier: "mid", from: "lg", dur: 12.8, delay: -1.4, enter: 2600 },
 ];
 
