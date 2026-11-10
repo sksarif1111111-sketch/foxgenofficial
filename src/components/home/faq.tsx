@@ -17,7 +17,7 @@ export function Faq({ items }: { items: FaqItem[] }) {
               </Accordion.Trigger>
             </h3>
           </Accordion.Header>
-          <Accordion.Content className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+          <Accordion.Content className="overflow-hidden">
             <div className="body-6 px-6 pb-6 text-muted-foreground">{item.a}</div>
           </Accordion.Content>
         </Accordion.Item>
