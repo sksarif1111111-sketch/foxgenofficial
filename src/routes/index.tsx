@@ -150,7 +150,7 @@ function Home() {
         {/* HERO */}
         <section aria-labelledby="hero-title" className="container-page pb-16 pt-8 sm:pt-16 lg:pb-24">
           <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
-            <div>
+            <div className="min-w-0">
               <p className="caption-1 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-muted-foreground">
                 <SealCheck size={16} weight="fill" className="text-primary" /> Every payment checked by a person
               </p>
@@ -176,7 +176,7 @@ function Home() {
                   <dd className="heading-5 mt-1 tabular-nums">{catalog.data ? live.length : <span className="inline-block h-6 w-10 animate-pulse rounded bg-muted" />}</dd>
                 </div>
                 <div>
-                  <dt className="caption-5 text-muted-foreground">Rewards bot members</dt>
+                  <dt className="caption-5 text-muted-foreground">Bot members</dt>
                   <dd className="heading-5 mt-1 tabular-nums">{members !== null ? members.toLocaleString("en-US") : <span className="inline-block h-6 w-10 animate-pulse rounded bg-muted" />}</dd>
                 </div>
                 <div>
@@ -187,7 +187,7 @@ function Home() {
             </div>
 
             {/* Hero visual: live product shelf from the real catalogue */}
-            <div className="rounded-3xl border border-border bg-card p-2 shadow-lift">
+            <div className="min-w-0 rounded-3xl border border-border bg-card p-2 shadow-lift">
               <div className="rounded-2xl bg-muted/60 p-4 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
                   <p className="title-4">Live in the store</p>
