@@ -35,7 +35,7 @@ export function FloatingProductTile({ product, slot }: { product: HeroSceneProdu
         <div className="hm-idle hm-anim relative">
           {slot.approach !== undefined ? <div className="hm-approach hm-anim">{tile}</div> : tile}
           {slot.tier !== "back" && (
-            <p className="caption-5 absolute left-1/2 top-full mt-2 hidden w-[120px] -translate-x-1/2 truncate text-center text-studio-muted lg:block">{shortProductName(product.name)}</p>
+            <p className="caption-5 absolute left-1/2 top-full mt-2 hidden w-[104px] -translate-x-1/2 truncate text-center text-studio-muted lg:block">{shortProductName(product.name)}</p>
           )}
         </div>
       </div>
