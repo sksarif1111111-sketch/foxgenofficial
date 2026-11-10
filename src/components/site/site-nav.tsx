@@ -169,6 +169,17 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
               </li>
             ))}
           </ul>
+          <button
+            type="button"
+            tabIndex={open ? 0 : -1}
+            onClick={() => {
+              setOpen(false);
+              openAssistant();
+            }}
+            className={`heading-5 mt-1 flex items-center justify-between rounded-xl px-3 py-3 text-left transition duration-500 ${ease} hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${open ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+          >
+            Ask Foxgen AI
+          </button>
           <div className="mt-auto flex flex-col gap-3 pt-8">
             <BuyNowLink className="button-md w-full py-3" onClick={() => setOpen(false)}>
               <ShoppingBagOpen size={18} weight="bold" /> Buy now
@@ -184,7 +195,10 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
         </div>
       </div>
 
-      {!open && <AssistantRobot />}
+      {/* Stays mounted while the menu is open so an open chat keeps its place. */}
+      <div className={open ? "hidden" : undefined}>
+        <AssistantRobot />
+      </div>
     </>
   );
 }
