@@ -400,7 +400,7 @@ function RobotSvg() {
           </g>
           <g className="rb-arm-r">
             <ellipse cx="83" cy="113" rx="6" ry="9.5" fill="url(#rb-blue)" transform="rotate(-24 83 113)" />
-            <ellipse className="rb-finger" cx="88.4" cy="125" rx="2.3" ry="4.6" fill="url(#rb-blue)" transform="rotate(-24 88.4 125)" />
+            <ellipse className="rb-finger" cx="89" cy="126.5" rx="2.6" ry="5.6" fill="url(#rb-blue)" transform="rotate(-24 89 126.5)" />
           </g>
 
         </g>
