@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { canFall, clampX, hasRoomToFall, pickTarget, walkRange } from "./robot-motion";
 
 describe("walking robot", () => {
