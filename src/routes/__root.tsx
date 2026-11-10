@@ -13,22 +13,22 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
+import { BRAND } from "@/lib/brand";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
+        <img src={BRAND.mark} alt={BRAND.name} width={64} height={64} className="mx-auto size-16 rounded-2xl bg-ink object-cover" />
+        <p className="caption-3 mt-8 uppercase tracking-wider text-primary">Error 404</p>
+        <h1 className="heading-4 mt-3 text-foreground">This page is not in the store</h1>
+        <p className="body-6 mt-3 text-muted-foreground">The link may be old or the page was moved. Browse the current offers instead.</p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link to="/" className="button-sm rounded-full bg-primary px-3 py-2 text-primary-foreground transition duration-300 hover:bg-primary/90">
+            Go to Home
+          </Link>
+          <Link to="/shop" className="button-sm rounded-full border border-border px-3 py-2 transition duration-300 hover:bg-muted">
+            Explore offers
           </Link>
         </div>
       </div>
