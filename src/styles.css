@@ -1026,8 +1026,8 @@
   60%, 80% { transform: translateX(4px); }
 }
 @keyframes rb-wave {
-  0%, 100% { transform: translate(16px, -2px) rotate(-100deg); }
-  50% { transform: translate(16px, -2px) rotate(-138deg); }
+  0%, 100% { transform: translate(18px, -6px) rotate(-95deg); }
+  50% { transform: translate(18px, -6px) rotate(-130deg); }
 }
 @keyframes rb-tilt {
   0% { transform: rotate(0deg); }

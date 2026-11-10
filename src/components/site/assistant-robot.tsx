@@ -281,14 +281,6 @@ function RobotSvg() {
             <ellipse cx="70" cy="139" rx="8.5" ry="5" fill="url(#rb-blue)" />
           </g>
 
-          {/* Tiny hands */}
-          <g className="rb-arm-l">
-            <ellipse cx="37" cy="113" rx="6" ry="9.5" fill="url(#rb-blue)" transform="rotate(24 37 113)" />
-          </g>
-          <g className="rb-arm-r">
-            <ellipse cx="83" cy="113" rx="6" ry="9.5" fill="url(#rb-blue)" transform="rotate(-24 83 113)" />
-          </g>
-
           {/* Round body with a glowing heart */}
           <ellipse cx="60" cy="113" rx="21" ry="18" fill="url(#rb-white)" className="rb-line" />
           <ellipse cx="60" cy="117" rx="11.5" ry="9" fill="url(#rb-blue)" />
@@ -330,6 +322,15 @@ function RobotSvg() {
             <ellipse cx="86" cy="72" rx="4.5" ry="2.6" className="rb-cheek" />
             <ellipse cx="38" cy="30" rx="11" ry="4" className="rb-gloss" transform="rotate(-18 38 30)" />
           </g>
+
+          {/* Tiny hands, drawn last so a wave shows in front of the head */}
+          <g className="rb-arm-l">
+            <ellipse cx="37" cy="113" rx="6" ry="9.5" fill="url(#rb-blue)" transform="rotate(24 37 113)" />
+          </g>
+          <g className="rb-arm-r">
+            <ellipse cx="83" cy="113" rx="6" ry="9.5" fill="url(#rb-blue)" transform="rotate(-24 83 113)" />
+          </g>
+
         </g>
       </g>
 
