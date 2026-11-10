@@ -908,7 +908,7 @@
   .rb-shadow { fill: oklch(0.3 0.06 255 / 18%); transform-origin: 60px 146px; }
   .rb-dust, .rb-stars { opacity: 0; }
   .rb-dust { fill: oklch(0.85 0.02 245); transform-origin: 118px 142px; }
-  .rb-stars { fill: oklch(0.85 0.16 90); transform-origin: 150px 104px; }
+  .rb-stars { fill: oklch(0.85 0.16 90); transform-origin: 150px 50px; }
 
   .rb-figure { transform-origin: 60px 146px; }
   .rb-bob { transform-origin: 60px 146px; }
@@ -949,8 +949,8 @@
 
   /* Stumble: surprised, arms flail */
   .robot-root[data-act="stumble"] .rb-figure { animation: rb-stumble 0.56s ease-in-out both; }
-  .robot-root[data-act="stumble"] .rb-arm-l { animation: rb-flail 0.18s ease-in-out infinite; }
-  .robot-root[data-act="stumble"] .rb-arm-r { animation: rb-flail 0.18s ease-in-out -0.09s infinite; }
+  .robot-root[data-act="stumble"] .rb-arm-l { animation: rb-flail-l 0.18s ease-in-out infinite; }
+  .robot-root[data-act="stumble"] .rb-arm-r { animation: rb-flail-r 0.18s ease-in-out -0.09s infinite; }
   .robot-root[data-act="stumble"] .rb-eyes-open { animation: rb-eyes-wide 0.56s ease-out both; }
   .robot-root[data-act="stumble"] .rb-mouth-smile { opacity: 0; }
   .robot-root[data-act="stumble"] .rb-mouth-o { opacity: 1; }
@@ -1026,8 +1026,8 @@
   60%, 80% { transform: translateX(4px); }
 }
 @keyframes rb-wave {
-  0%, 100% { transform: rotate(-140deg); }
-  50% { transform: rotate(-105deg); }
+  0%, 100% { transform: translate(16px, -2px) rotate(-100deg); }
+  50% { transform: translate(16px, -2px) rotate(-138deg); }
 }
 @keyframes rb-tilt {
   0% { transform: rotate(0deg); }
@@ -1041,9 +1041,13 @@
   75% { transform: rotate(-5deg) translateY(-2px); }
   100% { transform: rotate(16deg); }
 }
-@keyframes rb-flail {
-  0%, 100% { transform: rotate(-150deg); }
-  50% { transform: rotate(-95deg); }
+@keyframes rb-flail-l {
+  0%, 100% { transform: translate(-15px, -2px) rotate(95deg); }
+  50% { transform: translate(-15px, -2px) rotate(140deg); }
+}
+@keyframes rb-flail-r {
+  0%, 100% { transform: translate(15px, -2px) rotate(-95deg); }
+  50% { transform: translate(15px, -2px) rotate(-140deg); }
 }
 @keyframes rb-eyes-wide {
   0% { transform: scale(1); }
@@ -1100,7 +1104,7 @@
   72% { transform: rotate(-6deg); }
 }
 @keyframes rb-shadow-lie {
-  to { transform: translateX(26px) scale(2.2, 1.1); }
+  to { transform: translateX(64px) scale(2.6, 1.1); }
 }
 /* Robot chat pop-up: grows out of the robot's side; typing dots bounce while the AI writes. */
 .assistant-pop { transform-origin: bottom right; animation: assistant-pop 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }

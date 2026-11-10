@@ -335,9 +335,11 @@ function RobotSvg() {
 
       {/* Cartoon stars circling its head while it lies on the floor */}
       <g className="rb-stars">
+        <g transform="translate(0 -52)">
         <path d="M150 92 l2 4.5 4.8 .6 -3.5 3.3 .9 4.8 -4.2 -2.3 -4.2 2.3 .9 -4.8 -3.5 -3.3 4.8 -.6 z" />
         <path d="M168 104 l1.4 3.2 3.4 .4 -2.5 2.3 .6 3.4 -2.9 -1.6 -2.9 1.6 .6 -3.4 -2.5 -2.3 3.4 -.4 z" />
         <path d="M134 106 l1.2 2.7 2.9 .4 -2.1 2 .5 2.9 -2.5 -1.4 -2.5 1.4 .5 -2.9 -2.1 -2 2.9 -.4 z" />
+        </g>
       </g>
     </svg>
   );
