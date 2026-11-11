@@ -88,16 +88,16 @@ function LoginPage() {
   const heading = mode === "signup" ? "Create your account" : mode === "otp" ? "Verify your email" : mode === "forgot" ? "Reset your password" : "Welcome back";
   return <CustomerAuthShell>
     <h1 className="heading-4 text-center">{heading}</h1>
-    <p className="body-6 mb-6 mt-2 text-center text-muted-foreground">{mode === "otp" ? email : mode === "signup" ? "Your next purchase starts here." : mode === "forgot" ? "A fresh start for your store account." : "Sign in to your Foxgen store account."}</p>
+    <p className="body-6 mb-4 mt-2 text-center text-muted-foreground">{mode === "otp" ? email : mode === "signup" ? "Your next purchase starts here." : mode === "forgot" ? "A fresh start for your store account." : "Sign in to your Foxgen store account."}</p>
     {(mode === "login" || mode === "signup") && <>
       <div className="space-y-2">
         <Button className="google-login w-full justify-center gap-[10px] px-3" disabled={busy} onClick={() => social("google")}><GoogleMark />Continue with Google</Button>
         <Button variant="outline" className="w-full gap-3 bg-card" disabled={busy} onClick={() => social("microsoft")}><span aria-hidden="true" className="microsoft-mark"><i/><i/><i/><i/></span>Continue with Microsoft</Button>
         <Button className="apple-login w-full" disabled={busy} onClick={() => social("apple")}>Continue with Apple</Button>
       </div>
-      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border"/>or with email<span className="h-px flex-1 bg-border"/></div>
+      <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border"/>or with email<span className="h-px flex-1 bg-border"/></div>
     </>}
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-3">
       {mode !== "otp" && <div className="space-y-2"><Label htmlFor="customer-email">Email address</Label><div className="relative"><EnvelopeSimple className="absolute left-3 top-3.5 text-muted-foreground" size={18}/><Input id="customer-email" type="email" autoComplete="email" maxLength={254} required value={email} onChange={e => setEmail(e.target.value)} className="h-11 bg-card/70 pl-10" placeholder="you@example.com"/></div></div>}
       {(mode === "login" || mode === "signup") && <div className="space-y-2"><Label htmlFor="customer-password">Password</Label><div className="relative"><LockKey className="absolute left-3 top-3.5 text-muted-foreground" size={18}/><Input id="customer-password" type={show ? "text" : "password"} autoComplete={mode === "signup" ? "new-password" : "current-password"} minLength={mode === "signup" ? 8 : undefined} maxLength={200} required value={password} onChange={e => setPassword(e.target.value)} className="h-11 bg-card/70 pl-10 pr-10" placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"}/><Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1 size-9" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow(!show)}>{show ? <EyeSlash size={18}/> : <Eye size={18}/>}</Button></div></div>}
       {mode === "otp" && <div className="space-y-2"><Label htmlFor="verification-code">Verification code</Label><Input id="verification-code" inputMode="numeric" autoComplete="one-time-code" minLength={6} maxLength={8} pattern="[0-9]{6,8}" required value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ""))} placeholder="Enter your email code" className="h-12 bg-card/70 text-center font-mono text-lg"/></div>}
