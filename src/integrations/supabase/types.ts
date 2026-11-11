@@ -1868,6 +1868,8 @@ export type Database = {
           confirmed_at: string | null
           created_at: string
           currency: string
+          customer_external_id: string | null
+          customer_first_seen_at: string | null
           customer_name: string | null
           customer_user_id: string | null
           delivered_at: string | null
@@ -1907,6 +1909,8 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           currency?: string
+          customer_external_id?: string | null
+          customer_first_seen_at?: string | null
           customer_name?: string | null
           customer_user_id?: string | null
           delivered_at?: string | null
@@ -1946,6 +1950,8 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           currency?: string
+          customer_external_id?: string | null
+          customer_first_seen_at?: string | null
           customer_name?: string | null
           customer_user_id?: string | null
           delivered_at?: string | null
@@ -2309,6 +2315,15 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      shop_crm_customer_id: {
+        Args: {
+          _customer: string
+          _emails: string
+          _profile: string
+          _telegram: number
+        }
+        Returns: string
       }
       shop_crm_order_snapshot: { Args: { _order_id: string }; Returns: Json }
       shop_pause_crm_when_drained: { Args: never; Returns: undefined }

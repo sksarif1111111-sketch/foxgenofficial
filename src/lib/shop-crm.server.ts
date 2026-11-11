@@ -1,6 +1,6 @@
 import { db, getSettings } from "@/lib/hub.server";
 import { deliverySlaMinutes } from "@/lib/shop-fulfillment";
-import { crmOrderRecord } from "@/lib/shop-crm.payload";
+import { crmSyncRecords, type CrmSnapshot } from "@/lib/shop-crm.payload";
 
 export async function crmSyncStatus() {
   const [last, pending, stuck] = await Promise.all([
@@ -25,11 +25,24 @@ export async function flushCrmOutbox() {
     if (result.error) throw new Error("Could not record CRM retry.");
   };
   const sla = deliverySlaMinutes(settings["shop_delivery_sla_minutes"]);
+  // Older snapshots intentionally preserve historic status/material; only enrich the stable buyer link.
+  const identities = await db.from("shop_orders").select("id,customer_external_id,customer_first_seen_at,created_at").in("id", rows.map(r => r.order_id));
+  if (identities.error) {
+    await fail("Could not read CRM customer identities.", rows.map(r => r.id));
+    return { ok: false, sent: 0 };
+  }
+  const identityByOrder = new Map(identities.data.map(o => [o.id, o]));
   let sent = 0;
   // One version per request preserves every transition and bounds large batches.
   for (const row of [...rows].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))) {
-  const snapshot = row.payload as { order: Record<string, unknown>; items: Record<string, unknown>[]; has_fulfillment: boolean };
-  const body = JSON.stringify({ records: [crmOrderRecord(snapshot.order, snapshot.items, snapshot.has_fulfillment, sla)] });
+  const snapshot = row.payload as CrmSnapshot;
+  const identity = identityByOrder.get(row.order_id);
+  const enriched = { ...snapshot, order: { ...snapshot.order,
+    customer_external_id: identity?.customer_external_id ?? snapshot.order["customer_external_id"],
+    customer_first_seen_at: identity?.customer_first_seen_at ?? snapshot.order["customer_first_seen_at"],
+    created_at: identity?.created_at ?? snapshot.order["created_at"],
+  } };
+  const body = JSON.stringify({ records: crmSyncRecords([enriched], sla, new Date().toISOString()) });
   if (new TextEncoder().encode(body).length > 256 * 1024) { await fail("Order exceeds CRM's 256 KB limit.", [row.id]); continue; }
   try {
     const response = await fetch("https://foxgencrm.lovable.app/api/public/store/sync", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body, signal: AbortSignal.timeout(20000) });
