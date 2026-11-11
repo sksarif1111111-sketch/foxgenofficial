@@ -266,6 +266,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const backRow = (to = "menu"): Btn[] => [{ text: `${E("back", "⬅️")} Back`, callback_data: to }];
 
         const buildHomeKeyboard = (isActive: boolean): Keyboard => [
+          [{ text: "💰 Add funds", callback_data: "addfunds" }],
           [
             { text: `${E("shop", "🛍️")} Shop`, callback_data: "shop" },
             { text: `${E("rewards", "🎁")} Free Rewards`, callback_data: "rewards" },
@@ -362,6 +363,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               { command: "start", description: `${E("brand", "🦊")} Open ${storeName}` },
               { command: "menu", description: "🏠 Main menu" },
               { command: "shop", description: `${E("shop", "🛍️")} Shop products` },
+              { command: "addfunds", description: "💰 Add funds to wallet" },
               { command: "rewards", description: `${E("rewards", "🎁")} Free rewards` },
               { command: "profile", description: `${E("profile", "👤")} My profile` },
               { command: "invite", description: `${E("invite", "👥")} Invite & earn` },
@@ -378,6 +380,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await send("Please send /start first.", [[{ text: `${E("brand", "🦊")} Start`, callback_data: "menu" }]]);
           return Response.json({ ok: true });
         }
+
+        const { walletFundingBot } = await import("@/lib/wallet-topup.server");
+        if (await walletFundingBot(profile.id, chatId, cb || (text === "/addfunds" ? "addfunds" : ""), text)) return Response.json({ ok: true });
 
         // ---------- delivery email capture for a paid Telegram order ----------
         if (text && !text.startsWith("/") && text.includes("@")) {

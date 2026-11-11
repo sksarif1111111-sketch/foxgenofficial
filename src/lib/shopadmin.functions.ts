@@ -1,6 +1,7 @@
 import { requireAdminPassword } from "@/lib/admin-access.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { walletReviewSchema, walletDeductSchema } from "./wallet-topup.contract";
 
 const idInput = z.object({ id: z.string().uuid() });
 
@@ -461,4 +462,31 @@ export const shopWalletTopUp = createServerFn({ method: "POST" }).middleware([re
     if (error) throw new Error("Could not add funds to this wallet.");
     await logActivity("shop", "Wallet funded", "success", `${data.amount.toFixed(2)} USD added`);
     return { balance: Number(balance) };
+  });
+
+export const shopWalletPendingTopUps = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async () => {
+  const { db } = await import("@/lib/hub.server");
+  const { data, error } = await db.from("wallet_topup_requests").select("*").eq("status", "pending").order("created_at").limit(100);
+  if (error) throw new Error("Could not load top ups.");
+  return data ?? [];
+});
+export const shopWalletReviewTopUp = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
+  .inputValidator((input: unknown) => walletReviewSchema.parse(input)).handler(async ({ data }) => {
+    const { db, logActivity } = await import("@/lib/hub.server");
+    const result = await db.rpc("shop_review_wallet_topup", { _id: data.id, _approve: data.approve, _note: data.note, _credit_usd: data.creditUsd });
+    if (result.error) throw new Error("Request is no longer pending, or a verified USD credit is required.");
+    const record = result.data as { profile_id: string; amount: number; currency: string; balance: number | null };
+    const { notifyWalletReview } = await import("@/lib/wallet-topup.server");
+    let notified = false;
+    try { notified = await notifyWalletReview(record.profile_id, data.approve ? `Added ${record.amount} ${record.currency} to your wallet. USD balance: ${record.balance}.` : `Your wallet top up was rejected: ${data.note}`); } catch { /* Funding decision is already committed; never repeat credit. */ }
+    await logActivity("wallet", data.approve ? "Top up approved" : "Top up rejected", notified ? "success" : "warning", `Request ${data.id}${notified ? "" : "; Telegram notification failed"}`);
+    return { ok: true, notified };
+  });
+export const shopWalletDeduct = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
+  .inputValidator((input: unknown) => walletDeductSchema.parse(input)).handler(async ({ data }) => {
+    const { db, logActivity } = await import("@/lib/hub.server");
+    const result = await db.rpc("shop_admin_wallet_deduct", { _profile: data.profileId, _amount: data.amount, _note: data.note });
+    if (result.error || !result.data) throw new Error("Insufficient balance or deduction could not be applied.");
+    await logActivity("wallet", "Wallet deducted", "warning", `${data.amount} USD: ${data.note}`);
+    return { ok: true };
   });
