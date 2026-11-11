@@ -28,7 +28,7 @@ export function BrandMark({ compact = false, tone = "default" }: { compact?: boo
     <Link to="/" className="flex min-w-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${BRAND.name} home`}>
       <img src={BRAND.mark} alt="" width={44} height={44} decoding="async" className="size-8 shrink-0 rounded-lg bg-ink object-cover shadow-soft ring-1 ring-border sm:size-11" />
       {!compact && (
-        <span className="flex min-w-0 flex-col leading-none">
+        <span className="flex min-w-0 flex-col leading-none max-[359px]:hidden">
           <span className="title-4 truncate font-bold sm:title-3">{BRAND.short}</span>
           <span className={`caption-4 mt-0.5 ${tone === "inverse" ? "text-muted-foreground" : "text-muted-foreground"}`}>{BRAND.suffix}</span>
         </span>
