@@ -1,5 +1,5 @@
 export const STUDENT_VOUCHER_CODE = "FOXGENSTUDENT10";
-type AccountOrder = { channel: string; customer_user_id: string | null; status: string; currency: string; total: number };
+type AccountOrder = { channel: string; customer_user_id: string | null; status: string; currency: string; total: number | null };
 export function accountOrderSummary(orders: AccountOrder[], userId: string) {
   const own = orders.filter(o => o.channel === "website" && o.customer_user_id === userId);
   const paid = own.filter(o => ["payment_confirmed", "awaiting_fulfillment", "delivered"].includes(o.status));
