@@ -77,7 +77,7 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
     await send(body.slice(0,3900),[...(p.purchasable?[[{text:'🛒 Buy · choose quantity',callback_data:`qty:${p.id}`}]]:[]),[support,{text:'⬅ Shop',callback_data:'shop'}]],p.image_url);return true;
   }
   const confirm=async(id:string,qty:number)=>{
-    const p=await shopProductById(id,'website');if(!p||!p.purchasable||!Number.isInteger(qty)||qty<1||qty>maxUnits(p)){await send('Quantity unavailable. Open the product again.');return;}
+    const p=await shopProductById(id,'website');const limits=await db.from('products').select('min_per_order').eq('id',id).maybeSingle();if(!p||!p.purchasable||!Number.isInteger(qty)||qty<(limits.data?.min_per_order??1)||qty>maxUnits(p)){await send('Quantity unavailable. Open the product again.');return;}
     const methods=await db.from('payment_methods').select('*').eq('channel','telegram').eq('enabled',true).order('display_order');
     const eligible=(methods.data??[]).filter(m=>['wallet','upi','binance_id','usdt_bep20'].includes(m.provider)&&(m.provider==='wallet'||!!m.recipient)&&(m.currency==='INR'?p.price_inr!==null:p.price_usdt!==null));
     const s=await buyerStats(profile);
@@ -86,7 +86,7 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
   if(action==='soon'){await send('Coming Soon — this payment method is not supported yet.');return true;}
   if(action.startsWith('qty:')) {
     const p=await shopProductById(action.slice(4),'website');if(!p){await send('Product unavailable.');return true;}
-    const limit=maxUnits(p);await send(`<b>${esc(p.name)}</b>\nUnit: ${esc(p.price_label)}\nAvailable purchase quantity: ${limit}`,[quantityChoices(limit).map(n=>({text:n===limit&&n>5?`All (${n})`:String(n),callback_data:`buy:${p.id}:${n}`})),[{text:'Custom quantity',callback_data:`customqty:${p.id}`}],...home]);return true;
+    const limits=await db.from('products').select('min_per_order').eq('id',p.id).maybeSingle();const limit=maxUnits(p);await send(`<b>${esc(p.name)}</b>\nUnit: ${esc(p.price_label)}\nAvailable purchase quantity: ${limit}`,[quantityChoices(limit,limits.data?.min_per_order??1).map(n=>({text:n===limit&&n>5?`All (${n})`:String(n),callback_data:`buy:${p.id}:${n}`})),[{text:'Custom quantity',callback_data:`customqty:${p.id}`}],...home]);return true;
   }
   if(action.startsWith('customqty:')){await saveState('quantity',{productId:action.slice(10)});await send('Send a whole number of units.');return true;}
   if(state?.state==='quantity'&&text&&!text.startsWith('/')){const data=state.data as Record<string,unknown>;await clear();await confirm(String(data['productId']),Number(text));return true;}

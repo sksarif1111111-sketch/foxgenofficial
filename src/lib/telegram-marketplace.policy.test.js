@@ -13,4 +13,8 @@ describe('Telegram marketplace rules', () => {
   it('preserves final elapsed delivery time', () => {
     expect(orderTime('2026-11-11T00:00:00Z','2026-11-11T00:18:00Z',30)).toBe('Delivered in 18 min');
   });
+  it('respects the configured minimum quantity', () => {
+    expect(quantityChoices(8,3)).toEqual([3,5,8]);
+    expect(quantityChoices(2,3)).toEqual([]);
+  });
 });
