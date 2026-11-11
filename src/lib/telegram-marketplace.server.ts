@@ -2,6 +2,7 @@ import { db, tg, type Profile } from './hub.server';
 import { createOrder, maxUnits, shopProductById, shopProductRows, cancelOrder, submitPayment } from './shop.server';
 import { quantityChoices, orderTime } from './telegram-marketplace.policy';
 import { memberLabel } from './member-number';
+import type { Json } from '@/integrations/supabase/types';
 type Button = { text: string; callback_data?: string; url?: string; copy_text?: { text: string } };
 type Keyboard = Button[][];
 const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -34,7 +35,7 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
   const support: Button = { text:'💬 Help', url:settings['support_url'] || 'https://t.me/FoXGENSPORT' };
   const session = await db.from('shop_bot_sessions').select('*').eq('profile_id',profile.id).maybeSingle();
   const state = session.data && Date.now()-Date.parse(session.data.updated_at)<1800000 ? session.data : null;
-  const saveState = async (name:string,data:Record<string,unknown>) => { await db.from('shop_bot_sessions').upsert({profile_id:profile.id,state:name,data,updated_at:new Date().toISOString()}); };
+  const saveState = async (name:string,data:Record<string,Json>) => { await db.from('shop_bot_sessions').upsert({profile_id:profile.id,state:name,data,updated_at:new Date().toISOString()}); };
   const clear = async () => { await db.from('shop_bot_sessions').delete().eq('profile_id',profile.id); };
   const detail = async (id:string) => {
     const o = await db.from('shop_orders').select('*').eq('id',id).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();
@@ -101,7 +102,7 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
     }return true;
   }
   if(action.startsWith('proof:')){const o=await db.from('shop_orders').select('id,status').eq('id',action.slice(6)).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();if(o.data?.status!=='awaiting_payment'){await send('This order is not awaiting payment.');return true;}await saveState('reference',{orderId:o.data.id});await send('Send your transaction ID / UTR (6–200 characters).');return true;}
-  if(state?.state==='reference'&&text&&!text.startsWith('/')){if(text.length<6||text.length>200){await send('Enter the exact transaction ID (6–200 characters).');return true;}await saveState('evidence',{...(state.data as Record<string,unknown>),reference:text});await send('Send the payment screenshot as a photo.');return true;}
+  if(state?.state==='reference'&&text&&!text.startsWith('/')){if(text.length<6||text.length>200){await send('Enter the exact transaction ID (6–200 characters).');return true;}await saveState('evidence',{...(state.data as Record<string,Json>),reference:text});await send('Send the payment screenshot as a photo.');return true;}
   if(state?.state==='evidence'&&input.photoId){const data=state.data as Record<string,unknown>;const id=String(data['orderId']);const o=await db.from('shop_orders').select('id').eq('id',id).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();if(!o.data)throw new Error('Order unavailable');await submitPayment(id,String(data['reference']),`telegram-file:${input.photoId}`);await clear();await send('⏳ Proof submitted. Your payment is under review; no payment has been confirmed yet.',[[{text:'📦 Track order',callback_data:`order:${id}`}],...home]);return true;}
   if(action==='myorders'||action.startsWith('myorders:')) {const page=Math.max(1,Number(action.split(':')[1])||1);const orders=await db.from('shop_orders').select('id,order_number,status').eq('profile_id',profile.id).eq('channel','telegram').order('created_at',{ascending:false}).range((page-1)*8,page*8);await send(`<b>MY ORDERS</b> · Page ${page}\nSelect an order.`,[...(orders.data??[]).slice(0,8).map(o=>[{text:`${o.order_number} · ${o.status.replace(/_/g,' ')}`,callback_data:`order:${o.id}`}]),[{text:'◀ Previous',callback_data:`myorders:${Math.max(1,page-1)}`},...(orders.data?.length===9?[{text:'Next ▶',callback_data:`myorders:${page+1}`}]:[])],...home]);return true;}
   if(action.startsWith('order:')){await detail(action.slice(6));return true;}
