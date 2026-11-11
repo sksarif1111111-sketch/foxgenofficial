@@ -33,9 +33,14 @@ describe('single Telegram navigation screen', () => {
     expect(actions.filter(a => a === 'shop')).toHaveLength(1);
     expect(actions.filter(a => a === 'storeprofile')).toHaveLength(1);
     expect(new Set(actions).size).toBe(actions.length);
-    for (const action of ['me', 'rewards', 'invite', 'tasks', 'extension']) expect(actions).toContain(action);
+    expect(actions).toEqual(['shop', 'wallet', 'rewards', 'storeprofile', 'support', 'help']);
   });
   it('keeps invitations hidden for inactive buyers', () => {
     expect(telegramHomeKeyboard(false, (_, fallback) => fallback).flat().map(b => b.callback_data)).not.toContain('invite');
+  });
+  it('does not send a duplicate screen when Telegram throttles an edit', async () => {
+    const calls = [];
+    await telegramRenderer(async method => { calls.push(method); return { ok: false, error_code: 429, parameters: { retry_after: 9 } }; }, 12, 34)('Home', keyboard);
+    expect(calls).toEqual(['editMessageText']);
   });
 });
