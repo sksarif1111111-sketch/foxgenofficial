@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { telegramRenderer, telegramHomeKeyboard } from "@/lib/telegram-navigation";
+import { telegramRenderer, telegramHomeKeyboard, styledKeyboard } from "@/lib/telegram-navigation";
 import { botFailureMessage, isReadOnlyBotAction } from "@/lib/telegram-recovery";
 
 type TgUser = { id: number; username?: string; first_name?: string; last_name?: string };
@@ -200,7 +200,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             text: body,
             parse_mode: "HTML",
             disable_web_page_preview: true,
-            reply_markup: { inline_keyboard: keyboard },
+            reply_markup: { inline_keyboard: styledKeyboard(keyboard) },
           });
 
         /**
