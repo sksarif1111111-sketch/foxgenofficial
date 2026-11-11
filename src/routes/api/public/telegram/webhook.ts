@@ -858,6 +858,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             await render(
               `${E("profile", "👤")} <b>MY PROFILE</b>\n${LINE}\n` +
                 `Name: <b>${esc(who)}</b>\n` +
+                `Member: <b>M-${String(fresh.member_number).padStart(6, "0")}</b>\n` +
                 `Status: <b>${fresh.status === "active" ? "Active ✅" : "Pending ⏳"}</b>\n` +
                 `${E("credits", "💰")} Credits: <b>${fresh.credits_available}</b>\n` +
                 `${E("invite", "👥")} Referrals: <b>${refs}</b>\n` +

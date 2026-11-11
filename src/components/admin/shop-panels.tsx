@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { DeliveryCountdown } from "@/components/admin/delivery-countdown";
+import { memberLabel } from "@/lib/member-number";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { useServerFn } from "@tanstack/react-start";
@@ -1002,6 +1003,7 @@ function PaymentMethodsEditor({
 
 type WalletAccount = {
   id: string;
+  member_number?: number | null;
   name: string;
   username: string | null;
   telegram_user_id: number | null;
@@ -1098,10 +1100,10 @@ export function WalletPanel({ notify }: { notify: Notify }) {
             <div>
               <p className="text-sm font-semibold">{row.name}</p>
               <p className="text-xs text-muted-foreground">
-                {row.username ? `@${row.username}` : row.telegram_user_id ?? "—"}
+                {memberLabel(row.member_number)} · {row.username ? `@${row.username}` : row.telegram_user_id ?? "—"}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 max-w-full">
               <span className="text-sm font-black text-primary">${row.balance.toFixed(2)}</span>
               <input
                 value={amounts[row.id] ?? ""}

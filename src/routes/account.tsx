@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { customerMemberNumber } from "@/lib/customer-shop.functions";
+import { memberLabel } from "@/lib/member-number";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -33,6 +35,8 @@ const TOKEN_KEY = "foxgen_hub_token";
 
 function AccountPage() {
   const { user, ready } = useCustomerSession();
+  const fMember = useServerFn(customerMemberNumber);
+  const member = useQuery({ queryKey: ["customer-member", user?.id], queryFn: () => fMember(), enabled: !!user });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [token, setToken] = useState<string | null>(null);
@@ -62,6 +66,7 @@ function AccountPage() {
       <SiteNav />
       <main id="main" className="container-page py-10 sm:py-14">
         {user ? <section className="space-y-6">
+          <p className="caption-3 text-muted-foreground">{memberLabel(member.data)}</p>
           <div className="flex flex-wrap items-center justify-between gap-4"><div><h1 className="heading-4">My store account</h1><p className="body-6 mt-2 break-all text-muted-foreground">{user.email}</p><p className="caption-3 mt-2 text-success">Email verified</p></div><Button variant="outline" onClick={async () => { await queryClient.cancelQueries(); queryClient.clear(); localStorage.removeItem(TOKEN_KEY); await supabase.auth.signOut(); await navigate({ to: "/login", search: { redirect: "/account" }, replace: true }); }}><LogOut className="size-4"/>Sign out</Button></div>
           <Button asChild><Link to="/shop" search={{ view: "orders" }}><Receipt className="size-4"/>My website orders</Link></Button>
         </section> : !ready || token === null || (token && hub.isLoading) ? (

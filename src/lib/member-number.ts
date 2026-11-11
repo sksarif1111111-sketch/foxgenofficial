@@ -1,0 +1,1 @@
+export const memberLabel = (number: number | string | null | undefined) => number == null ? "" : `M-${String(number).padStart(6, "0")}`;

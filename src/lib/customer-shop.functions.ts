@@ -3,6 +3,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { ownsWebsiteOrder } from "@/lib/customer-auth.policy";
 import type { MyOrder } from "@/lib/shop.functions";
+export const customerMemberNumber = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+  const { db } = await import("./hub.server");
+  const result = await db.from("shop_customer_accounts").select("member_number").eq("user_id", context.userId).maybeSingle();
+  return result.data?.member_number ?? null;
+});
 
 async function ownOrder(id: string, userId: string) {
   const { db } = await import("@/lib/hub.server");

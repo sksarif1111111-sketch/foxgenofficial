@@ -414,7 +414,7 @@ export const shopWalletAccounts = createServerFn({ method: "POST" }).middleware(
     const { db } = await import("@/lib/hub.server");
     let query = db
       .from("profiles")
-      .select("id, first_name, last_name, telegram_username, telegram_user_id")
+      .select("id, first_name, last_name, telegram_username, telegram_user_id,member_number")
       .order("created_at", { ascending: false })
       .limit(40);
     const search = data.search?.trim();
@@ -430,6 +430,7 @@ export const shopWalletAccounts = createServerFn({ method: "POST" }).middleware(
       : { data: [] as Array<Record<string, unknown>> };
     return (profiles ?? []).map((p) => ({
       id: p.id as string,
+      member_number: p.member_number,
       name: [p.first_name, p.last_name].filter(Boolean).join(" ") || (p.telegram_username as string) || "Customer",
       username: (p.telegram_username as string) ?? null,
       telegram_user_id: p.telegram_user_id as number | null,
