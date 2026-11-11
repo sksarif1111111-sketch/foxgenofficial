@@ -61,3 +61,32 @@ Errors: 401 invalid/missing credential, 400 invalid query, 404 unknown resource,
 503 key not configured or service unavailable. Responses are never cacheable.
 No cross-origin browser access is enabled: connect server-to-server.
 Rotate the shared key using the secure secret form in both projects.
+
+## Separate operator integration
+
+The GET API above remains read-only and non-contact. The owner's explicit operator-to-operator exception applies only to the following authenticated paths.
+
+### Actions
+
+`POST /api/public/shop/v1/actions` requires **SHOP_CRM_ACTION_KEY**, not the read-only key. Store the same shared action key securely on the CRM server. It grants payment approval/rejection, delivery and buyer messages; do not give it to customers.
+
+Every body has `order_id` (UUID) and `action`:
+- `approve`: optional `notes`, `send` (boolean).
+- `reject`: required `reason` (3–600 characters).
+- `request_info`: required `message` (3–600 characters).
+- `add_fulfillment`: `kind` (`link`, `code`, `instructions`) and `content` (3–4000 characters).
+- `deliver_email`, `deliver_telegram`: no additional fields.
+
+These call the same server-only helpers as Admin and record actor `crm`. Errors: 400 invalid body/state/material, 401 invalid action key, 404 unknown order, 503 unavailable data service. No stacks or secrets are returned. A successful Telegram job is not resent; email retry behavior remains available. Both channels can deliver the same confirmed order, without resetting its first delivery timestamp.
+
+### Push to FoxgenCRM
+
+Sender: `POST https://foxgencrm.lovable.app/api/public/store/sync`, authenticated with server-only **FOXGEN_CRM_API_KEY** issued in CRM → FoxGen Store. This is independent of both Store API keys.
+
+Records use entity `orders`, plain order UUID `external_id`, original raw status and stable source `updated_at`. Names include product quantities and order number. Stars amounts use stored purchase-time `price_usdt` snapshots for the USDT equivalent; original XTR/Stars remain in `data`. Other currencies remain separate.
+
+Operator data includes customer name, delivery email, Telegram ID, payment method/reference, confirmation/delivery timestamps, SLA minutes, item names/quantities and fulfillment existence. It **never** includes actual activation codes, credentials, fulfillment content, passwords, tokens or keys. This contact-sharing exception does not widen GET exports.
+
+The server-only outbox retains order-update snapshots and attempts/errors; rows are acknowledged only after CRM returns `{ "ok": true }`. Upserts must use the UUID and source timestamp. Failed transfers remain queued. Buying shows pending/stuck totals and last success. A minute retry is armed while work remains and paused after drain, preventing empty recurring checks (up to 1440 retries/day while blocked; frequent retries can increase Cloud usage). The managed job is `shop-crm-outbox-retry`; do not delete/recreate it without updating the queue functions' job binding. The hosted callback currently returns 404 for the new route; review and publish these changes, then verify the managed callback before relying on automatic retries. Local authenticated flush succeeded and CRM acknowledged the existing unpaid order; no paid delivery has been tested.
+
+Email delivery still requires RESEND_API_KEY and a verified `shop_email_from` setting; neither is configured yet. Telegram verification uses the existing bot-token-derived secret.

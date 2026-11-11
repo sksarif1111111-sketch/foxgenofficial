@@ -130,11 +130,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // Match currency and amount against the order before accepting the payment.
           const { data: pending } = await db
             .from("shop_orders")
-            .select("id, status, stars_total, telegram_charge_id")
+            .select("id, status, stars_total, telegram_charge_id, telegram_user_id")
             .eq("id", sp.invoice_payload)
             .maybeSingle();
           const amountOk =
-            !!pending && sp.currency === "XTR" && Number(pending.stars_total) === Number(sp.total_amount);
+            !!pending && pending.telegram_user_id === update.message.from?.id && sp.currency === "XTR" && Number(pending.stars_total) === Number(sp.total_amount);
           if (!pending || pending.telegram_charge_id) {
             // Unknown order or this payment was already processed: never confirm twice.
             return Response.json({ ok: true, duplicate: !!pending });
@@ -149,10 +149,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             await logBotError("payment", "Stars amount/currency mismatch", update.message.from?.id ?? null, pending.id);
             return Response.json({ ok: true });
           }
+          const { orderRequiresEmail } = await import("@/lib/shop.server");
+          const requiresEmail = await orderRequiresEmail({ id: pending.id, channel: "telegram" });
           const { data: updated } = await db
             .from("shop_orders")
             .update({
-              status: "awaiting_email",
+              status: requiresEmail ? "awaiting_email" : "awaiting_fulfillment",
               stock_consumed: true,
               telegram_charge_id: sp.telegram_payment_charge_id,
               submitted_at: now,
@@ -175,7 +177,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             chat_id: update.message.chat.id,
             text:
               `⭐ Payment received for order <b>${updated.order_number}</b>.\n\n` +
-              `Please enter the email address where you want to receive your activation link or product access.`,
+              (requiresEmail ? `Please enter the email address where you want to receive your activation link or product access.` : `Your access will be delivered right here in this chat. Please wait while we prepare your order.`),
             parse_mode: "HTML",
           });
           return Response.json({ ok: true });
@@ -396,7 +398,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 .from("shop_orders")
                 .update({ status: "awaiting_fulfillment", updated_at: new Date().toISOString() })
                 .eq("id", pending.id)
-                .eq("status", "under_review");
+                .eq("status", "under_review")
+                .not("confirmed_at", "is", null);
               const minutes = await reviewMinutes();
               await send(
                 `Please wait. My owner is checking your payment.\n` +

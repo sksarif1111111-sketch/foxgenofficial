@@ -1,6 +1,9 @@
+import { Button } from "@/components/ui/button";
+import { DeliveryCountdown } from "@/components/admin/delivery-countdown";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { useServerFn } from "@tanstack/react-start";
+import { adminSaveSettings } from "@/lib/hubadmin.functions";
 import {
   shopAddFulfillment,
   shopAdminProducts,
@@ -16,6 +19,7 @@ import {
   shopSavePaymentMethod,
   shopSaveProduct,
   shopSendDelivery,
+  shopSendTelegramDelivery,
   shopSetProductState,
   shopDeleteProduct,
   shopSummary,
@@ -52,6 +56,9 @@ const DELIVERY_REASONS: Record<string, string> = {
   no_delivery_material: "Add a delivery link, activation code or workspace instructions first.",
   payment_not_confirmed: "Approve the payment before sending delivery.",
   no_email: "This order has no confirmed delivery email yet.",
+  telegram_material_too_long: "Delivery material is too long for one Telegram message. Shorten it or use email.",
+  telegram_send_failed: "Telegram could not deliver. Check the delivery job and retry.",
+  delivery_in_progress: "Delivery is already in progress.",
   email_send_failed: "The email provider rejected the send. See the delivery jobs list for the error.",
   sent: "Delivery email sent.",
   pending: "Payment approved. Add delivery material, then send.",
@@ -77,8 +84,13 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
   const fInfo = useServerFn(shopRequestInfo);
   const fFulfill = useServerFn(shopAddFulfillment);
   const fSend = useServerFn(shopSendDelivery);
+  const fSendTelegram = useServerFn(shopSendTelegramDelivery);
+  const [now, setNow] = useState(0);
+  useEffect(() => { setNow(Date.now()); const timer = setInterval(() => setNow(Date.now()), 5000); return () => clearInterval(timer); }, []);
   const fDraftEmail = useServerFn(shopDraftEmail);
   const fSaveEmail = useServerFn(shopSaveEmailDraft);
+  const fSaveSettings = useServerFn(adminSaveSettings);
+  const [slaDraft, setSlaDraft] = useState("30");
 
   const [summary, setSummary] = useState<BuyingSummary | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -97,6 +109,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
   const load = useCallback(async () => {
     const [s, o] = await Promise.all([fSummary({ data: undefined }), fOrders({ data: { status, search } })]);
     setSummary(s);
+    setSlaDraft(String(s.deliverySlaMinutes));
     setRows(o as Row[]);
   }, [fOrders, fSummary, search, status]);
 
@@ -128,13 +141,14 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
 
   return (
     <section className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {[
           ["Pending review", summary?.pendingReview],
           ["Awaiting email", summary?.awaitingEmail],
           ["Awaiting delivery", summary?.awaitingDelivery],
           ["Completed", summary?.completed],
           ["Rejected", summary?.rejected],
+          ["Orders overdue", now ? (summary?.deliveryDeadlines ?? []).filter(t => Date.parse(t) + (summary?.deliverySlaMinutes ?? 30) * 60000 <= now).length : summary?.ordersOverdue],
         ].map(([label, value]) => (
           <div key={String(label)} className={card}>
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{label}</p>
@@ -143,6 +157,16 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
         ))}
       </div>
 
+      <p className="text-xs text-muted-foreground">CRM sync · {summary?.crmSync.configured ? "Connected" : "Key missing"} · Last success: {summary?.crmSync.lastSuccess ? new Date(summary.crmSync.lastSuccess).toLocaleString() : "Not yet"} · {summary?.crmSync.pending ?? 0} queued · <span className={summary?.crmSync.stuck ? "text-destructive" : ""}>{summary?.crmSync.stuck ?? 0} stuck (5+ attempts)</span></p>
+      <div className="flex flex-wrap items-end gap-3">
+        <Field label="Delivery SLA (minutes)"><input type="number" min="1" max="1440" value={slaDraft} onChange={e => setSlaDraft(e.target.value)} className={input} /></Field>
+        <Button variant="outline" disabled={busy} onClick={() => void act(async () => {
+          const minutes = Number(slaDraft);
+          if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) throw new Error("Enter 1–1440 minutes.");
+          await fSaveSettings({ data: { values: { shop_delivery_sla_minutes: String(minutes) } } });
+          notify("Delivery SLA saved.");
+        })}>Save SLA</Button>
+      </div>
       <div className={card}>
         <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Confirmed revenue by currency</p>
         <div className="mt-2 flex flex-wrap gap-4">
@@ -179,7 +203,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
           <article key={String(row["id"])} className={`${card} space-y-2`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-bold">{String(row["order_number"])}</span>
-              <span className="rounded-full border border-border px-3 py-1 text-xs">{String(row["status"])}</span>
+              <div className="flex flex-wrap items-center gap-2"><DeliveryCountdown order={row as { status: string; confirmed_at: string | null; delivered_at: string | null }} minutes={summary?.deliverySlaMinutes ?? 30} now={now} /><span className="rounded-full border border-border px-3 py-1 text-xs">{String(row["status"])}</span></div>
             </div>
             <p className="text-sm text-muted-foreground">
               {(row["items"] as Array<{ product_name: string; quantity: number }>)
@@ -223,7 +247,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
             </button>
           </div>
           <div className="grid gap-2 text-sm sm:grid-cols-2">
-            <p>Status: {String(open.order["status"])}</p>
+            <p className="flex flex-wrap items-center gap-2">Status: {String(open.order["status"])} <DeliveryCountdown order={open.order} minutes={summary?.deliverySlaMinutes ?? 30} now={now} /></p>
             <p>
               Amount:{" "}
               {open.order["currency"] === "XTR"
@@ -276,7 +300,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
               >
                 Approve and Send
               </button>
-              <button
+              {open.order.delivery_emails && (              <Button
                 type="button"
                 disabled={busy}
                 className={ghostBtn}
@@ -288,8 +312,13 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                   })
                 }
               >
-                Send / Retry Delivery
-              </button>
+                Send Delivery
+              </Button>)}
+              {open.order.telegram_user_id != null && <Button type="button" variant="outline" disabled={busy} className={ghostBtn} onClick={() => void act(async () => {
+                const result = await fSendTelegram({ data: { id: open.order.id } });
+                notify(result.ok ? "Telegram delivery sent." : (DELIVERY_REASONS[result.reason ?? ""] ?? "Telegram delivery failed. Check delivery jobs."));
+                await openOrder(open.order.id);
+              })}>Send via Telegram</Button>}
             </div>
             <Field label="Rejection reason or information request">
               <input value={reason} onChange={(e) => setReason(e.target.value)} className={input} />

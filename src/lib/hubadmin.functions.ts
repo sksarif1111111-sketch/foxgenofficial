@@ -289,6 +289,8 @@ export const adminSaveSettings = createServerFn({ method: "POST" }).middleware([
   .inputValidator((input: unknown) => z.object({ values: z.record(z.string(), z.string()) }).parse(input))
   .handler(async ({ data }) => {
     const { setSetting } = await import("@/lib/hub.server");
+    const sla = data.values["shop_delivery_sla_minutes"];
+    if (sla !== undefined && (!Number.isInteger(Number(sla)) || Number(sla) < 1 || Number(sla) > 1440)) throw new Error("Delivery SLA must be 1–1440 minutes.");
     for (const [key, value] of Object.entries(data.values)) await setSetting(key, value);
     return { ok: true };
   });

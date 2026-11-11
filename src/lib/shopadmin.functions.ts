@@ -7,6 +7,10 @@ const idInput = z.object({ id: z.string().uuid() });
 /* --------------------------------- Buying --------------------------------- */
 
 export type BuyingSummary = {
+  deliverySlaMinutes: number;
+  crmSync: { configured: boolean; lastSuccess: string | null; pending: number; stuck: number };
+  ordersOverdue: number;
+  deliveryDeadlines: string[];
   pendingReview: number;
   awaitingEmail: number;
   awaitingDelivery: number;
@@ -16,9 +20,18 @@ export type BuyingSummary = {
 };
 
 export const shopSummary = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async (): Promise<BuyingSummary> => {
-  const { db } = await import("@/lib/hub.server");
-  const { data } = await db.from("shop_orders").select("status, currency, total, stars_total");
-  const rows = data ?? [];
+  const { db, getSettings } = await import("@/lib/hub.server");
+  const { deliverySlaMinutes: parseSla, deliveryClock } = await import("@/lib/shop-fulfillment");
+  const { crmSyncStatus } = await import("@/lib/shop-crm.server");
+  const [settings, crmSync] = await Promise.all([getSettings(), crmSyncStatus()]);
+  const deliverySlaMinutes = parseSla(settings["shop_delivery_sla_minutes"]);
+  const rows: Array<{ status: string; currency: string; total: number | null; stars_total: number | null; confirmed_at: string | null; delivered_at: string | null }> = [];
+  for (let offset = 0; ; offset += 1000) {
+    const result = await db.from("shop_orders").select("status,currency,total,stars_total,confirmed_at,delivered_at").order("id").range(offset, offset + 999);
+    if (result.error) throw new Error("Could not load order summary.");
+    rows.push(...(result.data ?? []));
+    if ((result.data ?? []).length < 1000) break;
+  }
   const revenueMap = new Map<string, number>();
   for (const row of rows) {
     if (!["payment_confirmed", "awaiting_fulfillment", "delivered"].includes(row.status)) continue;
@@ -29,6 +42,9 @@ export const shopSummary = createServerFn({ method: "POST" }).middleware([requir
     }
   }
   return {
+    deliverySlaMinutes, crmSync,
+    deliveryDeadlines: rows.filter(r => ["payment_confirmed", "awaiting_fulfillment"].includes(r.status) && r.confirmed_at).map(r => String(r.confirmed_at)),
+    ordersOverdue: rows.filter(r => deliveryClock(r, deliverySlaMinutes)?.overdue).length,
     pendingReview: rows.filter((r) => r.status === "under_review" || r.status === "payment_submitted").length,
     awaitingEmail: rows.filter((r) => r.status === "awaiting_email").length,
     awaitingDelivery: rows.filter((r) => r.status === "awaiting_fulfillment" || r.status === "payment_confirmed").length,
@@ -122,93 +138,22 @@ export const shopApproveOrder = createServerFn({ method: "POST" }).middleware([r
     z.object({ id: z.string().uuid(), notes: z.string().max(600).optional(), send: z.boolean().optional() }).parse(input),
   )
   .handler(async ({ data }) => {
-    const { db, logActivity } = await import("@/lib/hub.server");
-    const { orderEvent, notifyBuyerTelegram, sendFulfillmentEmail } = await import("@/lib/shop.server");
-    const { data: order } = await db.from("shop_orders").select("*").eq("id", data.id).maybeSingle();
-    if (!order) throw new Error("Order not found.");
-
-    if (!order.stock_consumed) {
-      const now = new Date().toISOString();
-      const { data: updated } = await db
-        .from("shop_orders")
-        .update({
-          status: "awaiting_fulfillment",
-          stock_consumed: true,
-          confirmed_at: now,
-          reviewed_at: now,
-          review_notes: data.notes ?? null,
-          updated_at: now,
-        })
-        .eq("id", data.id)
-        .eq("stock_consumed", false)
-        .in("status", ["payment_submitted", "awaiting_email", "under_review"])
-        .select("id");
-      if (!updated || updated.length === 0) {
-        if (!data.send) throw new Error("This order is not waiting for payment approval.");
-      } else {
-        await orderEvent(data.id, "payment_confirmed", "admin", data.notes ?? "");
-        await logActivity("shop", "Payment approved", "success", order.order_number);
-        await notifyBuyerTelegram(
-          data.id,
-          "Payment successful. Please wait while we prepare your access. We will notify you when your activation email is sent.",
-        );
-      }
-    }
-
-    if (data.send) {
-      const result = await sendFulfillmentEmail(data.id);
-      if (!result.ok) return { ok: true, delivery: result.reason };
-      return { ok: true, delivery: "sent" };
-    }
-    return { ok: true, delivery: "pending" };
+    const actions = await import("@/lib/shop-actions.server");
+    return actions.shopApproveOrder(data);
   });
 
 export const shopRejectOrder = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid(), reason: z.string().trim().min(3).max(600) }).parse(input))
   .handler(async ({ data }) => {
-    const { db, logActivity } = await import("@/lib/hub.server");
-    const { orderEvent, notifyBuyerTelegram, refundWalletOrder } = await import("@/lib/shop.server");
-    const { data: order } = await db.from("shop_orders").select("*").eq("id", data.id).maybeSingle();
-    if (!order) throw new Error("Order not found.");
-    if (order.stock_consumed) throw new Error("A confirmed order cannot be rejected here.");
-    await db.rpc("shop_release_stock", { _order_id: data.id });
-    await db
-      .from("shop_orders")
-      .update({
-        status: "rejected",
-        reject_reason: data.reason,
-        rejected_at: new Date().toISOString(),
-        reviewed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", data.id);
-    await orderEvent(data.id, "rejected", "admin", data.reason);
-    await refundWalletOrder(order as Record<string, unknown>, `Order ${order.order_number} rejected`);
-    await logActivity("shop", "Payment rejected", "warning", `${order.order_number} — ${data.reason}`);
-    await notifyBuyerTelegram(
-      data.id,
-      `Your order ${order.order_number} could not be confirmed.\nReason: ${data.reason}\nIf you believe this is a mistake, contact support with your transaction reference.`,
-    );
-    return { ok: true };
+    const actions = await import("@/lib/shop-actions.server");
+    return actions.shopRejectOrder(data);
   });
 
 export const shopRequestInfo = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid(), message: z.string().trim().min(3).max(600) }).parse(input))
   .handler(async ({ data }) => {
-    const { db } = await import("@/lib/hub.server");
-    const { orderEvent, notifyBuyerTelegram } = await import("@/lib/shop.server");
-    const { data: order } = await db.from("shop_orders").select("order_number").eq("id", data.id).maybeSingle();
-    if (!order) throw new Error("Order not found.");
-    await db
-      .from("shop_orders")
-      .update({ info_request: data.message, updated_at: new Date().toISOString() })
-      .eq("id", data.id);
-    await orderEvent(data.id, "info_requested", "admin", data.message);
-    await notifyBuyerTelegram(
-      data.id,
-      `We need a little more information for order ${order.order_number}:\n${data.message}`,
-    );
-    return { ok: true };
+    const actions = await import("@/lib/shop-actions.server");
+    return actions.shopRequestInfo(data);
   });
 
 export const shopAddFulfillment = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
@@ -222,11 +167,15 @@ export const shopAddFulfillment = createServerFn({ method: "POST" }).middleware(
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { db } = await import("@/lib/hub.server");
-    const { orderEvent } = await import("@/lib/shop.server");
-    await db.from("shop_fulfillments").insert({ order_id: data.id, kind: data.kind, content: data.content });
-    await orderEvent(data.id, "fulfillment_added", "admin", data.kind);
-    return { ok: true };
+    const actions = await import("@/lib/shop-actions.server");
+    return actions.shopAddFulfillment(data);
+  });
+
+export const shopSendTelegramDelivery = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
+  .inputValidator((input: unknown) => idInput.parse(input))
+  .handler(async ({ data }) => {
+    const { sendTelegramDelivery } = await import("@/lib/shop.server");
+    return sendTelegramDelivery(data.id);
   });
 
 export const shopSendDelivery = createServerFn({ method: "POST" }).middleware([requireAdminPassword])

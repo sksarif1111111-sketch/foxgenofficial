@@ -1,4 +1,5 @@
 import { db, getSettings, logActivity, tg } from "@/lib/hub.server";
+import { needsDeliveryEmail, telegramDeliveryText } from "@/lib/shop-fulfillment";
 
 export type ShopChannel = "website" | "telegram";
 
@@ -117,7 +118,7 @@ export function shapeProduct(row: Record<string, unknown>, channel: ShopChannel)
     max_per_order: Number(row["max_per_order"] ?? 1),
     availability,
     delivery_method: String(row["delivery_method"] ?? "email_manual"),
-    requires_buyer_email: row["requires_buyer_email"] !== false,
+    requires_buyer_email: channel === "telegram" ? row["requires_buyer_email"] === true : row["requires_buyer_email"] !== false,
     installation_instructions: (row["installation_instructions"] as string) ?? null,
     download_url: (row["download_url"] as string) ?? null,
     tutorial_url: (row["tutorial_url"] as string) ?? null,
@@ -333,6 +334,7 @@ export async function createOrder(input: {
       features: product.features,
       terms: product.terms,
       delivery_method: product.delivery_method,
+      requires_buyer_email: product.requires_buyer_email,
       price_usdt: product.price_usdt,
       price_inr: product.price_inr,
       price_stars: product.price_stars,
@@ -368,7 +370,7 @@ export async function createOrder(input: {
       .from("shop_orders")
       .update({
         payment_reference: `WALLET-${order.order_number}`,
-        status: "awaiting_email",
+        status: input.channel === "telegram" && !product.requires_buyer_email ? "under_review" : "awaiting_email",
         submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -422,7 +424,7 @@ export async function submitPayment(orderId: string, reference: string, evidence
     .update({
       payment_reference: trimmed,
       payment_evidence_url: evidenceUrl,
-      status: order.delivery_emails ? "under_review" : "awaiting_email",
+      status: order.delivery_emails || !await orderRequiresEmail(order) ? "under_review" : "awaiting_email",
       submitted_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
@@ -447,7 +449,7 @@ export async function setOrderEmails(orderId: string, rawEmails: string) {
     await db.from("shop_order_items").update({ delivery_email: email }).eq("id", item.id);
   }
 
-  const nextStatus = order.submitted_at ? "under_review" : order.status;
+  const nextStatus = order.confirmed_at ? "awaiting_fulfillment" : order.submitted_at ? "under_review" : order.status;
   await db
     .from("shop_orders")
     .update({
@@ -507,7 +509,7 @@ export async function notifyBuyerTelegram(orderId: string, text: string) {
 
 export type EmailResult = { ok: boolean; reason?: string };
 
-export async function sendFulfillmentEmail(orderId: string): Promise<EmailResult> {
+export async function sendFulfillmentEmail(orderId: string, actor = "system"): Promise<EmailResult> {
   const settings = await getSettings();
   const { data: order } = await db.from("shop_orders").select("*").eq("id", orderId).maybeSingle();
   if (!order) return { ok: false, reason: "order_not_found" };
@@ -594,9 +596,9 @@ Thank you for choosing FOXGEN STORE.`;
 
   await db
     .from("shop_orders")
-    .update({ status: "delivered", delivered_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ status: "delivered", delivered_at: order.delivered_at ?? new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", orderId);
-  await orderEvent(orderId, "delivered", "system", targets.join(", "));
+  await orderEvent(orderId, "delivered", actor, targets.join(", "));
   await notifyBuyerTelegram(
     orderId,
     `Your access email has been sent to ${targets.join(", ")}. Please check your inbox and spam folder.`,
@@ -605,6 +607,61 @@ Thank you for choosing FOXGEN STORE.`;
 }
 
 export { db };
+
+export async function orderRequiresEmail(order: { id: string; channel: string; telegram_user_id?: number | null }) {
+  if (needsDeliveryEmail(order, false)) return true;
+  const { data: items, error } = await db.from("shop_order_items").select("product_id,snapshot").eq("order_id", order.id);
+  if (error) throw new Error("Could not check email requirements.");
+  const ids = (items ?? []).map(i => i.product_id).filter((id): id is string => typeof id === "string");
+  const products = ids.length ? await db.from("products").select("id,requires_buyer_email").in("id", ids) : { data: [], error: null };
+  if (products.error) throw new Error("Could not check email requirements.");
+  return (items ?? []).some(i => {
+    const snapshot = i.snapshot as Record<string, unknown> | null;
+    return snapshot?.["requires_buyer_email"] === true || (products.data ?? []).some(p => p.id === i.product_id && p.requires_buyer_email === true);
+  });
+}
+
+export async function sendTelegramDelivery(orderId: string, actor = "admin"): Promise<EmailResult> {
+  const { data: order } = await db.from("shop_orders").select("*").eq("id", orderId).maybeSingle();
+  if (!order) return { ok: false, reason: "order_not_found" };
+  if (!order.telegram_user_id) return { ok: false, reason: "no_telegram" };
+  // Email-first delivery may be followed by Telegram delivery, but not an unrelated delivered state.
+  if (order.status === "delivered") {
+    const email = await db.from("shop_delivery_jobs").select("id").eq("order_id", orderId).eq("channel", "email").eq("status", "sent").limit(1);
+    if (!email.data?.length) return { ok: false, reason: "payment_not_confirmed" };
+  } else if (!["payment_confirmed", "awaiting_fulfillment"].includes(order.status)) return { ok: false, reason: "payment_not_confirmed" };
+  const [{ data: items, error: itemsError }, { data: materials, error: materialError }, settings] = await Promise.all([
+    db.from("shop_order_items").select("product_name,quantity").eq("order_id", orderId),
+    db.from("shop_fulfillments").select("content").eq("order_id", orderId).order("created_at"), getSettings(),
+  ]);
+  if (itemsError || materialError) return { ok: false, reason: "delivery_read_failed" };
+  if (!materials?.length) return { ok: false, reason: "no_delivery_material" };
+  const text = telegramDeliveryText((items ?? []).map(i => `${i.product_name} x${i.quantity}`).join(", "), materials.map(m => m.content), order.order_number, settings["support_url"] ?? settings["whatsapp_support_url"] ?? "our support channel");
+  // Telegram allows 4096 characters; never truncate credentials or instructions.
+  if (text.length > 4096) return { ok: false, reason: "telegram_material_too_long" };
+  const lock = `delivery:${orderId}`;
+  const { acquireLock, releaseLock } = await import("@/lib/hub.server");
+  if (!await acquireLock(lock, 60000)) return { ok: false, reason: "delivery_in_progress" };
+  try {
+    const { data: previous } = await db.from("shop_delivery_jobs").select("id,payload").eq("order_id", orderId).eq("channel", "telegram").eq("status", "sent");
+    if ((previous ?? []).some(j => (j.payload as Record<string, unknown>)?.["fulfillment"] === true)) return { ok: true, reason: "already_sent" };
+    const { data: job, error } = await db.from("shop_delivery_jobs").insert({ order_id: orderId, channel: "telegram", target: String(order.telegram_user_id), payload: { text, fulfillment: true }, attempts: 1 }).select("id").single();
+    if (error || !job) return { ok: false, reason: "delivery_job_failed" };
+    let sent = false;
+    try { const result = await tg("sendMessage", { chat_id: order.telegram_user_id, text, parse_mode: "HTML", disable_web_page_preview: true }); sent = result.ok; } catch { /* keep credential details out of errors */ }
+    if (!sent) {
+      await db.from("shop_delivery_jobs").update({ status: "failed", last_error: "Telegram could not deliver the message." }).eq("id", job.id);
+      return { ok: false, reason: "telegram_send_failed" };
+    }
+    const now = new Date().toISOString();
+    const result = await db.from("shop_delivery_jobs").update({ status: "sent", sent_at: now }).eq("id", job.id);
+    if (result.error) return { ok: false, reason: "delivery_record_failed" };
+    const updated = await db.from("shop_orders").update({ status: "delivered", delivered_at: order.delivered_at ?? now, updated_at: now }).eq("id", orderId);
+    if (updated.error) return { ok: false, reason: "delivery_record_failed" };
+    await orderEvent(orderId, "delivered", actor, "Telegram fulfillment");
+    return { ok: true };
+  } finally { await releaseLock(lock); }
+}
 
 /* ------------------------- AI fulfillment email draft ---------------------- */
 
