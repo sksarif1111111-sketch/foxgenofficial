@@ -141,6 +141,13 @@
       "when": 1794361026769,
       "tag": "0019_website_customer_order_ownership",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794361950470,
+      "tag": "0020_crm_stable_customer_links",
+      "breakpoints": true
     }
   ]
 }
