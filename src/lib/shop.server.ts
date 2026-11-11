@@ -111,7 +111,7 @@ export function shapeProduct(row: Record<string, unknown>, channel: ShopChannel)
     credits_per_interval: num(row["credits_per_interval"]),
     renewal_interval: (row["renewal_interval"] as string) ?? null,
     price_usdt: priceUsdt,
-    price_inr: num(row["price_inr"]),
+    price_inr: num(row["price_inr"]) ?? (priceUsdt === null ? null : priceUsdt * 100),
     price_stars: priceStars,
     stock_mode: stockMode,
     stock_quantity: stockQty,
@@ -185,7 +185,7 @@ export async function lastSupplierSync(): Promise<string | null> {
 
 export async function shopProductById(id: string, channel: ShopChannel): Promise<ShopProduct | null> {
   const { data } = await db.from("products").select("*").eq("id", id).maybeSingle();
-  if (!data) return null;
+  if (!data || !data.shop_published || data.status === "archived" || data.supplier_removed) return null;
   return shapeProduct(data as Record<string, unknown>, channel);
 }
 

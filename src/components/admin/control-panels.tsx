@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MetricCard, Panel, StatusDot, type AdminNavId } from "@/components/admin/admin-shell";
 import { ImageUpload } from "@/components/admin/image-upload";
-import { botDashboard, integrationsHistory, integrationsStatus, integrationsSync, memberCreditHistory, referralLeaderboard, type LeaderRow } from "@/lib/control.functions";
+import { botDashboard, integrationsHistory, integrationsStatus, integrationsSync, integrationsRemoveSupplier, memberCreditHistory, referralLeaderboard, type LeaderRow } from "@/lib/control.functions";
 import { adminDeleteOffer, adminOffers, adminSaveOffer, type OfferInput } from "@/lib/offers.functions";
 import { shopAdminProducts } from "@/lib/shopadmin.functions";
 import { lockExtension } from "@/lib/admin-access.functions";
@@ -512,6 +512,8 @@ export function OffersPanel({ notify }: { notify: Notify }) {
 export function IntegrationsPanel({ notify, onOpen }: { notify: Notify; onOpen: (id: AdminNavId) => void }) {
   const fStatus = useServerFn(integrationsStatus);
   const fSync = useServerFn(integrationsSync);
+  const fRemove = useServerFn(integrationsRemoveSupplier);
+  const [removing, setRemoving] = useState(false);
   const cache = useQueryClient();
   const q = useQuery({ queryKey: ["integrations"], queryFn: () => fStatus() });
   const sync = useMutation({
@@ -553,9 +555,10 @@ export function IntegrationsPanel({ notify, onOpen }: { notify: Notify; onOpen: 
                 <div>
                   <p className="font-semibold">{c.name}</p>
                   <p className="mt-0.5 text-sm text-muted-foreground">{c.detail}</p>
+                  {c.endpoint && <p className="mt-1 break-all text-xs text-muted-foreground">{c.endpoint}</p>}
                 </div>
                 <StatusDot tone={c.status === "connected" ? "success" : c.status === "error" ? "danger" : "muted"}>
-                  {c.status === "connected" ? "Connected" : c.status === "error" ? "Error" : "Not configured"}
+                  {c.removed ? "Removed" : c.status === "connected" ? "In use" : c.status === "error" ? "Error" : "Not in use"}
                 </StatusDot>
               </div>
               <div className="mt-4 flex flex-wrap gap-1.5">
@@ -570,6 +573,13 @@ export function IntegrationsPanel({ notify, onOpen }: { notify: Notify; onOpen: 
               {c.kind === "supplier" && (
                 <div className="mt-4 flex gap-2">
                   <Button variant="ghost" size="sm" onClick={() => onOpen("SyncHistory")}>View logs</Button>
+                  {!c.removed && <Button variant="destructive" size="sm" disabled={removing || sync.isPending} onClick={async () => {
+                    if (c.id !== "reseller" && c.id !== "digihup") return;
+                    if (!window.confirm(`Remove ${c.name} from this store? All its products disappear from the website and Telegram. Imports stop; previous orders and accounts stay intact. Stored credentials are retained but no longer used.`)) return;
+                    setRemoving(true);
+                    try { const result = await fRemove({data:{id:c.id}}); notify(`${result.removed} products removed from website and Telegram. Order history retained.`); await cache.invalidateQueries(); }
+                    catch (e) { notify(errMsg(e, "Removal failed.")); } finally { setRemoving(false); }
+                  }}><Trash2 className="mr-1 size-3.5" />Remove API & products</Button>}
                 </div>
               )}
               {c.id === "telegram" && (

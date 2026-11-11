@@ -40,7 +40,7 @@ export async function tg<T = unknown>(method: string, payload: Record<string, un
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const json = (await res.json()) as { ok: boolean; result?: T; description?: string };
+  const json = (await res.json()) as { ok: boolean; result?: T; description?: string; error_code?: number; parameters?: { retry_after?: number } };
   return json;
 }
 
@@ -388,6 +388,8 @@ export async function notifyReferralReward(referredUserId: string) {
       .eq("status", "verified"),
   ]);
   if (!referrer) return;
+  // Concurrent reconciliation can notify the same referrer many times. One shared lock avoids a burst.
+  if (!(await acquireLock(`referral-notice:${referral.referrer_id}`, 15000))) return;
 
   const sent = await tg("sendMessage", {
     chat_id: referrer.telegram_user_id,
