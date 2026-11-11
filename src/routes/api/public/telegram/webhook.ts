@@ -96,7 +96,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const claimToken = crypto.randomUUID();
         if (typeof updateId === "number") {
           const claimed = await db.rpc("shop_claim_webhook", { _id: updateId, _token: claimToken });
-          if (claimed.error) return Response.json({ ok: false }, { status: 500 });
+          if (claimed.error) { await logBotError("webhook_claim", claimed.error.message, null, String(updateId)); return Response.json({ ok: false }, { status: 500 }); }
           if (claimed.data === "completed") return Response.json({ ok: true, duplicate: true });
           if (claimed.data !== "claimed") return Response.json({ ok: false }, { status: 503 });
         }
@@ -330,8 +330,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const marketAction = ({ profile: "storeprofile", orders: "myorders", products: "shop", store: "shop" } as Record<string,string>)[marketRaw] ?? marketRaw;
         try {
           if (await marketplaceBot({ profile, chatId, action: marketAction, text, settings, callbackId: update.callback_query?.id, photoId: update.message?.photo?.at(-1)?.file_id, render })) return Response.json({ ok: true });
-        } catch {
+        } catch (error) {
           workFailed = true;
+          await logBotError("marketplace", error instanceof Error ? error.message : "Action failed", from.id, marketAction);
           await send("Could not complete this action. Please try again or contact Support.", [[{ text: "Home", callback_data: "menu" }]]);
           return Response.json({ ok: false }, { status: 500 });
         }
@@ -904,7 +905,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               .eq("enabled", true)
               .order("display_order", { ascending: true });
             const dots = ["🟢", "🔵", "🟣", "🟡"];
-            let body = `${E("rewards", "🎁")} <b>FREE LICENSE REWARDS</b>\n${LINE}\n`;
+            let body = `${E("rewards", "🎁")} <b>FREE REWARDS</b>\n${LINE}\nReferral credits unlock free extension licenses. Wallet funds are separate.\n\n`;
             const rows: Keyboard = [];
             (rewards ?? []).forEach((r, i) => {
               const dot = dots[i] ?? "🎁";
@@ -913,6 +914,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             });
             body += `${LINE}\nYour Credits: <b>${fresh?.credits_available ?? 0}</b>`;
             rows.push([{ text: `${E("invite", "👥")} Earn More Credits`, callback_data: "invite" }]);
+            rows.push([{text:"📦 Lovable Extension",callback_data:"extension"},{text:"🔑 My Licenses",callback_data:"mylic"}]);
+            rows.push([{text:"Credits & earnings",callback_data:"me"},{text:"📋 Tasks",callback_data:"tasks"}]);
             rows.push(backRow());
             await render(body, rows);
             return Response.json({ ok: true });
@@ -1098,8 +1101,9 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         } finally {
           await unlock();
         }
-        } catch {
+        } catch (error) {
           workFailed = true;
+          await logBotError("webhook", error instanceof Error ? error.message : "Unhandled webhook failure", null, String(updateId));
           return Response.json({ ok: false }, { status: 500 });
         } finally {
           if (typeof updateId === "number") await db.from("shop_webhook_work").update({ status: workFailed ? "failed" : "completed", locked_until: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("update_id", updateId).eq("claim_token", claimToken);

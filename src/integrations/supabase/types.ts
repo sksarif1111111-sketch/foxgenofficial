@@ -1387,6 +1387,7 @@ export type Database = {
           status: string
           stock_mode: string
           stock_quantity: number | null
+          supplier_removed: boolean
           terms: string | null
           tutorial_url: string | null
           updated_at: string
@@ -1439,6 +1440,7 @@ export type Database = {
           status?: string
           stock_mode?: string
           stock_quantity?: number | null
+          supplier_removed?: boolean
           terms?: string | null
           tutorial_url?: string | null
           updated_at?: string
@@ -1491,6 +1493,7 @@ export type Database = {
           status?: string
           stock_mode?: string
           stock_quantity?: number | null
+          supplier_removed?: boolean
           terms?: string | null
           tutorial_url?: string | null
           updated_at?: string
@@ -2646,6 +2649,7 @@ export type Database = {
         Returns: boolean
       }
       shop_release_stock: { Args: { _order_id: string }; Returns: boolean }
+      shop_remove_supplier: { Args: { _provider: string }; Returns: number }
       shop_reserve_stock: {
         Args: { _product_id: string; _qty: number }
         Returns: boolean

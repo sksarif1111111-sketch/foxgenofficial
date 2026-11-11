@@ -78,8 +78,9 @@ export const catalogDeleteProduct = createServerFn({ method: "POST" }).middlewar
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");
-    await db.from("products").delete().eq("id", data.id);
-    await logActivity("products", "Product deleted", "warning", data.id);
+    const { error } = await db.from("products").update({ supplier_removed: true, shop_published: false, status: "archived", availability: "out_of_stock", updated_at: new Date().toISOString() }).eq("id", data.id);
+    if (error) throw new Error("Could not remove this product.");
+    await logActivity("products", "Product removed; history retained", "warning", data.id);
     return { ok: true };
   });
 

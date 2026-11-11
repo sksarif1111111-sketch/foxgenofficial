@@ -327,8 +327,13 @@ export const shopDeleteProduct = createServerFn({ method: "POST" }).middleware([
     const { db, logActivity } = await import("@/lib/hub.server");
     const { count, error: countError } = await db.from("shop_order_items").select("id", { count: "exact", head: true }).eq("product_id", data.id);
     if (countError) throw new Error("Could not check this product's orders.");
-    if ((count ?? 0) > 0) throw new Error("This product has orders, so it can't be deleted. Archive it instead to hide it everywhere.");
-    const { data: row } = await db.from("products").select("name").eq("id", data.id).maybeSingle();
+    const { data: row } = await db.from("products").select("name,reseller_product_id").eq("id", data.id).maybeSingle();
+    if (row?.reseller_product_id || (count ?? 0) > 0) {
+      const removed = await db.from("products").update({ supplier_removed: Boolean(row?.reseller_product_id), shop_published: false, status: "archived", availability: "out_of_stock", updated_at: new Date().toISOString() }).eq("id", data.id);
+      if (removed.error) throw new Error("Could not remove this product.");
+      await logActivity("shop", "Product removed", "warning", `${row?.name ?? data.id}; order history retained`);
+      return { ok: true };
+    }
     await db.from("store_offers").update({ product_id: null, status: "archived" }).eq("product_id", data.id);
     await db.from("product_prices").delete().eq("product_id", data.id);
     await db.from("product_files").delete().eq("product_id", data.id);
@@ -480,10 +485,10 @@ export const shopWalletReviewTopUp = createServerFn({ method: "POST" }).middlewa
     const { db, logActivity } = await import("@/lib/hub.server");
     const result = await db.rpc("shop_review_wallet_topup", { _id: data.id, _approve: data.approve, _note: data.note, _credit_usd: data.creditUsd });
     if (result.error) throw new Error("Request is no longer pending, or a verified USD credit is required.");
-    const record = result.data as { profile_id: string; amount: number; currency: string; balance: number | null };
+    const record = result.data as { profile_id: string; amount: number; currency: string; credit_usd: number | null; balance: number | null };
     const { notifyWalletReview } = await import("@/lib/wallet-topup.server");
     let notified = false;
-    try { notified = await notifyWalletReview(record.profile_id, data.approve ? `Added ${record.amount} ${record.currency} to your wallet. USD balance: ${record.balance}.` : `Your wallet top up was rejected: ${data.note}`); } catch { /* Funding decision is already committed; never repeat credit. */ }
+    try { notified = await notifyWalletReview(record.profile_id, data.approve ? `Payment of ${record.amount} ${record.currency} verified. Added $${record.credit_usd} USD / USDT to your wallet. Balance: $${record.balance}. Referral credits are separate.` : `Your wallet top up was rejected: ${data.note}`); } catch { /* Funding decision is already committed; never repeat credit. */ }
     await logActivity("wallet", data.approve ? "Top up approved" : "Top up rejected", notified ? "success" : "warning", `Request ${data.id}${notified ? "" : "; Telegram notification failed"}`);
     return { ok: true, notified };
   });

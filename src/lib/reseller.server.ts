@@ -4,11 +4,13 @@
  * Credentials are read from server secrets only and never returned to the browser.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supplierOf, supplierEnabled } from "./supplier-policy";
+export { supplierOf } from "./supplier-policy";
 
 export type SupplierId = "reseller" | "digihup";
 
 export const SUPPLIERS: Array<{ id: SupplierId; name: string; secret: string; capabilities: string[] }> = [
-  { id: "reseller", name: "Reseller API", secret: "RESELLER_API_KEY", capabilities: ["Products", "Wholesale price", "Stock", "Balance"] },
+  { id: "reseller", name: "Reseller API (original supplier)", secret: "RESELLER_API_KEY", capabilities: ["Products", "Wholesale price", "Stock", "Balance"] },
   { id: "digihup", name: "DIGIHUP", secret: "DIGIHUP_API_KEY", capabilities: ["Products", "Wholesale price", "Stock", "Instructions"] },
 ];
 
@@ -27,11 +29,6 @@ const RESELLER_URL = "https://eygkdpfjrjwwbiackfpr.supabase.co/functions/v1/rese
 const DIGIHUP_URL = "https://shorky-new-production.up.railway.app/api/reseller/v1";
 /** DIGIHUP ids are namespaced so they never collide with the first supplier's ids. */
 export const DIGIHUP_PREFIX = "digihup:";
-
-export function supplierOf(resellerProductId: string | null | undefined): SupplierId | null {
-  if (!resellerProductId) return null;
-  return resellerProductId.startsWith(DIGIHUP_PREFIX) ? "digihup" : "reseller";
-}
 
 /** Supplier descriptions use Telegram HTML; the store shows plain text. */
 export function plainText(html: unknown, max = 2000): string | null {
@@ -165,19 +162,25 @@ async function recordRun(provider: string, trigger: "manual" | "auto", status: "
  */
 export async function syncSuppliers(trigger: "manual" | "auto") {
   const started = new Date().toISOString();
-  const results = await Promise.allSettled([fetchResellerProducts(), fetchDigihupProducts()]);
+  const { data: settingsRows, error: settingsError } = await supabaseAdmin.from("app_settings").select("key,value").like("key", "supplier_disabled_%");
+  if (settingsError) throw new Error("Could not check supplier controls; sync stopped.");
+  const settings = Object.fromEntries((settingsRows ?? []).map(r => [r.key, r.value ?? ""]));
+  const enabled = SUPPLIERS.filter(s => supplierEnabled(s.id, settings) && Boolean(process.env[s.secret]));
+  if (!enabled.length) return { suppliers: [] };
+  const results = await Promise.allSettled(enabled.map(s => s.id === "reseller" ? fetchResellerProducts() : fetchDigihupProducts()));
   const bySupplier: Record<SupplierId, { list: SupplierProduct[]; error: string | null }> = {
     reseller: { list: [], error: null },
     digihup: { list: [], error: null },
   };
-  (["reseller", "digihup"] as const).forEach((id, i) => {
-    const r = results[i]!;
+  enabled.forEach(({ id }, i) => {
+    const r = results[i];
+    if (!r) return;
     if (r.status === "fulfilled") bySupplier[id].list = r.value;
     else bySupplier[id].error = r.reason instanceof Error ? r.reason.message : "Sync failed";
   });
-  const okSuppliers = (Object.keys(bySupplier) as SupplierId[]).filter((id) => !bySupplier[id].error);
+  const okSuppliers = enabled.map(s => s.id).filter((id) => !bySupplier[id].error);
   if (!okSuppliers.length) {
-    for (const id of Object.keys(bySupplier) as SupplierId[]) {
+    for (const { id } of enabled) {
       await recordRun(id, trigger, "failed", { total: 0, added: 0, updated: 0 }, bySupplier[id].error, started);
     }
     throw new Error("Could not reach any supplier. Previous products and prices were kept.");
@@ -219,15 +222,17 @@ export async function syncSuppliers(trigger: "manual" | "auto") {
   const { data: crmRows, error: crmErr } = await db.from("crm_products").select("reseller_product_id, default_sale_price").not("reseller_product_id", "is", null);
   if (crmErr) throw new Error(crmErr.message);
   const sellPrice = new Map((crmRows ?? []).map((r) => [r.reseller_product_id as string, Number(r.default_sale_price)]));
-  const { data: storeRows, error: storeErr } = await db.from("products").select("id, reseller_product_id").not("reseller_product_id", "is", null);
+  const { data: storeRows, error: storeErr } = await db.from("products").select("id, reseller_product_id, supplier_removed").not("reseller_product_id", "is", null);
   if (storeErr) throw new Error(storeErr.message);
   const inStore = new Map((storeRows ?? []).map((r) => [r.reseller_product_id as string, r.id]));
+  const removed = new Set((storeRows ?? []).filter(r => r.supplier_removed).map(r => r.reseller_product_id));
   const seen = new Set<string>();
   let order = 0;
   for (const p of list) {
-    if (seen.has(p.id)) continue;
+    if (seen.has(p.id) || removed.has(p.id)) continue;
     seen.add(p.id);
-    const supplier = supplierOf(p.id)!;
+    const supplier = supplierOf(p.id);
+    if (!supplier) continue;
     const stock = Number.isFinite(Number(p.stock)) ? Math.max(0, Math.floor(Number(p.stock))) : null;
     const price = sellPrice.get(p.id) ?? Math.max(0, Number(p.wholesale_price) || 0);
     // Existing store products keep their selling price (edited in Products); only stock and name refresh.
@@ -247,6 +252,7 @@ export async function syncSuppliers(trigger: "manual" | "auto") {
       const { error: e } = await db.from("products").insert({
         ...refresh,
         price_usdt: price,
+        price_inr: Math.round(price * 10000) / 100,
         price,
         currency: "USD",
         is_free: false,
@@ -268,16 +274,17 @@ export async function syncSuppliers(trigger: "manual" | "auto") {
   }
   // Products a working supplier no longer lists go out of stock (kept for order history).
   for (const [rid, storeId] of inStore) {
-    const supplier = supplierOf(rid)!;
+    const supplier = supplierOf(rid);
+    if (!supplier) continue;
     if (seen.has(rid) || !okSuppliers.includes(supplier)) continue;
     await db.from("products").update({ availability: "out_of_stock", updated_at: now }).eq("id", storeId);
   }
 
-  for (const id of Object.keys(bySupplier) as SupplierId[]) {
+  for (const { id } of enabled) {
     const err = bySupplier[id].error;
     await recordRun(id, trigger, err ? "failed" : "success", counts[id], err, started);
   }
   return {
-    suppliers: (Object.keys(bySupplier) as SupplierId[]).map((id) => ({ id, ok: !bySupplier[id].error, error: bySupplier[id].error, ...counts[id] })),
+    suppliers: enabled.map(s => s.id).map((id) => ({ id, ok: !bySupplier[id].error, error: bySupplier[id].error, ...counts[id] })),
   };
 }

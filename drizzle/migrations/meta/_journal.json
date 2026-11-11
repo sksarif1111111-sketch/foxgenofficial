@@ -197,6 +197,13 @@
       "when": 1794367483083,
       "tag": "0027_marketplace_payment_channel_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1794433452234,
+      "tag": "0028_supplier_catalogue_removal_and_fixed_wallet_rate",
+      "breakpoints": true
     }
   ]
 }

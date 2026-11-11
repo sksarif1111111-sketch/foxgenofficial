@@ -1,4 +1,5 @@
 import { db, tg } from "@/lib/hub.server";
+import { walletUsd } from "./wallet-rate";
 import { topupAmount, topupReference, topupEvidence } from "./wallet-topup.contract";
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 export async function walletFundingBot(profileId: string, chatId: number, action: string, text: string, photoId?: string, render?: (body: string, buttons: Array<Array<{ text: string; callback_data: string }>>) => Promise<void>) {
@@ -27,7 +28,7 @@ export async function walletFundingBot(profileId: string, chatId: number, action
     if (!method?.recipient || !["USDT", "INR"].includes(method.currency) || ["wallet", "stars"].includes(method.provider)) { await send("This method is unavailable."); return true; }
     const result = await db.from("wallet_topup_sessions").upsert({ profile_id: profileId, method_id: method.id, amount: null, reference: null, updated_at: new Date().toISOString() });
     if (result.error) throw new Error("Could not start funding request");
-    await send(`💰 <b>${esc(method.name)}</b>\n━━━━━━━━━━━━━━\nRecipient: <code>${esc(method.recipient)}</code>\nNetwork: ${esc(method.network ?? "UPI")}\n${esc(method.instructions ?? "")}\n\nEnter the amount in ${esc(method.currency)}. Wallet balances are USD; INR credits are confirmed by the owner during review.`);
+    await send(`💰 <b>${esc(method.name)}</b>\n━━━━━━━━━━━━━━\nRecipient: <code>${esc(method.recipient)}</code>\nNetwork: ${esc(method.network ?? "UPI")}\n${esc(method.instructions ?? "")}\n\nEnter the amount in ${esc(method.currency)}. ₹100 = $1 USD / USDT wallet funds. Funds are added only after payment verification; referral credits remain separate.`);
     return true;
   }
   const { data: session } = await db.from("wallet_topup_sessions").select("*").eq("profile_id", profileId).maybeSingle();
@@ -41,7 +42,8 @@ export async function walletFundingBot(profileId: string, chatId: number, action
     const amount = topupAmount.safeParse(text);
     if (!amount.success) { await send("Enter a positive amount, at most 100000, with up to two decimals."); return true; }
     await db.from("wallet_topup_sessions").update({ amount: amount.data, updated_at: new Date().toISOString() }).eq("profile_id", profileId);
-    await send("Send the transaction reference after completing your transfer."); return true;
+    const method = await db.from("payment_methods").select("currency").eq("id",session.method_id).maybeSingle();
+    await send(`After verification: $${walletUsd(amount.data, method.data?.currency ?? "USDT").toFixed(2)} wallet funds. Send the transaction reference after completing your transfer.`); return true;
   }
   if (!session.reference) {
     const reference = topupReference.safeParse(text);

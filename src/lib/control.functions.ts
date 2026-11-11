@@ -194,6 +194,8 @@ export type IntegrationCard = {
   lastErrorAt: string | null;
   products: number | null;
   syncable: boolean;
+  removed?: boolean;
+  endpoint?: string;
 };
 
 async function lastRuns(db: Db, provider: string) {
@@ -238,15 +240,17 @@ export const integrationsStatus = createServerFn({ method: "POST" }).middleware(
   cards.push(tgCard);
 
   // Suppliers
-  const { data: storeRows } = await db.from("products").select("reseller_product_id").not("reseller_product_id", "is", null);
+  const supplierSettings = await getSettings();
+  const { data: storeRows } = await db.from("products").select("reseller_product_id, supplier_removed").not("reseller_product_id", "is", null);
   for (const s of SUPPLIERS) {
     const configured = Boolean(process.env[s.secret]);
+    const removed = supplierSettings[`supplier_disabled_${s.id}`] === "true";
     const runs = await lastRuns(db, s.id);
-    const products = (storeRows ?? []).filter((r) => (s.id === "digihup") === String(r.reseller_product_id).startsWith(DIGIHUP_PREFIX)).length;
-    const check = configured ? await checkSupplier(s.id) : { ok: false, detail: `${s.secret} secret is missing.` };
+    const products = (storeRows ?? []).filter((r) => !r.supplier_removed && (s.id === "digihup") === String(r.reseller_product_id).startsWith(DIGIHUP_PREFIX)).length;
+    const check = removed ? { ok: false, detail: "Removed from this store. Imports stopped; previous orders retained." } : configured ? await checkSupplier(s.id) : { ok: false, detail: `${s.secret} secret is missing.` };
     cards.push({
-      id: s.id, name: s.name, kind: "supplier", configured, status: !configured ? "not_configured" : check.ok ? "connected" : "error",
-      detail: check.detail, capabilities: s.capabilities, ...runs, products, syncable: configured,
+      id: s.id, name: s.name, kind: "supplier", configured, status: removed || !configured ? "not_configured" : check.ok ? "connected" : "error",
+      detail: check.detail, capabilities: s.capabilities, ...runs, products, syncable: configured && !removed, removed, endpoint: s.id === "digihup" ? "shorky-new-production.up.railway.app · DIGIHUP" : "Original reseller · products / balance API",
     });
   }
 
@@ -284,3 +288,14 @@ export const integrationsHistory = createServerFn({ method: "POST" }).middleware
   if (error) throw new Error("Could not load sync history.");
   return data ?? [];
 });
+
+/** Atomic removal prevents concurrent cron imports from republishing the catalogue. */
+export const integrationsRemoveSupplier = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
+  .inputValidator((input: unknown) => z.object({ id: z.enum(["reseller", "digihup"]) }).parse(input))
+  .handler(async ({ data }) => {
+    const { db, logActivity } = await import("@/lib/hub.server");
+    const result = await db.rpc("shop_remove_supplier", { _provider: data.id });
+    if (result.error) throw new Error("Could not remove supplier products.");
+    await logActivity("integrations", "Supplier removed", "warning", `${data.id}: ${result.data} products hidden; history retained`);
+    return { removed: Number(result.data) };
+  });

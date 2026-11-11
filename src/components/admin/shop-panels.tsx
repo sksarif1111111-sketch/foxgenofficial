@@ -1,3 +1,4 @@
+import { walletUsd } from "@/lib/wallet-rate";
 import { InventoryManager } from "@/components/admin/inventory-manager";
 import { marketplaceAssignInventory, marketplaceGenerateImage } from "@/lib/marketplace-admin.functions";
 import { catalogCategories } from "@/lib/hubcatalog.functions";
@@ -685,7 +686,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
           ))}
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">{visibleRows.length} of {rows.length} products. Supplier API products refresh price and stock on sync; store-only edits (images, Stars price, descriptions) are kept.</p>
+      <p className="text-xs text-muted-foreground">{visibleRows.length} of {rows.length} products. Supplier API products refresh name and stock on sync; selling prices stay unchanged; store-only edits (images, Stars price, descriptions) are kept.</p>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
         <div className="overflow-x-auto">
@@ -746,7 +747,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
                           type="button"
                           className="rounded-xl border border-destructive/40 px-3 py-2 text-xs font-bold text-destructive"
                           onClick={() => {
-                            if (!window.confirm(`Delete “${String(row["name"])}” permanently? Products with orders can only be archived.`)) return;
+                            if (!window.confirm(`Remove “${String(row["name"])}” from website and Telegram? Supplier products stay removed on future syncs. Order history is retained.`)) return;
                             void act(() => fDeleteProduct({ data: { id } }), "Product deleted.");
                           }}
                         >
@@ -783,7 +784,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
             <Button variant="outline" disabled={generating||!draft.name.trim()} onClick={async()=>{if(!window.confirm("Generate a product thumbnail using paid AI credits?"))return;setGenerating(true);try{const r=await fGenerateImage({data:{name:draft.name,description:draft.description}});setDraft({...draft,image_url:r.url});notify("Image saved. Save the product to use it.");}catch(e){notify(e instanceof Error?e.message:"Image generation unavailable. Upload an image instead.");}finally{setGenerating(false);}}}>{generating?"Generating…":"Generate image · AI credits"}</Button>
             {draft.reseller_product_id && (
               <p className="sm:col-span-2 rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground">
-                Connected to supplier product <span className="font-mono">{draft.reseller_product_id}</span>. Name, USDT price and stock are refreshed on each sync; everything else you edit here is kept.
+                Connected to supplier product <span className="font-mono">{draft.reseller_product_id}</span>. Name and stock are refreshed on each sync; selling prices stay unchanged; everything else you edit here is kept.
               </p>
             )}
             <Field label="Price USDT (blank = not configured)">
@@ -1049,7 +1050,6 @@ export function WalletPanel({ notify }: { notify: Notify }) {
   const fDeduct = useServerFn(shopWalletDeduct);
   const [pending, setPending] = useState<Awaited<ReturnType<typeof shopWalletPendingTopUps>>>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [credits, setCredits] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<WalletAccount[]>([]);
   const [amounts, setAmounts] = useState<Record<string, string>>({});
@@ -1096,10 +1096,10 @@ export function WalletPanel({ notify }: { notify: Notify }) {
           <p className="text-xs text-muted-foreground break-all">{r.profile_id} · {r.network} · {r.recipient_used}</p>
           {r.evidence_url && <a href={r.evidence_url.startsWith('telegram-file:') ? `/api/admin/payment-proof/${r.id}` : r.evidence_url} target="_blank" rel="noreferrer" className="text-primary text-sm">Payment evidence</a>}
           <input aria-label={`Review note ${r.id}`} placeholder="Review note or rejection reason" className={input} value={notes[r.id] ?? ""} onChange={e => setNotes(p => ({ ...p, [r.id]: e.target.value }))} />
-          {r.currency === "INR" && <input aria-label={`USD credit ${r.id}`} placeholder="Verified USD wallet credit" inputMode="decimal" className={input} value={credits[r.id] ?? ""} onChange={e => setCredits(p => ({ ...p, [r.id]: e.target.value }))} />}
+          <p className="text-sm text-muted-foreground">On approval: ${walletUsd(Number(r.amount), r.currency).toFixed(2)} USD / USDT · ₹100 = $1. Payment must be verified first.</p>
           <div className="flex gap-2">{[true,false].map(approve => <Button key={String(approve)} variant={approve ? "default" : "outline"} disabled={busy} onClick={async () => {
-            if ((notes[r.id] ?? "").trim().length < 3 || (approve && r.currency === "INR" && !(Number(credits[r.id]) > 0))) { notify("Enter a review note and verified USD credit for INR."); return; }
-            setBusy(true); try { const result = await fReview({ data: { id: r.id, approve, note: notes[r.id], creditUsd: r.currency === "INR" && approve ? Number(credits[r.id]) : undefined } }); notify(result.notified ? "Top up reviewed." : "Reviewed; Telegram notification failed."); await load(); } catch(e) { notify(e instanceof Error ? e.message : "Review failed."); } finally { setBusy(false); }
+            if ((notes[r.id] ?? "").trim().length < 3) { notify("Enter a payment verification note or rejection reason."); return; }
+            setBusy(true); try { const result = await fReview({ data: { id: r.id, approve, note: notes[r.id], creditUsd: undefined } }); notify(result.notified ? "Top up reviewed." : "Reviewed; Telegram notification failed."); await load(); } catch(e) { notify(e instanceof Error ? e.message : "Review failed."); } finally { setBusy(false); }
           }}>{approve ? "Approve" : "Reject"}</Button>)}</div>
         </div>)}
         {!pending.length && <p className="text-sm text-muted-foreground">No pending top ups.</p>}
