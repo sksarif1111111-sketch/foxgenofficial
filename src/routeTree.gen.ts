@@ -28,6 +28,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TutorialsRouteImport } from './routes/tutorials'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
+import { Route as ApiAdminPaymentProofIdRouteImport } from './routes/api/admin/payment-proof/$id'
 import { Route as ApiPublicCronCrmSyncRouteImport } from './routes/api/public/cron/crm-sync'
 import { Route as ApiPublicCronSupplierSyncRouteImport } from './routes/api/public/cron/supplier-sync'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
@@ -134,6 +135,11 @@ const ProductProductIdRoute = ProductProductIdRouteImport.update({
   path: '/product/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminPaymentProofIdRoute = ApiAdminPaymentProofIdRouteImport.update({
+  id: '/api/admin/payment-proof/$id',
+  path: '/api/admin/payment-proof/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronCrmSyncRoute = ApiPublicCronCrmSyncRouteImport.update({
   id: '/api/public/cron/crm-sync',
   path: '/api/public/cron/crm-sync',
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/api/admin/payment-proof/$id': typeof ApiAdminPaymentProofIdRoute
   '/api/public/cron/crm-sync': typeof ApiPublicCronCrmSyncRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByTo {
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/api/admin/payment-proof/$id': typeof ApiAdminPaymentProofIdRoute
   '/api/public/cron/crm-sync': typeof ApiPublicCronCrmSyncRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
@@ -270,6 +278,7 @@ export interface FileRoutesById {
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/api/admin/payment-proof/$id': typeof ApiAdminPaymentProofIdRoute
   '/api/public/cron/crm-sync': typeof ApiPublicCronCrmSyncRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
@@ -303,6 +312,7 @@ export interface FileRouteTypes {
     | '/tutorials'
     | '/api/chat'
     | '/product/$productId'
+    | '/api/admin/payment-proof/$id'
     | '/api/public/cron/crm-sync'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
     | '/tutorials'
     | '/api/chat'
     | '/product/$productId'
+    | '/api/admin/payment-proof/$id'
     | '/api/public/cron/crm-sync'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/tutorials'
     | '/api/chat'
     | '/product/$productId'
+    | '/api/admin/payment-proof/$id'
     | '/api/public/cron/crm-sync'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
@@ -397,6 +409,7 @@ export interface RootRouteChildren {
   TutorialsRoute: typeof TutorialsRoute
   ApiChatRoute: typeof ApiChatRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
+  ApiAdminPaymentProofIdRoute: typeof ApiAdminPaymentProofIdRoute
   ApiPublicCronCrmSyncRoute: typeof ApiPublicCronCrmSyncRoute
   ApiPublicCronSupplierSyncRoute: typeof ApiPublicCronSupplierSyncRoute
   ApiPublicExtCoreRoute: typeof ApiPublicExtCoreRoute
@@ -544,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/payment-proof/$id': {
+      id: '/api/admin/payment-proof/$id'
+      path: '/api/admin/payment-proof/$id'
+      fullPath: '/api/admin/payment-proof/$id'
+      preLoaderRoute: typeof ApiAdminPaymentProofIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/crm-sync': {
       id: '/api/public/cron/crm-sync'
       path: '/api/public/cron/crm-sync'
@@ -637,6 +657,7 @@ const rootRouteChildren: RootRouteChildren = {
   TutorialsRoute: TutorialsRoute,
   ApiChatRoute: ApiChatRoute,
   ProductProductIdRoute: ProductProductIdRoute,
+  ApiAdminPaymentProofIdRoute: ApiAdminPaymentProofIdRoute,
   ApiPublicCronCrmSyncRoute: ApiPublicCronCrmSyncRoute,
   ApiPublicCronSupplierSyncRoute: ApiPublicCronSupplierSyncRoute,
   ApiPublicExtCoreRoute: ApiPublicExtCoreRoute,
