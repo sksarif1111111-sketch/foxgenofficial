@@ -169,6 +169,13 @@
       "when": 1794362875443,
       "tag": "0023_customer_directory_plain_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794366774741,
+      "tag": "0024_telegram_marketplace_atomic_core",
+      "breakpoints": true
     }
   ]
 }
