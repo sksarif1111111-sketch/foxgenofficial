@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { customerMemberNumber } from "@/lib/customer-shop.functions";
-import { memberLabel } from "@/lib/member-number";
 import { CustomerAccountPanel } from "@/components/site/customer-account-panel";
 
 export const Route = createFileRoute("/account")({
@@ -23,7 +22,7 @@ export const Route = createFileRoute("/account")({
       { title: "My Account — Foxgen AI Store" },
       { name: "description", content: "Manage your account details, student voucher, spending and My orders at Foxgen AI Store." },
       { property: "og:title", content: "My Account — Foxgen AI Store" },
-      { property: "og:description", content: "Your orders, wallet, credits and licences in one place." },
+      { property: "og:description", content: "Your account details, purchase totals, student voucher and My orders in one place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },

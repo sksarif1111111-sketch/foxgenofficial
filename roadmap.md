@@ -1,10 +1,11 @@
 # Roadmap
 
 ## Compact login and customer account
-- [ ] Smaller glass login with moving background; preserve sign-in and recovery actions.
-- [ ] Customer display name, currency-separated paid spending, order totals and My orders interface.
-- [ ] Student voucher FOXGENSTUDENT10 visible for self-declared students; discount/verification/redemption rules await owner details, no pricing changes.
-- [ ] Verify name save/readback, account totals, desktop/mobile layout and reduced motion.
+- [x] Smaller 368px glass login with moving background; sign-in/recovery controls preserved and exercised without sending emails.
+- [x] Customer display name, paginated currency-separated paid spending, order totals and My orders interface; website and Telegram records stay separate.
+- [x] Student voucher FOXGENSTUDENT10 shown after saved self-declaration, without changing prices.
+- [ ] Activate voucher discount/verification/redemption — awaiting owner terms; code alone does not define a discount.
+- [x] Authenticated name/student save and reload verified, original preferences restored; real zero-order totals and My orders link checked at 1280/390px, reduced motion stops background. Six rule tests and build passed; no paid website history was available for a nonzero UI check.
 
 ## Member feed, bot funding and CRM product bridge
 - [x] Number every bot member and website account; durable customer directory/payment exports acknowledged by CRM.
