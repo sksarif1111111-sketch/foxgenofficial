@@ -1,5 +1,12 @@
 # Roadmap
 
+## Store fulfillment and operator CRM integration (Nov 2026)
+- [ ] Direct Telegram fulfillment with conditional email capture and shared admin/CRM actions.
+- [ ] Thirty-minute admin SLA badges and overdue KPI.
+- [ ] Separate CRM action credential and endpoint; preserve read-only API.
+- [ ] Durable CRM order outbox, scheduled retries, sync health and documentation.
+- [ ] Verify rules and admin flows; request diff review before publishing.
+
 ## Homepage rebuild from the user's SKILL.md (Nov 2026)
 - [x] Floating nav + full height mobile menu, hero with Buy now, live offers with category filter, why, how it works, tagline reveal, rewards + bot, tutorials, support, FAQ (with FAQ schema), final CTA, footer, Privacy and Terms pages, branded 404. Tested at 1280/1024/768/390.
 - [x] Refund/cancellation terms — owner gave the 30 minute delivery promise and refund rule (Home trust band, FAQ, Terms).
