@@ -16,6 +16,11 @@ export const Route = createFileRoute("/api/public/shop/v1/actions")({
     if (!parsed.success) return json({ ok: false, error: "INVALID_ACTION_INPUT" }, 400);
     const data = parsed.data;
     const { db } = await import("@/lib/hub.server");
+    if (data.action === "upsert_product") {
+      const { data: product, error } = await db.rpc("shop_crm_upsert_product", { _input: data });
+      if (error) return json({ ok: false, error: "PRODUCT_UPDATE_FAILED" }, 400);
+      return json({ ok: true, product_id: product });
+    }
     const { data: order, error } = await db.from("shop_orders").select("id").eq("id", data.order_id).maybeSingle();
     if (error) return json({ ok: false, error: "SERVICE_UNAVAILABLE" }, 503);
     if (!order) return json({ ok: false, error: "ORDER_NOT_FOUND" }, 404);

@@ -1,5 +1,10 @@
 # Roadmap
 
+## Member feed, bot funding and CRM product bridge
+- [ ] Number every bot member and website account; durable customer directory and wallet payment exports.
+- [ ] Bot USDT/UPI funding requests, atomic Admin approve/reject and noted deductions.
+- [ ] Authenticated CRM product upsert with draft-only first creation; test rules and document.
+
 ## CRM buyer history linking
 - [x] Persist stable buyer IDs and first-seen timestamps without merging website and Telegram accounts.
 - [x] Send customer upserts alongside linked order snapshots; preserve order numbers, retries and read-only API.
