@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { telegramRenderer, telegramHomeKeyboard } from "@/lib/telegram-navigation";
 
 type TgUser = { id: number; username?: string; first_name?: string; last_name?: string };
-type Btn = { text: string; url?: string; callback_data?: string };
+type Btn = { text: string; url?: string; callback_data?: string; copy_text?: { text: string } };
 type Keyboard = Btn[][];
 
 const LINE = "━━━━━━━━━━━━━━";
@@ -82,7 +83,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             id: string;
             from: TgUser;
             data?: string;
-            message?: { chat: { id: number }; message_id: number };
+            message?: { chat: { id: number }; message_id: number; photo?: Array<{ file_id: string }> };
           };
         };
 
@@ -205,30 +206,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
          * Centralised page renderer: one message, one fresh keyboard, no duplicates.
          * Every navigation edits the current message and safely ignores "not modified".
          */
-        const render = async (body: string, keyboard: Keyboard) => {
-          const markup = { inline_keyboard: keyboard.map((row) => row.map((btn) => ({ ...btn }))) };
-          if (editMessageId) {
-            const res = await tg("editMessageText", {
-              chat_id: chatId,
-              message_id: editMessageId,
-              text: body,
-              parse_mode: "HTML",
-              disable_web_page_preview: true,
-              reply_markup: markup,
-            });
-            if (res.ok) return;
-            if (res.description?.includes("message is not modified")) return;
-            await logBotError("telegram_api", res.description ?? "editMessageText failed", from.id, "render");
-          }
-          const sent = await tg("sendMessage", {
-            chat_id: chatId,
-            text: body,
-            parse_mode: "HTML",
-            disable_web_page_preview: true,
-            reply_markup: markup,
-          });
-          if (!sent.ok) await logBotError("telegram_api", sent.description ?? "sendMessage failed", from.id, "render");
-        };
+        const render = telegramRenderer(tg, chatId, editMessageId, Boolean(update.callback_query?.message?.photo?.length));
 
         const storeName = S("store_name", "FoxGEN Store");
         const storeTagline = S("store_tagline", "Premium digital products at affordable prices.");
@@ -261,31 +239,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         // ---------- keyboard builders (always a brand new array) ----------
         const backRow = (to = "menu"): Btn[] => [{ text: `${E("back", "⬅️")} Back`, callback_data: to }];
 
-        const buildHomeKeyboard = (isActive: boolean): Keyboard => [
-          [{ text: "🛍️ SHOP", callback_data: "shop" }, { text: "📱 Virtual Numbers (OTP)", callback_data: "virtual" }],
-          [{ text: "📦 My Orders", callback_data: "myorders" }, { text: "👤 Profile", callback_data: "storeprofile" }],
-          [{ text: "👛 Wallet", callback_data: "wallet" }, { text: "🔍 Search", callback_data: "search" }],
-          [{ text: "🛠️ Reseller API", callback_data: "reseller" }],
-          [
-            { text: `${E("shop", "🛍️")} Shop`, callback_data: "shop" },
-            { text: `${E("rewards", "🎁")} Free Rewards`, callback_data: "rewards" },
-          ],
-          isActive
-            ? [
-                { text: `${E("profile", "👤")} My Profile`, callback_data: "me" },
-                { text: `${E("invite", "👥")} Invite & Earn`, callback_data: "invite" },
-              ]
-            : [{ text: `${E("profile", "👤")} My Profile`, callback_data: "me" }],
-          [
-            { text: `${E("tasks", "📋")} Tasks`, callback_data: "tasks" },
-            { text: `${E("extension", "📦")} Extension`, callback_data: "extension" },
-          ],
-          [
-            { text: `${E("community", "📢")} Community`, callback_data: "community" },
-            { text: `${E("help", "ℹ️")} Help`, callback_data: "help" },
-          ],
-          [{ text: `${E("support", "💬")} Support`, callback_data: "support" }],
-        ];
+        const buildHomeKeyboard = (isActive: boolean): Keyboard => telegramHomeKeyboard(isActive, E);
 
         const buildCommunityKeyboard = (): Keyboard => [
           [{ text: "▶️ YouTube", url: youtubeUrl }],
@@ -367,13 +321,15 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         const { walletFundingBot } = await import("@/lib/wallet-topup.server");
-        if (await walletFundingBot(profile.id, chatId, cb || (text === "/addfunds" ? "addfunds" : ""), text, update.message?.photo?.at(-1)?.file_id)) return Response.json({ ok: true });
+        const navigationAction = cb || (text.startsWith("/") ? text.slice(1).split(/[ @]/)[0]?.toLowerCase() ?? "" : "");
+        const normalizedAction = navigationAction === "home" ? "menu" : navigationAction;
+        if (await walletFundingBot(profile.id, chatId, normalizedAction, text, update.message?.photo?.at(-1)?.file_id, render)) return Response.json({ ok: true });
 
         const { marketplaceBot } = await import("@/lib/telegram-marketplace.server");
-        const marketRaw = cb || (text.startsWith("/") ? text.slice(1).split(/[ @]/)[0] ?? "" : "");
+        const marketRaw = normalizedAction;
         const marketAction = ({ profile: "storeprofile", orders: "myorders", products: "shop", store: "shop" } as Record<string,string>)[marketRaw] ?? marketRaw;
         try {
-          if (await marketplaceBot({ profile, chatId, action: marketAction, text, settings, callbackId: update.callback_query?.id, photoId: update.message?.photo?.at(-1)?.file_id })) return Response.json({ ok: true });
+          if (await marketplaceBot({ profile, chatId, action: marketAction, text, settings, callbackId: update.callback_query?.id, photoId: update.message?.photo?.at(-1)?.file_id, render })) return Response.json({ ok: true });
         } catch {
           workFailed = true;
           await send("Could not complete this action. Please try again or contact Support.", [[{ text: "Home", callback_data: "menu" }]]);

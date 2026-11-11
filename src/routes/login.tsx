@@ -87,8 +87,8 @@ function LoginPage() {
   }); };
   const heading = mode === "signup" ? "Create your account" : mode === "otp" ? "Verify your email" : mode === "forgot" ? "Reset your password" : "Welcome back";
   return <CustomerAuthShell>
-    <h1 className="heading-4 text-center">{heading}</h1>
-    <p className="body-6 mb-4 mt-2 text-center text-muted-foreground">{mode === "otp" ? email : mode === "signup" ? "Your next purchase starts here." : mode === "forgot" ? "A fresh start for your store account." : "Sign in to your Foxgen store account."}</p>
+    <h1 className="heading-6 sm:heading-4 text-center">{heading}</h1>
+    <p className="body-6 mb-3 mt-2 break-words text-center text-muted-foreground sm:mb-4">{mode === "otp" ? email : mode === "signup" ? "Your next purchase starts here." : mode === "forgot" ? "A fresh start for your store account." : "Sign in to your Foxgen store account."}</p>
     {(mode === "login" || mode === "signup") && <>
       <div className="space-y-2">
         <Button className="google-login w-full justify-center gap-[10px] px-3" disabled={busy} onClick={() => social("google")}><GoogleMark />Continue with Google</Button>
@@ -105,11 +105,11 @@ function LoginPage() {
       {notice && <p role="status" className="rounded-lg bg-card/70 p-3 text-sm text-foreground">{notice}</p>}
       <Button type="submit" disabled={busy} className="h-11 w-full gap-2">{busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "otp" ? "Verify email" : mode === "forgot" ? "Send reset link" : "Sign in"}<ArrowRight size={18}/></Button>
     </form>
-    <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm">
+    <div className="mt-2 flex flex-wrap items-center justify-center gap-0 text-sm sm:mt-4 sm:gap-2">
       {mode === "login" ? <><Button variant="link" disabled={busy} onClick={() => switchMode("forgot")}>Forgot password?</Button><Button variant="link" disabled={busy} onClick={() => switchMode("signup")}>Create account</Button></> : <Button variant="link" disabled={busy} onClick={() => switchMode("login")}>Back to sign in</Button>}
       {mode === "otp" && <Button variant="link" disabled={busy || now < resendAt} onClick={() => void work(async () => { const r = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase(), options: { emailRedirectTo: `${window.location.origin}/login?redirect=${encodeURIComponent(redirect)}` } }); if (r.error) setError("Could not resend. Wait a moment and try again."); else { setNotice("Verification email sent. Check your inbox."); setResendAt(Date.now() + 60000); } })}>{now < resendAt ? `Resend in ${Math.ceil((resendAt - now) / 1000)}s` : "Resend code"}</Button>}
     </div>
-    <p className="caption-3 mt-5 flex items-center justify-center gap-2 text-muted-foreground"><ShieldCheck size={16}/>Secure account · Verified email</p>
-    <p className="caption-4 mt-3 text-center text-muted-foreground"><Link to="/terms" className="underline">Terms</Link> · <Link to="/privacy" className="underline">Privacy</Link></p>
+    <p className="caption-3 mt-3 flex items-center justify-center gap-2 text-muted-foreground sm:mt-5"><ShieldCheck size={16}/>Secure account · Verified email</p>
+    <p className="caption-4 mt-2 text-center text-muted-foreground sm:mt-3"><Link to="/terms" className="underline">Terms</Link> · <Link to="/privacy" className="underline">Privacy</Link></p>
   </CustomerAuthShell>;
 }

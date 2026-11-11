@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowCounterClockwise, PaperPlaneRight, X } from "@phosphor-icons/react/dist/ssr";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { deleteThread, getThread, newThreadId, saveThreadMessages } from "@/lib/chat-threads";
+import { Button } from "@/components/ui/button";
 
 const THREAD_KEY = "foxgen-assistant-thread";
 const SUGGESTIONS = ["What products do you have?", "Which items are in stock?", "How do I buy?"];
@@ -41,7 +42,7 @@ export default function AssistantChatPopup({ onClose, side = "right" }: { onClos
       role="dialog"
       aria-label="Foxgen AI chat"
       data-side={side}
-      className={`assistant-pop fixed bottom-[86px] z-40 ${side === "left" ? "left-2 sm:left-4" : "right-2 sm:right-4"} flex h-[min(520px,calc(100dvh-120px))] w-[min(370px,calc(100vw-1rem))] flex-col overflow-hidden rounded-3xl border border-border bg-card text-foreground shadow-lift sm:bottom-[124px]`}
+      className={`assistant-pop fixed bottom-[86px] z-40 ${side === "left" ? "left-4" : "right-4"} flex h-[min(400px,calc(100dvh-112px))] w-[min(320px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-border bg-card text-foreground shadow-lift sm:bottom-[124px] sm:h-[min(520px,calc(100dvh-150px))] sm:w-[370px]`}
     >
       <div className="flex items-center gap-3 border-b border-border bg-accent/60 px-4 py-3">
         <span className="relative flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
@@ -52,12 +53,12 @@ export default function AssistantChatPopup({ onClose, side = "right" }: { onClos
           <span className="title-4 block font-bold">Foxgen AI</span>
           <span className="caption-4 block text-muted-foreground">Usually replies in seconds</span>
         </span>
-        <button type="button" onClick={reset} aria-label="Start a new chat" title="New chat" className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Button type="button" variant="ghost" size="icon" onClick={reset} aria-label="Start a new chat" title="New chat" className="size-9 shrink-0 text-muted-foreground">
           <ArrowCounterClockwise size={18} weight="bold" />
-        </button>
-        <button type="button" onClick={onClose} aria-label="Close chat" className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        </Button>
+        <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Close chat" className="size-9 shrink-0 text-muted-foreground">
           <X size={18} weight="bold" />
-        </button>
+        </Button>
       </div>
       <ChatBody key={threadId} threadId={threadId} initialMessages={initial} />
     </div>
@@ -79,7 +80,7 @@ function ChatBody({ threadId, initialMessages }: { threadId: string; initialMess
   const busy = status === "submitted" || status === "streaming";
 
   useEffect(() => {
-    inputRef.current?.focus();
+    if (window.matchMedia("(min-width: 640px)").matches) inputRef.current?.focus();
   }, []);
   useEffect(() => {
     if ((status === "ready" || status === "error") && messages.length > 0) saveThreadMessages(threadId, messages);
@@ -108,9 +109,9 @@ function ChatBody({ threadId, initialMessages }: { threadId: string; initialMess
         {messages.length === 0 && (
           <div className="flex flex-wrap gap-2 pt-1">
             {SUGGESTIONS.map((s) => (
-              <button key={s} type="button" onClick={() => send(s)} className="caption-1 rounded-full border border-border px-3 py-1.5 transition hover:border-primary/50 hover:bg-accent">
+              <Button variant="outline" key={s} type="button" onClick={() => send(s)} className="caption-3 h-auto whitespace-normal px-3 py-2">
                 {s}
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -147,16 +148,16 @@ function ChatBody({ threadId, initialMessages }: { threadId: string; initialMess
           placeholder="Type your message..."
           aria-label="Type your message"
           maxLength={1000}
-          className="body-6 max-h-28 min-h-11 flex-1 resize-none rounded-2xl border border-input bg-background px-4 py-2.5 outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30"
+          className="body-3 sm:body-6 max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2.5 outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30"
         />
-        <button
+        <Button size="icon"
           type="submit"
           disabled={busy || !input.trim()}
           aria-label="Send message"
           className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-soft transition hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <PaperPlaneRight size={18} weight="fill" />
-        </button>
+        </Button>
       </form>
     </>
   );

@@ -25,11 +25,11 @@ const ease = "ease-[cubic-bezier(0.22,1,0.36,1)]";
 
 export function BrandMark({ compact = false, tone = "default" }: { compact?: boolean; tone?: "default" | "inverse" }) {
   return (
-    <Link to="/" className="flex shrink-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${BRAND.name} home`}>
-      <img src={BRAND.mark} alt="" width={44} height={44} decoding="async" className="size-11 rounded-xl bg-ink object-cover shadow-soft ring-1 ring-border" />
+    <Link to="/" className="flex min-w-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`${BRAND.name} home`}>
+      <img src={BRAND.mark} alt="" width={44} height={44} decoding="async" className="size-8 shrink-0 rounded-lg bg-ink object-cover shadow-soft ring-1 ring-border sm:size-11" />
       {!compact && (
-        <span className="flex flex-col leading-none">
-          <span className="title-3 font-bold tracking-tight">{BRAND.short}</span>
+        <span className="flex min-w-0 flex-col leading-none max-[359px]:hidden">
+          <span className="title-4 truncate font-bold sm:title-3">{BRAND.short}</span>
           <span className={`caption-4 mt-0.5 ${tone === "inverse" ? "text-muted-foreground" : "text-muted-foreground"}`}>{BRAND.suffix}</span>
         </span>
       )}
@@ -105,7 +105,7 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
         <div className="flex justify-center px-4 pt-4">
         <nav
           aria-label="Main"
-          className="pointer-events-auto flex w-full max-w-5xl items-center gap-2 rounded-2xl border border-border/80 bg-card/85 py-2 pl-3 pr-2 shadow-lift backdrop-blur-xl animate-fade-up sm:gap-4 sm:pl-4"
+          className="pointer-events-auto grid w-full max-w-5xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-border/80 bg-card/85 py-2 pl-3 pr-2 shadow-lift backdrop-blur-xl animate-fade-up sm:flex sm:gap-4 sm:pl-4"
         >
           <BrandMark />
           <ul className="mx-auto hidden items-center gap-1 lg:flex">
@@ -123,7 +123,7 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
               </li>
             ))}
           </ul>
-          <div className="ml-auto flex items-center gap-1 lg:ml-0">
+          <div className="ml-auto flex shrink-0 items-center gap-1 lg:ml-0">
             {right}
             <Link
               to={user ? "/account" : "/login"}
@@ -133,7 +133,7 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
             >
               <UserCircle size={22} />
             </Link>
-            <BuyNowLink tone="navy" className="button-sm">
+            <BuyNowLink tone="navy" className="button-xsm whitespace-nowrap px-3 sm:button-sm sm:px-4">
               <ShoppingBagOpen size={16} weight="bold" /> Buy now
             </BuyNowLink>
             <MenuToggle open={open} onClick={() => setOpen((v) => !v)} />
