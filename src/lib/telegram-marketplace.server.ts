@@ -3,9 +3,11 @@ import { createOrder, maxUnits, shopProductById, shopProductRows, cancelOrder, s
 import { quantityChoices, orderTime } from './telegram-marketplace.policy';
 import { memberLabel } from './member-number';
 import { dualPrice } from './wallet-rate';
+import { paymentMenu } from './telegram-payment-menu';
+import { styledKeyboard, type TelegramButton } from './telegram-navigation';
 import { categoryOf, categoryLabel } from './store-categories';
 import type { Json } from '@/integrations/supabase/types';
-type Button = { text: string; callback_data?: string; url?: string; copy_text?: { text: string } };
+type Button = TelegramButton;
 type Keyboard = Button[][];
 const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const home: Keyboard = [[{ text: '⬅️ Home', callback_data: 'menu' }]];
@@ -30,10 +32,10 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
     if (image?.startsWith('/')) image = new URL(image, settings['shop_url'] || 'https://foxgenofficial.lovable.app').href;
     if (input.render) return input.render(body, keys, image && /^https:\/\//.test(image) && body.length <= 1024 ? image : undefined);
     if (image && /^https:\/\//.test(image) && body.length <= 1024) {
-      const r = await tg('sendPhoto',{ chat_id:chatId,photo:image,caption:body,parse_mode:'HTML',reply_markup:{inline_keyboard:keys} });
+      const r = await tg('sendPhoto',{ chat_id:chatId,photo:image,caption:body,parse_mode:'HTML',reply_markup:{inline_keyboard:styledKeyboard(keys)} });
       if (r.ok) return;
     }
-    const result = await tg('sendMessage',{chat_id:chatId,text:body,parse_mode:'HTML',disable_web_page_preview:true,reply_markup:{inline_keyboard:keys}});
+    const result = await tg('sendMessage',{chat_id:chatId,text:body,parse_mode:'HTML',disable_web_page_preview:true,reply_markup:{inline_keyboard:styledKeyboard(keys)}});
     if (!result.ok) throw new Error('Telegram message failed');
   };
   const support: Button = { text:'💬 Help', url:settings['support_url'] || 'https://t.me/FoXGENSPORT' };
@@ -84,9 +86,9 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
   const confirm=async(id:string,qty:number)=>{
     const p=await shopProductById(id,'website');const limits=await db.from('products').select('min_per_order').eq('id',id).maybeSingle();if(!p||!p.purchasable||!Number.isInteger(qty)||qty<(limits.data?.min_per_order??1)||qty>maxUnits(p)){await send('Quantity unavailable. Open the product again.');return;}
     const methods=await db.from('payment_methods').select('*').eq('channel','telegram').eq('enabled',true).order('display_order');
-    const eligible=(methods.data??[]).filter(m=>['wallet','upi','binance_id','usdt_bep20'].includes(m.provider)&&(m.provider==='wallet'||!!m.recipient)&&(m.currency==='INR'?p.price_inr!==null:p.price_usdt!==null));
+    if(methods.error) throw new Error('Could not load payment methods');
     const s=await buyerStats(profile);
-    await send(`<b>CONFIRM PURCHASE</b>\n${esc(p.name)} ×${qty}\nUnit: ${esc(dualPrice(p))}\nTotal: ${esc(dualPrice({price_usdt:p.price_usdt===null?null:p.price_usdt*qty,price_inr:p.price_inr===null?null:p.price_inr*qty}))}\nWallet: ${s.balance.toFixed(2)} USD\n\nChoose payment method. Proof is reviewed before delivery.`,[...eligible.map(m=>[{text:`${m.name}${m.currency==='INR'?` · ₹${((p.price_inr??0)*qty).toFixed(2)}`:''}`,callback_data:`pay:${p.id}:${qty}:${m.id}`}]),...(p.price_stars?[[{text:`⭐ Telegram Stars · ${p.price_stars*qty}`,callback_data:`buystars:${p.id}:${qty}`}]]:[]),[{text:'Razer Pay · Coming Soon',callback_data:'soon'},{text:'Visa / Mastercard · Coming Soon',callback_data:'soon'}],[{text:'Change quantity',callback_data:`qty:${p.id}`}],...home]);
+    await send(`🧾 <b>ORDER SUMMARY</b>\n━━━━━━━━━━━━━━\n🛍️ Product: ${esc(p.name)}\n🔢 Quantity: ${qty}\n💵 Unit price: ${esc(dualPrice(p))}\n━━━━━━━━━━━━━━\n💰 Total: ${esc(dualPrice({price_usdt:p.price_usdt===null?null:p.price_usdt*qty,price_inr:p.price_inr===null?null:p.price_inr*qty}))}\n👛 Your balance: $${s.balance.toFixed(2)} USD / USDT\n\nChoose a payment method 👇\nWallet purchases deduct dollars, not referral credits. UPI / Binance payments require review.`,[...paymentMenu(p.id,qty,methods.data??[],p,s.balance),...(p.price_stars?[[{text:`⭐ Telegram Stars · ${p.price_stars*qty}`,callback_data:`buystars:${p.id}:${qty}`}]]:[]),[{text:'💳 Visa / Mastercard · Coming Soon',callback_data:'soon'}],[{text:'🏦 International bank · Coming Soon',callback_data:'soon'}],[{text:'💰 Add funds',callback_data:'addfunds'}],[{text:'⬅ Change quantity',callback_data:`qty:${p.id}`}],...home]);
   };
   if(action==='soon'){await send('Coming Soon — this payment method is not supported yet.');return true;}
   if(action.startsWith('qty:')) {
@@ -98,15 +100,23 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
   if(action.startsWith('buy:')){const [,id,q]=action.split(':');await confirm(id??'',Number(q));return true;}
   if(action.startsWith('pay:')||action.startsWith('buystars:')) {
     const [,id,q,method]=action.split(':');
-    const o=await createOrder({channel:'telegram',profileId:profile.id,telegramUserId:profile.telegram_user_id,customerName:[profile.first_name,profile.last_name].filter(Boolean).join(' '),productId:id??'',quantity:Number(q),paymentMethodId:method,checkoutKey:input.callbackId?`telegram:${input.callbackId}`:undefined});
+    let methodId=method;
+    if(action.startsWith('pay:') && ['wallet','upi','binance_id','usdt_bep20'].includes(method??'')) {
+      const selected=await db.from('payment_methods').select('id').eq('channel','telegram').eq('enabled',true).eq('provider',method??'').order('display_order').limit(1).maybeSingle();
+      if(selected.error||!selected.data){await send('Payment method unavailable. Please reopen the order summary.');return true;}
+      methodId=selected.data.id;
+    }
+    const o=await createOrder({channel:'telegram',profileId:profile.id,telegramUserId:profile.telegram_user_id,customerName:[profile.first_name,profile.last_name].filter(Boolean).join(' '),productId:id??'',quantity:Number(q),paymentMethodId:methodId,checkoutKey:input.callbackId?`telegram:${input.callbackId}`:undefined});
     if(o.currency==='XTR') { const p=await shopProductById(id??'','telegram');await tg('sendInvoice',{chat_id:chatId,title:(p?.name||'Order').slice(0,32),description:`Order ${o.order_number}`,payload:o.id,currency:'XTR',prices:[{label:'Order total',amount:o.stars_total}]}); }
     else if(o.payment_reference?.startsWith('WALLET-')) {await detail(o.id);return true;}
     else {
       const m=await db.from('payment_methods').select('*').eq('id',o.payment_method_id??'').maybeSingle();const config=m.data?.config as Record<string,unknown>|undefined;
-      await send(`<b>${esc(o.payment_method_name)}</b>\nOrder: ${esc(o.order_number)}\nAmount: <b>${o.total} ${esc(o.currency)}</b>\nRecipient: <code>${esc(o.payment_recipient)}</code>\n${esc(config?.['account_name']||config?.['recipient_name']||'')}\n${esc(m.data?.instructions||'Send the exact amount, then submit the transaction ID and payment screenshot. Payment is pending until verified.')}`,[[{text:'Copy recipient',copy_text:{text:o.payment_recipient||''}}],[{text:'Submit transaction ID',callback_data:`proof:${o.id}`}],[{text:'📦 Order details',callback_data:`order:${o.id}`}],...home],typeof config?.['qr_url']==='string'?config['qr_url']:null);
+      await send(`💳 <b>${esc(o.payment_method_name)}</b>\n━━━━━━━━━━━━━━\n🧾 Order: ${esc(o.order_number)}\n💰 Amount: <b>${o.total} ${esc(o.currency)}</b>\nRecipient: <code>${esc(o.payment_recipient)}</code>\n${esc(config?.['account_name']||config?.['recipient_name']||'')}\n${esc(m.data?.instructions||'Send the exact amount, then submit the transaction ID and payment screenshot.')}\n\n⏳ Payment remains under review until approved.`,[[{text:'📋 Copy recipient',copy_text:{text:o.payment_recipient||''}},{text:'📋 Copy amount',copy_text:{text:String(o.total)}}],[{text:'🧾 Send transaction ID',callback_data:`proof:${o.id}`}],[{text:'📸 Send payment screenshot',callback_data:`proof:${o.id}`}],[{text:'✖ Cancel order',callback_data:`cancelshop:${o.id}`}],[{text:'📦 Order details',callback_data:`order:${o.id}`}],...home],typeof config?.['qr_url']==='string'?config['qr_url']:null);
     }return true;
   }
-  if(action.startsWith('proof:')){const o=await db.from('shop_orders').select('id,status').eq('id',action.slice(6)).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();if(o.data?.status!=='awaiting_payment'){await send('This order is not awaiting payment.');return true;}await saveState('reference',{orderId:o.data.id});await send('Send your transaction ID / UTR (6–200 characters).');return true;}
+  if(action.startsWith('proof:')){const o=await db.from('shop_orders').select('id,status').eq('id',action.slice(6)).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();if(o.data?.status!=='awaiting_payment'){await send('This order is not awaiting payment.');return true;}await saveState('reference',{orderId:o.data.id});await send('📸 Send your payment screenshot or transaction ID / UTR first. Both are needed for payment review.');return true;}
+  if(state?.state==='reference'&&input.photoId){await saveState('photo_reference',{...(state.data as Record<string,Json>),photoId:input.photoId});await send('🧾 Screenshot received. Now send your transaction ID / UTR (6–200 characters).');return true;}
+  if(state?.state==='photo_reference'&&text&&!text.startsWith('/')){if(text.length<6||text.length>200){await send('Enter the exact transaction ID (6–200 characters).');return true;}const data=state.data as Record<string,unknown>;const id=String(data['orderId']);const owned=await db.from('shop_orders').select('id').eq('id',id).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();if(!owned.data)throw new Error('Order unavailable');await submitPayment(id,text,`telegram-file:${String(data['photoId'])}`);await clear();await send('⏳ <b>PAYMENT UNDER REVIEW</b>\nScreenshot and transaction ID received. Payment is not confirmed until approved.',[[{text:'📦 Track order',callback_data:`order:${id}`}],...home]);return true;}
   if(state?.state==='reference'&&text&&!text.startsWith('/')){if(text.length<6||text.length>200){await send('Enter the exact transaction ID (6–200 characters).');return true;}await saveState('evidence',{...(state.data as Record<string,Json>),reference:text});await send('Send the payment screenshot as a photo.');return true;}
   if(state?.state==='evidence'&&input.photoId){const data=state.data as Record<string,unknown>;const id=String(data['orderId']);const o=await db.from('shop_orders').select('id').eq('id',id).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();if(!o.data)throw new Error('Order unavailable');await submitPayment(id,String(data['reference']),`telegram-file:${input.photoId}`);await clear();await send('⏳ Proof submitted. Your payment is under review; no payment has been confirmed yet.',[[{text:'📦 Track order',callback_data:`order:${id}`}],...home]);return true;}
   if(action==='myorders'||action.startsWith('myorders:')) {const page=Math.max(1,Number(action.split(':')[1])||1);const orders=await db.from('shop_orders').select('id,order_number,status').eq('profile_id',profile.id).eq('channel','telegram').order('created_at',{ascending:false}).range((page-1)*8,page*8);await send(`<b>MY ORDERS</b> · Page ${page}\nSelect an order.`,[...(orders.data??[]).slice(0,8).map(o=>[{text:`${o.order_number} · ${o.status.replace(/_/g,' ')}`,callback_data:`order:${o.id}`}]),[{text:'◀ Previous',callback_data:`myorders:${Math.max(1,page-1)}`},...(orders.data?.length===9?[{text:'Next ▶',callback_data:`myorders:${page+1}`}]:[])],...home]);return true;}

@@ -1,5 +1,10 @@
 # Roadmap
 
+## Telegram payment summary and premium menus (Nov 12 2026)
+- [x] Fixed >64-byte payment callbacks; UPI/Binance/wallet summary, card/bank Coming Soon, screenshot-first order proof and required funding photo, QR/copy controls.
+- [x] Native green/blue/red Telegram button styles and exact member count added. Isolated database flow verified UPI proof under review, ₹100 approval → $1, automatic wallet debit → $0 with 7 referral credits unchanged; checkout channel-variable ambiguity fixed. 25 focused tests passed; no real transfers or Telegram client navigation performed.
+- [ ] Publish and verify updated buttons in Telegram — hosted code/client appearance not yet checked; Telegram controls message/background colours.
+
 ## Live Telegram navigation failure (Nov 12 2026)
 - [x] Confirmed historical hosted 500 at 21:33 UTC and a failed webhook work row; current signed harmless hosted requests return 200 with zero pending Telegram updates. Read-only navigation failures now acknowledge successfully delivered error screens; funding/payment/redemption work retains failure fencing. Original exception is absent from logs, so its exact trigger remains unproven.
 - [x] Real database + isolated profile + mocked Telegram transport verified full webhook Shop → Wallet → Free Rewards → injected DIGIHUP error screen → Wallet recovery, all 200 with completed work. 25 regression tests passed; live DIGIHUP returns 401 with a clear credential message. Temporary profile removed.

@@ -204,6 +204,27 @@
       "when": 1794433452234,
       "tag": "0028_supplier_catalogue_removal_and_fixed_wallet_rate",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794437971139,
+      "tag": "0029_fix_wallet_checkout_channel_ambiguity",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794438014118,
+      "tag": "0030_qualify_wallet_checkout_channel_variable",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794438045510,
+      "tag": "0031_restore_payment_method_channel_column",
+      "breakpoints": true
     }
   ]
 }
