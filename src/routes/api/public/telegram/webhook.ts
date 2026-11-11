@@ -92,10 +92,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         const updateId = update.update_id;
+        const claimToken = crypto.randomUUID();
         if (typeof updateId === "number") {
-          const claimed = await db.rpc("shop_claim_webhook", { _id: updateId });
+          const claimed = await db.rpc("shop_claim_webhook", { _id: updateId, _token: claimToken });
           if (claimed.error) return Response.json({ ok: false }, { status: 500 });
-          if (!claimed.data) return Response.json({ ok: true, duplicate: true });
+          if (claimed.data === "completed") return Response.json({ ok: true, duplicate: true });
+          if (claimed.data !== "claimed") return Response.json({ ok: false }, { status: 503 });
         }
         let workFailed = false;
         try {
@@ -124,11 +126,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // Match currency and amount against the order before accepting the payment.
           const { data: pending } = await db
             .from("shop_orders")
-            .select("id, status, stars_total, telegram_charge_id, telegram_user_id")
+            .select("id, status, channel, stars_total, telegram_charge_id, telegram_user_id")
             .eq("id", sp.invoice_payload)
             .maybeSingle();
           const amountOk =
-            !!pending && pending.telegram_user_id === update.message.from?.id && sp.currency === "XTR" && Number(pending.stars_total) === Number(sp.total_amount);
+            !!pending && pending.channel === "telegram" && pending.status === "awaiting_payment" && pending.telegram_user_id === update.message.from?.id && sp.currency === "XTR" && Number(pending.stars_total) === Number(sp.total_amount);
           if (!pending || pending.telegram_charge_id) {
             // Unknown order or this payment was already processed: never confirm twice.
             return Response.json({ ok: true, duplicate: !!pending });
@@ -1144,7 +1146,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           workFailed = true;
           return Response.json({ ok: false }, { status: 500 });
         } finally {
-          if (typeof updateId === "number") await db.from("shop_webhook_work").update({ status: workFailed ? "failed" : "completed", locked_until: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("update_id", updateId);
+          if (typeof updateId === "number") await db.from("shop_webhook_work").update({ status: workFailed ? "failed" : "completed", locked_until: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("update_id", updateId).eq("claim_token", claimToken);
         }
       },
     },

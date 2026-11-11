@@ -327,19 +327,8 @@ export async function setOrderEmails(orderId: string, rawEmails: string) {
 }
 
 export async function cancelOrder(orderId: string, actor: string, reason: string) {
-  const { data: order } = await db.from("shop_orders").select("*").eq("id", orderId).maybeSingle();
-  if (!order) throw new Error("Order not found.");
-  if (["payment_confirmed", "awaiting_fulfillment", "delivered"].includes(order.status)) {
-    throw new Error("A confirmed order cannot be cancelled here.");
-  }
-  await db.rpc("shop_release_stock", { _order_id: orderId });
-  await db
-    .from("shop_orders")
-    .update({ status: "cancelled", updated_at: new Date().toISOString() })
-    .eq("id", orderId);
-  await orderEvent(orderId, "cancelled", actor, reason);
-  await refundWalletOrder(order as Record<string, unknown>, `Order ${order.order_number} cancelled`);
-  return { ok: true };
+  const r=await db.rpc("shop_cancel_atomic",{_id:orderId,_status:"cancelled",_reason:reason,_actor:actor});
+  if(r.error)throw new Error(r.error.message);return {ok:true};
 }
 
 /* ------------------------------- notifications ------------------------------ */
@@ -354,7 +343,8 @@ export async function notifyBuyerTelegram(orderId: string, text: string) {
     .select("id")
     .single();
   try {
-    await tg("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: true });
+    const sent = await tg("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: true });
+    if (!sent.ok) throw new Error("Telegram notification failed");
     if (job) await db.from("shop_delivery_jobs").update({ status: "sent", attempts: 1, sent_at: new Date().toISOString() }).eq("id", job.id);
     return { ok: true };
   } catch (error) {
