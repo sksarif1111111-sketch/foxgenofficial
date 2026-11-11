@@ -218,6 +218,13 @@
       "when": 1794438014118,
       "tag": "0030_qualify_wallet_checkout_channel_variable",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794438045510,
+      "tag": "0031_restore_payment_method_channel_column",
+      "breakpoints": true
     }
   ]
 }
