@@ -5,6 +5,7 @@
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { supplierOf, supplierEnabled } from "./supplier-policy";
+import { supplierFailure } from "./supplier-errors";
 export { supplierOf } from "./supplier-policy";
 
 export type SupplierId = "reseller" | "digihup";
@@ -46,13 +47,6 @@ export function plainText(html: unknown, max = 2000): string | null {
   return text ? text.slice(0, max) : null;
 }
 
-function friendly(status: number, provider: string) {
-  if (status === 401 || status === 403) return `${provider} rejected the API key (expired or revoked).`;
-  if (status === 429) return `${provider} rate limit reached. Try again later.`;
-  if (status >= 500) return `${provider} is temporarily unavailable (${status}).`;
-  return `${provider} returned an unexpected response (${status}).`;
-}
-
 async function getJson(url: string, key: string, provider: string) {
   let res: Response;
   try {
@@ -64,7 +58,7 @@ async function getJson(url: string, key: string, provider: string) {
   const json = (await res.json().catch(() => null)) as Record<string, unknown> | null;
   if (!res.ok || !json || json["ok"] === false) {
     console.error("supplier api error", provider, res.status);
-    throw new Error(friendly(res.status, provider));
+    throw new Error(supplierFailure(res.status, provider, json));
   }
   return json;
 }
@@ -183,7 +177,7 @@ export async function syncSuppliers(trigger: "manual" | "auto") {
     for (const { id } of enabled) {
       await recordRun(id, trigger, "failed", { total: 0, added: 0, updated: 0 }, bySupplier[id].error, started);
     }
-    throw new Error("Could not reach any supplier. Previous products and prices were kept.");
+    throw new Error(enabled.map(s => bySupplier[s.id].error).filter(Boolean).join(" ") + " Previous products and prices were kept; bot menus remain available.");
   }
   const list = okSuppliers.flatMap((id) => bySupplier[id].list);
   const db = supabaseAdmin;
