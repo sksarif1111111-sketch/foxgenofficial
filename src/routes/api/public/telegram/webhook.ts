@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { telegramRenderer, telegramHomeKeyboard } from "@/lib/telegram-navigation";
+import { botFailureMessage, isReadOnlyBotAction } from "@/lib/telegram-recovery";
 
 type TgUser = { id: number; username?: string; first_name?: string; last_name?: string };
 type Btn = { text: string; url?: string; callback_data?: string; copy_text?: { text: string } };
@@ -323,17 +324,21 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const { walletFundingBot } = await import("@/lib/wallet-topup.server");
         const navigationAction = cb || (text.startsWith("/") ? text.slice(1).split(/[ @]/)[0]?.toLowerCase() ?? "" : "");
         const normalizedAction = navigationAction === "home" ? "menu" : navigationAction;
-        if (await walletFundingBot(profile.id, chatId, normalizedAction, text, update.message?.photo?.at(-1)?.file_id, render)) return Response.json({ ok: true });
-
         const { marketplaceBot } = await import("@/lib/telegram-marketplace.server");
         const marketRaw = normalizedAction;
         const marketAction = ({ profile: "storeprofile", orders: "myorders", products: "shop", store: "shop" } as Record<string,string>)[marketRaw] ?? marketRaw;
         try {
+          if (await walletFundingBot(profile.id, chatId, normalizedAction, text, update.message?.photo?.at(-1)?.file_id, render)) return Response.json({ ok: true });
           if (await marketplaceBot({ profile, chatId, action: marketAction, text, settings, callbackId: update.callback_query?.id, photoId: update.message?.photo?.at(-1)?.file_id, render })) return Response.json({ ok: true });
         } catch (error) {
           workFailed = true;
           await logBotError("marketplace", error instanceof Error ? error.message : "Action failed", from.id, marketAction);
-          await send("Could not complete this action. Please try again or contact Support.", [[{ text: "Home", callback_data: "menu" }]]);
+          await render(botFailureMessage(error instanceof Error ? error.message : ""), buildHomeKeyboard(profile.status === "active"));
+          // A delivered read-only error is handled. Telegram must not replay it endlessly.
+          if (isReadOnlyBotAction(marketAction)) {
+            workFailed = false;
+            return Response.json({ ok: true, handled_error: true });
+          }
           return Response.json({ ok: false }, { status: 500 });
         }
 
@@ -1097,6 +1102,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await render(`${E("error", "⚠️")} Something went wrong. Please try again shortly.`, [
             [{ text: "🏠 Home", callback_data: "menu" }],
           ]);
+          if (isReadOnlyBotAction(action)) workFailed = false;
           return Response.json({ ok: true });
         } finally {
           await unlock();
