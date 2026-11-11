@@ -8,6 +8,11 @@ import { shopWallet } from "@/lib/shop.functions";
 import { publicSiteInfo } from "@/lib/site.functions";
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
+import { useCustomerSession } from "@/components/site/customer-session";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -27,6 +32,9 @@ export const Route = createFileRoute("/account")({
 const TOKEN_KEY = "foxgen_hub_token";
 
 function AccountPage() {
+  const { user, ready } = useCustomerSession();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [token, setToken] = useState<string | null>(null);
   useEffect(() => {
     const fromUrl = new URL(window.location.href).searchParams.get("t");
@@ -36,8 +44,8 @@ function AccountPage() {
   const loadHub = useServerFn(getHubState);
   const loadWallet = useServerFn(shopWallet);
   const loadSite = useServerFn(publicSiteInfo);
-  const hub = useQuery({ queryKey: ["account-hub", token], queryFn: () => loadHub({ data: { token: token! } }), enabled: !!token, retry: false });
-  const wallet = useQuery({ queryKey: ["account-wallet", token], queryFn: () => loadWallet({ data: { token: token! } }), enabled: !!token && hub.isSuccess, retry: false });
+  const hub = useQuery({ queryKey: ["account-hub", token], queryFn: () => { if (!token) throw new Error("No Telegram link"); return loadHub({ data: { token } }); }, enabled: !!token && !user, retry: false });
+  const wallet = useQuery({ queryKey: ["account-wallet", token], queryFn: () => { if (!token) throw new Error("No Telegram link"); return loadWallet({ data: { token } }); }, enabled: !!token && !user && hub.isSuccess, retry: false });
   const site = useQuery({ queryKey: ["site-info"], queryFn: () => loadSite() });
   const botUser = site.data?.links.bot_username?.replace(/^@/, "");
 
@@ -53,14 +61,18 @@ function AccountPage() {
     <div className="min-h-screen bg-background text-foreground">
       <SiteNav />
       <main id="main" className="container-page py-10 sm:py-14">
-        {token === null || (token && hub.isLoading) ? (
+        {user ? <section className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4"><div><h1 className="heading-4">My store account</h1><p className="body-6 mt-2 break-all text-muted-foreground">{user.email}</p><p className="caption-3 mt-2 text-success">Email verified</p></div><Button variant="outline" onClick={async () => { await queryClient.cancelQueries(); queryClient.clear(); localStorage.removeItem(TOKEN_KEY); await supabase.auth.signOut(); await navigate({ to: "/login", replace: true }); }}><LogOut className="size-4"/>Sign out</Button></div>
+          <Button asChild><Link to="/shop" search={{ view: "orders" }}><Receipt className="size-4"/>My website orders</Link></Button>
+        </section> : !ready || token === null || (token && hub.isLoading) ? (
           <div className="h-64 animate-pulse rounded-3xl border border-border bg-card" />
         ) : !signedIn ? (
           <section className="mx-auto max-w-lg rounded-3xl border border-border bg-card p-8 text-center shadow-lift">
             <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground"><Bot className="size-6" /></span>
-            <h1 className="mt-5 text-2xl font-bold">Sign in with Telegram</h1>
+            <h1 className="mt-5 text-2xl font-bold">Your store account</h1>
+            <Button asChild className="mt-5 w-full"><Link to="/login" search={{ redirect: "/account" }}>Sign in / Create account</Link></Button>
             <p className="mt-2 text-sm text-muted-foreground">
-              Your Foxgen account lives in our Telegram bot. Open the bot, tap <b>My account</b> and use the secure link it sends — you'll be signed in here automatically.
+              Telegram purchases and rewards are separate. Open the bot and use its My account link to view them here.
             </p>
             {token && hub.isError && <p role="alert" className="mt-4 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">Your sign-in link has expired. Open the bot again to get a new one.</p>}
             {botUser ? (
