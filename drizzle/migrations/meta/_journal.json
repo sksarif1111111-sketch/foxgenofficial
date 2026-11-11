@@ -162,6 +162,13 @@
       "when": 1794362513887,
       "tag": "0022_harden_wallet_and_product_bridge",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794362875443,
+      "tag": "0023_customer_directory_plain_identity",
+      "breakpoints": true
     }
   ]
 }
