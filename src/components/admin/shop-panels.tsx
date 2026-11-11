@@ -3,6 +3,7 @@ import { DeliveryCountdown } from "@/components/admin/delivery-countdown";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { useServerFn } from "@tanstack/react-start";
+import { adminSaveSettings } from "@/lib/hubadmin.functions";
 import {
   shopAddFulfillment,
   shopAdminProducts,
@@ -88,6 +89,8 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
   useEffect(() => { setNow(Date.now()); const timer = setInterval(() => setNow(Date.now()), 5000); return () => clearInterval(timer); }, []);
   const fDraftEmail = useServerFn(shopDraftEmail);
   const fSaveEmail = useServerFn(shopSaveEmailDraft);
+  const fSaveSettings = useServerFn(adminSaveSettings);
+  const [slaDraft, setSlaDraft] = useState("30");
 
   const [summary, setSummary] = useState<BuyingSummary | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -106,6 +109,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
   const load = useCallback(async () => {
     const [s, o] = await Promise.all([fSummary({ data: undefined }), fOrders({ data: { status, search } })]);
     setSummary(s);
+    setSlaDraft(String(s.deliverySlaMinutes));
     setRows(o as Row[]);
   }, [fOrders, fSummary, search, status]);
 
@@ -154,6 +158,15 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
       </div>
 
       <p className="text-xs text-muted-foreground">CRM sync · {summary?.crmSync.configured ? "Connected" : "Key missing"} · Last success: {summary?.crmSync.lastSuccess ? new Date(summary.crmSync.lastSuccess).toLocaleString() : "Not yet"} · {summary?.crmSync.pending ?? 0} queued · <span className={summary?.crmSync.stuck ? "text-destructive" : ""}>{summary?.crmSync.stuck ?? 0} stuck (5+ attempts)</span></p>
+      <div className="flex flex-wrap items-end gap-3">
+        <Field label="Delivery SLA (minutes)"><input type="number" min="1" max="1440" value={slaDraft} onChange={e => setSlaDraft(e.target.value)} className={input} /></Field>
+        <Button variant="outline" disabled={busy} onClick={() => void act(async () => {
+          const minutes = Number(slaDraft);
+          if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) throw new Error("Enter 1–1440 minutes.");
+          await fSaveSettings({ data: { values: { shop_delivery_sla_minutes: String(minutes) } } });
+          notify("Delivery SLA saved.");
+        })}>Save SLA</Button>
+      </div>
       <div className={card}>
         <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Confirmed revenue by currency</p>
         <div className="mt-2 flex flex-wrap gap-4">

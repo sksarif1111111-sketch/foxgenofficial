@@ -8,6 +8,7 @@
 - [x] Rule tests and authenticated Buying desktop/mobile checks; unpaid delivery rejection checked.
 - [ ] Live paid Telegram fulfillment / email send — no paid order available; email API key and verified sender missing.
 - [ ] Owner reviews changes before publishing; CRM must configure the same action key before initiating actions.
+- [ ] Hosted CRM retry callback — stable preview host currently returns 404 for new route; publish reviewed changes before activating live delivery retries.
 
 ## Homepage rebuild from the user's SKILL.md (Nov 2026)
 - [x] Floating nav + full height mobile menu, hero with Buy now, live offers with category filter, why, how it works, tagline reveal, rewards + bot, tutorials, support, FAQ (with FAQ schema), final CTA, footer, Privacy and Terms pages, branded 404. Tested at 1280/1024/768/390.

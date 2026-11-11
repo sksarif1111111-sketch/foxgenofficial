@@ -370,7 +370,7 @@ export async function createOrder(input: {
       .from("shop_orders")
       .update({
         payment_reference: `WALLET-${order.order_number}`,
-        status: "awaiting_email",
+        status: channel === "telegram" && !product.requires_buyer_email ? "under_review" : "awaiting_email",
         submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
