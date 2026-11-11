@@ -18,7 +18,7 @@ export async function flushCrmOutbox() {
   const token = crypto.randomUUID();
   const { data: rows, error } = await db.rpc("shop_claim_crm_outbox", { _token: token });
   if (error) throw new Error("Could not claim CRM queue.");
-  if (!rows?.length) return { ok: true, sent: 0 };
+  if (!rows?.length) { await db.rpc("shop_pause_crm_when_drained"); return { ok: true, sent: 0 }; }
   const settings = await getSettings();
   const fail = async (message: string, rowIds: string[]) => {
     const result = await db.from("shop_crm_outbox").update({ last_error: message, locked_until: null, claim_token: null }).in("id", rowIds).eq("claim_token", token);
@@ -27,7 +27,7 @@ export async function flushCrmOutbox() {
   const sla = deliverySlaMinutes(settings["shop_delivery_sla_minutes"]);
   let sent = 0;
   // One version per request preserves every transition and bounds large batches.
-  for (const row of rows) {
+  for (const row of [...rows].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))) {
   const snapshot = row.payload as { order: Record<string, unknown>; items: Record<string, unknown>[]; has_fulfillment: boolean };
   const body = JSON.stringify({ records: [crmOrderRecord(snapshot.order, snapshot.items, snapshot.has_fulfillment, sla)] });
   if (new TextEncoder().encode(body).length > 256 * 1024) { await fail("Order exceeds CRM's 256 KB limit.", [row.id]); continue; }

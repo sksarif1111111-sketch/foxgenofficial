@@ -137,7 +137,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
 
   return (
     <section className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {[
           ["Pending review", summary?.pendingReview],
           ["Awaiting email", summary?.awaitingEmail],
