@@ -938,7 +938,7 @@ function PaymentMethodsEditor({
       </div>
       {rows.map((row) => (
         <article key={String(row["id"])} className={`${card} flex flex-wrap items-center justify-between gap-2`}>
-          <span className="text-sm">
+          <span className="min-w-0 max-w-full break-all text-sm">
             <strong>{String(row["name"])}</strong> · {String(row["currency"])} ·{" "}
             {String(row["network"] ?? "no network")} · {String(row["recipient"] ?? "—")} ·{" "}
             {row["enabled"] ? "enabled" : "disabled"}
