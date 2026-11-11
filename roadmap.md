@@ -1,5 +1,10 @@
 # Roadmap
 
+## Mobile layout and duplicate Telegram screens (Nov 11 2026)
+- [ ] Compact mobile login, pop-ups and storefront spacing; preserve desktop layout and existing account/payment flows.
+- [ ] Remove duplicate legacy/new Telegram responses and verify single-dispatch behavior.
+- [ ] Check login modes, pop-up controls and storefront at small phone widths; run bot regression tests.
+
 ## Complete Telegram marketplace upgrade (Nov 11 2026)
 - [x] Inspect 11 uploaded bot screenshots, supplied PhonePe QR, current bot checkout, wallet, Admin, payment methods and security architecture.
 - [x] Atomic checkout, unpaid cancellation and null-safe row-locked wallet refund added; duplicate checkout, overselling, stock return and webhook lease fencing verified against isolated database records. Broader paid concurrency checks remain below.
