@@ -1,9 +1,9 @@
 # Roadmap
 
 ## Mobile layout and duplicate Telegram screens (Nov 11 2026)
-- [ ] Compact mobile login, pop-ups and storefront spacing; preserve desktop layout and existing account/payment flows.
-- [ ] Remove duplicate legacy/new Telegram responses and verify single-dispatch behavior.
-- [ ] Check login modes, pop-up controls and storefront at small phone widths; run bot regression tests.
+- [x] Compact mobile login, Admin/AI pop-ups and storefront spacing; two-column catalogue from 360px, compact navigation and desktop layout preserved. No account/payment logic changed.
+- [x] One Shop/profile menu, distinct credits/rewards entry and shared edit-first text/photo navigation for marketplace, wallet and legacy handlers. Seven mock transport regression tests passed; live Telegram checks remain deployment-dependent.
+- [x] Login/signup/recovery and password visibility, Admin/AI pop-up open/close and real 81-product catalogue checked at 320/390/1280px without overflow/runtime errors. Wallet and marketplace rule tests passed; build healthy.
 
 ## Complete Telegram marketplace upgrade (Nov 11 2026)
 - [x] Inspect 11 uploaded bot screenshots, supplied PhonePe QR, current bot checkout, wallet, Admin, payment methods and security architecture.
