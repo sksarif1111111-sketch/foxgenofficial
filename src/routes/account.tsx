@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Bot, Coins, Gift, LogOut, Receipt, Wallet } from "lucide-react";
+import { Robot as Bot, Coins, Gift, SignOut as LogOut, Receipt, Wallet } from "@phosphor-icons/react/dist/ssr";
 import { getHubState } from "@/lib/hub.functions";
 import { shopWallet } from "@/lib/shop.functions";
 import { publicSiteInfo } from "@/lib/site.functions";
@@ -14,15 +14,15 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { customerMemberNumber } from "@/lib/customer-shop.functions";
-import { memberLabel } from "@/lib/member-number";
+import { CustomerAccountPanel } from "@/components/site/customer-account-panel";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
     meta: [
       { title: "My Account — Foxgen AI Store" },
-      { name: "description", content: "Sign in with Telegram to see your orders, wallet balance, credits and licences." },
+      { name: "description", content: "Manage your account details, student voucher, spending and My orders at Foxgen AI Store." },
       { property: "og:title", content: "My Account — Foxgen AI Store" },
-      { property: "og:description", content: "Your orders, wallet, credits and licences in one place." },
+      { property: "og:description", content: "Your account details, purchase totals, student voucher and My orders in one place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -65,11 +65,7 @@ function AccountPage() {
     <div className="min-h-screen bg-background text-foreground">
       <SiteNav />
       <main id="main" className="container-page py-10 sm:py-14">
-        {user ? <section className="space-y-6">
-          <p className="caption-3 text-muted-foreground">{memberLabel(member.data)}</p>
-          <div className="flex flex-wrap items-center justify-between gap-4"><div><h1 className="heading-4">My store account</h1><p className="body-6 mt-2 break-all text-muted-foreground">{user.email}</p><p className="caption-3 mt-2 text-success">Email verified</p></div><Button variant="outline" onClick={async () => { await queryClient.cancelQueries(); queryClient.clear(); localStorage.removeItem(TOKEN_KEY); await supabase.auth.signOut(); await navigate({ to: "/login", search: { redirect: "/account" }, replace: true }); }}><LogOut className="size-4"/>Sign out</Button></div>
-          <Button asChild><Link to="/shop" search={{ view: "orders" }}><Receipt className="size-4"/>My website orders</Link></Button>
-        </section> : !ready || token === null || (token && hub.isLoading) ? (
+        {user ? <CustomerAccountPanel user={user} memberNumber={member.data} signOut={async () => { await queryClient.cancelQueries(); queryClient.clear(); localStorage.removeItem(TOKEN_KEY); await supabase.auth.signOut(); await navigate({ to: "/login", search: { redirect: "/account" }, replace: true }); }}/> : !ready || token === null || (token && hub.isLoading) ? (
           <div className="h-64 animate-pulse rounded-3xl border border-border bg-card" />
         ) : !signedIn ? (
           <section className="mx-auto max-w-lg rounded-3xl border border-border bg-card p-8 text-center shadow-lift">
@@ -98,9 +94,9 @@ function AccountPage() {
                   <p className="text-sm text-muted-foreground">{p?.username ? `@${p.username} · ` : ""}{p?.status === "active" ? "Verified member" : "Verification pending"}</p>
                 </div>
               </div>
-              <button type="button" onClick={signOut} className="inline-flex h-10 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium hover:bg-muted">
+              <Button type="button" variant="outline" onClick={signOut}>
                 <LogOut className="size-4" /> Sign out
-              </button>
+              </Button>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Link to="/shop" search={{ view: "orders" }} className="rounded-2xl border border-border bg-card p-5 shadow-soft hover:border-primary/40">

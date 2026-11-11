@@ -3,6 +3,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { ownsWebsiteOrder } from "@/lib/customer-auth.policy";
 import type { MyOrder } from "@/lib/shop.functions";
+import { accountOrderSummary } from "@/lib/customer-account.policy";
+export const customerAccountSummary = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+  const orders = [];
+  for (let offset = 0; ; offset += 500) {
+    const result = await context.supabase.from("shop_orders").select("channel,customer_user_id,status,currency,total").eq("customer_user_id", context.userId).eq("channel", "website").order("id").range(offset, offset + 499);
+    if (result.error) throw new Error("Could not read your account totals.");
+    orders.push(...(result.data ?? []));
+    if ((result.data?.length ?? 0) < 500) break;
+  }
+  return accountOrderSummary(orders, context.userId);
+});
 export const customerMemberNumber = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { db } = await import("./hub.server");
   const result = await db.from("shop_customer_accounts").select("member_number").eq("user_id", context.userId).maybeSingle();
