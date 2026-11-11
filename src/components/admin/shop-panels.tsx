@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { DeliveryCountdown } from "@/components/admin/delivery-countdown";
-import { deliveryClock } from "@/lib/shop-fulfillment";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { useServerFn } from "@tanstack/react-start";
@@ -145,7 +144,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
           ["Awaiting delivery", summary?.awaitingDelivery],
           ["Completed", summary?.completed],
           ["Rejected", summary?.rejected],
-          ["Orders overdue", (summary?.ordersOverdue ?? 0) + rows.filter(r => deliveryClock(r as { status: string; confirmed_at: string | null }, summary?.deliverySlaMinutes ?? 30, now)?.overdue && !deliveryClock(r as { status: string; confirmed_at: string | null }, summary?.deliverySlaMinutes ?? 30, 0)?.overdue).length * 0],
+          ["Orders overdue", now ? (summary?.deliveryDeadlines ?? []).filter(t => Date.parse(t) + (summary?.deliverySlaMinutes ?? 30) * 60000 <= now).length : summary?.ordersOverdue],
         ].map(([label, value]) => (
           <div key={String(label)} className={card}>
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{label}</p>

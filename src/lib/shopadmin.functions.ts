@@ -10,6 +10,7 @@ export type BuyingSummary = {
   deliverySlaMinutes: number;
   crmSync: { configured: boolean; lastSuccess: string | null; pending: number; stuck: number };
   ordersOverdue: number;
+  deliveryDeadlines: string[];
   pendingReview: number;
   awaitingEmail: number;
   awaitingDelivery: number;
@@ -42,6 +43,7 @@ export const shopSummary = createServerFn({ method: "POST" }).middleware([requir
   }
   return {
     deliverySlaMinutes, crmSync,
+    deliveryDeadlines: rows.filter(r => ["payment_confirmed", "awaiting_fulfillment"].includes(r.status) && r.confirmed_at).map(r => String(r.confirmed_at)),
     ordersOverdue: rows.filter(r => deliveryClock(r, deliverySlaMinutes)?.overdue).length,
     pendingReview: rows.filter((r) => r.status === "under_review" || r.status === "payment_submitted").length,
     awaitingEmail: rows.filter((r) => r.status === "awaiting_email").length,

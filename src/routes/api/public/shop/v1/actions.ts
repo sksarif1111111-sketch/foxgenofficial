@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { actionKeyMatches, shopActionSchema } from "@/lib/shop-actions.contract";
+import { shopActionSchema } from "@/lib/shop-actions.contract";
 
 export const Route = createFileRoute("/api/public/shop/v1/actions")({
   server: { handlers: { POST: async ({ request }) => {
     const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
     const key = process.env["SHOP_CRM_ACTION_KEY"];
+    const { keyMatches } = await import("@/lib/shop-api.server");
     const supplied = /^Bearer ([^\s,]+)$/.exec(request.headers.get("authorization") ?? "")?.[1];
-    if (!key || !supplied || !await actionKeyMatches(supplied, key)) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+    if (!key || !supplied || !await keyMatches(supplied, key)) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
     const raw = await request.text();
     if (new TextEncoder().encode(raw).length > 16384) return json({ ok: false, error: "BODY_TOO_LARGE" }, 400);
     let input: unknown;

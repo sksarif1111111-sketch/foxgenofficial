@@ -3,7 +3,7 @@ import { externalOrderId, normalizeChannel, paidStatuses, querySchema, resourceS
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers });
 
-async function keyMatches(a: string, b: string) {
+export async function keyMatches(a: string, b: string) {
   const digest = (s: string) => crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   const [left, right] = await Promise.all([digest(a), digest(b)]);
   const x = new Uint8Array(left), y = new Uint8Array(right);

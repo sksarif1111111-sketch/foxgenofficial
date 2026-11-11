@@ -130,11 +130,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // Match currency and amount against the order before accepting the payment.
           const { data: pending } = await db
             .from("shop_orders")
-            .select("id, status, stars_total, telegram_charge_id")
+            .select("id, status, stars_total, telegram_charge_id, telegram_user_id")
             .eq("id", sp.invoice_payload)
             .maybeSingle();
           const amountOk =
-            !!pending && sp.currency === "XTR" && Number(pending.stars_total) === Number(sp.total_amount);
+            !!pending && pending.telegram_user_id === update.message.from?.id && sp.currency === "XTR" && Number(pending.stars_total) === Number(sp.total_amount);
           if (!pending || pending.telegram_charge_id) {
             // Unknown order or this payment was already processed: never confirm twice.
             return Response.json({ ok: true, duplicate: !!pending });
@@ -398,7 +398,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 .from("shop_orders")
                 .update({ status: "awaiting_fulfillment", updated_at: new Date().toISOString() })
                 .eq("id", pending.id)
-                .eq("status", "under_review");
+                .eq("status", "under_review")
+                .not("confirmed_at", "is", null);
               const minutes = await reviewMinutes();
               await send(
                 `Please wait. My owner is checking your payment.\n` +

@@ -625,7 +625,11 @@ export async function sendTelegramDelivery(orderId: string, actor = "admin"): Pr
   const { data: order } = await db.from("shop_orders").select("*").eq("id", orderId).maybeSingle();
   if (!order) return { ok: false, reason: "order_not_found" };
   if (!order.telegram_user_id) return { ok: false, reason: "no_telegram" };
-  if (!["payment_confirmed", "awaiting_fulfillment", "delivered"].includes(order.status)) return { ok: false, reason: "payment_not_confirmed" };
+  // Email-first delivery may be followed by Telegram delivery, but not an unrelated delivered state.
+  if (order.status === "delivered") {
+    const email = await db.from("shop_delivery_jobs").select("id").eq("order_id", orderId).eq("channel", "email").eq("status", "sent").limit(1);
+    if (!email.data?.length) return { ok: false, reason: "payment_not_confirmed" };
+  } else if (!["payment_confirmed", "awaiting_fulfillment"].includes(order.status)) return { ok: false, reason: "payment_not_confirmed" };
   const [{ data: items, error: itemsError }, { data: materials, error: materialError }, settings] = await Promise.all([
     db.from("shop_order_items").select("product_name,quantity").eq("order_id", orderId),
     db.from("shop_fulfillments").select("content").eq("order_id", orderId).order("created_at"), getSettings(),
@@ -637,7 +641,7 @@ export async function sendTelegramDelivery(orderId: string, actor = "admin"): Pr
   if (text.length > 4096) return { ok: false, reason: "telegram_material_too_long" };
   const lock = `delivery:${orderId}`;
   const { acquireLock, releaseLock } = await import("@/lib/hub.server");
-  if (!await acquireLock(lock)) return { ok: false, reason: "delivery_in_progress" };
+  if (!await acquireLock(lock, 60000)) return { ok: false, reason: "delivery_in_progress" };
   try {
     const { data: previous } = await db.from("shop_delivery_jobs").select("id,payload").eq("order_id", orderId).eq("channel", "telegram").eq("status", "sent");
     if ((previous ?? []).some(j => (j.payload as Record<string, unknown>)?.["fulfillment"] === true)) return { ok: true, reason: "already_sent" };
