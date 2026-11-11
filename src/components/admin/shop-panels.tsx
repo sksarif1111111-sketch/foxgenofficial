@@ -1,3 +1,6 @@
+import { InventoryManager } from "@/components/admin/inventory-manager";
+import { marketplaceAssignInventory, marketplaceGenerateImage } from "@/lib/marketplace-admin.functions";
+import { catalogCategories } from "@/lib/hubcatalog.functions";
 import { Button } from "@/components/ui/button";
 import { DeliveryCountdown } from "@/components/admin/delivery-countdown";
 import { memberLabel } from "@/lib/member-number";
@@ -81,6 +84,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export function BuyingPanel({ notify }: { notify: Notify }) {
   const fSummary = useServerFn(shopSummary);
+  const fAssignInventory = useServerFn(marketplaceAssignInventory);
   const fOrders = useServerFn(shopOrders);
   const fDetail = useServerFn(shopOrderDetail);
   const fApprove = useServerFn(shopApproveOrder);
@@ -360,6 +364,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
 
           <div className="space-y-2">
             <p className="text-sm font-bold">Delivery material</p>
+            <Button variant="outline" disabled={busy} onClick={()=>void act(async()=>{const r=await fAssignInventory({data:{id:open.order.id}});notify(`${r.assigned} private items assigned.`);await openOrder(open.order.id);})}>Assign private inventory</Button>
             {open.fulfillments.map((f: Row) => (
               <p key={String(f["id"])} className="whitespace-pre-line rounded-xl border border-border p-3 text-xs">
                 [{String(f["kind"])}] {String(f["content"])}
@@ -528,6 +533,10 @@ const numOrNull = (value: string) => {
 
 export function ShopProductsPanel({ notify }: { notify: Notify }) {
   const fProducts = useServerFn(shopAdminProducts);
+  const fCategories = useServerFn(catalogCategories);
+  const fGenerateImage = useServerFn(marketplaceGenerateImage);
+  const [generating,setGenerating] = useState(false);
+  const [categories,setCategories] = useState<Array<{id:string;name:string}>>([]);
   const fSave = useServerFn(shopSaveProduct);
   const fDuplicate = useServerFn(shopDuplicateProduct);
   const fState = useServerFn(shopSetProductState);
@@ -542,10 +551,11 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
   const [draft, setDraft] = useState<Draft | null>(null);
 
   const load = useCallback(async () => {
-    const [p, m] = await Promise.all([fProducts({ data: undefined }), fMethods({ data: undefined })]);
+    const [p, m, c] = await Promise.all([fProducts({ data: undefined }), fMethods({ data: undefined }), fCategories()]);
+    setCategories(c);
     setRows(p as Row[]);
     setMethods(m as Row[]);
-  }, [fMethods, fProducts]);
+  }, [fMethods, fProducts, fCategories]);
 
   useEffect(() => {
     void load();
@@ -770,6 +780,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
               <ImageUpload folder="products" label="Product image (cards & product page)" value={draft.image_url} onChange={(url) => setDraft({ ...draft, image_url: url })} />
               <ImageUpload folder="products" label="Brand logo (square)" value={draft.logo_url} onChange={(url) => setDraft({ ...draft, logo_url: url })} />
             </div>
+            <Button variant="outline" disabled={generating||!draft.name.trim()} onClick={async()=>{if(!window.confirm("Generate a product thumbnail using paid AI credits?"))return;setGenerating(true);try{const r=await fGenerateImage({data:{name:draft.name,description:draft.description}});setDraft({...draft,image_url:r.url});notify("Image saved. Save the product to use it.");}catch(e){notify(e instanceof Error?e.message:"Image generation unavailable. Upload an image instead.");}finally{setGenerating(false);}}}>{generating?"Generating…":"Generate image · AI credits"}</Button>
             {draft.reseller_product_id && (
               <p className="sm:col-span-2 rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground">
                 Connected to supplier product <span className="font-mono">{draft.reseller_product_id}</span>. Name, USDT price and stock are refreshed on each sync; everything else you edit here is kept.
@@ -784,6 +795,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
             <Field label="Price in Telegram Stars (whole number, blank = Telegram purchase off)">
               <input className={input} value={draft.price_stars} onChange={(e) => setDraft({ ...draft, price_stars: e.target.value })} />
             </Field>
+            <Field label="Bot category"><select className={input} value={draft.category_id} onChange={e=>setDraft({...draft,category_id:e.target.value})}><option value="">Uncategorised</option>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
             <Field label="Warranty">
               <input className={input} value={draft.warranty_label} onChange={e => setDraft({...draft,warranty_label:e.target.value})} />
             </Field>
@@ -835,6 +847,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
               <input className={input} value={draft.download_url} onChange={(e) => setDraft({ ...draft, download_url: e.target.value })} />
             </Field>
           </div>
+          {draft.id && <InventoryManager productId={draft.id} />}
           <Field label="Short description">
             <input className={input} value={draft.short_description} onChange={(e) => setDraft({ ...draft, short_description: e.target.value })} />
           </Field>
