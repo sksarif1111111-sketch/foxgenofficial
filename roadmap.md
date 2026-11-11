@@ -1,8 +1,9 @@
 # Roadmap
 
 ## Live Telegram navigation failure (Nov 12 2026)
-- [ ] Identify the hosted 500 boundary and repair it without changing payment/referral rules.
-- [ ] Verify Shop, Wallet and Free Rewards navigation and isolated DIGIHUP rejection handling; report hosted verification limits.
+- [x] Confirmed historical hosted 500 at 21:33 UTC and a failed webhook work row; current signed harmless hosted requests return 200 with zero pending Telegram updates. Read-only navigation failures now acknowledge successfully delivered error screens; funding/payment/redemption work retains failure fencing. Original exception is absent from logs, so its exact trigger remains unproven.
+- [x] Real database + isolated profile + mocked Telegram transport verified full webhook Shop → Wallet → Free Rewards → injected DIGIHUP error screen → Wallet recovery, all 200 with completed work. 25 regression tests passed; live DIGIHUP returns 401 with a clear credential message. Temporary profile removed.
+- [ ] Publish reviewed changes and click Shop, Wallet and Free Rewards in the real Telegram client; no accessible Telegram user session/test chat was available, so hosted customer navigation and original 500 trigger remain unverified. DIGIHUP imports require the owner to replace its rejected key.
 
 ## Supplier removal and simple Telegram marketplace (Nov 12 2026)
 - [x] Supplier identity/status and atomic removal controls added; removed product tombstones prevent republishing. Authenticated Admin controls checked at 1280/390px; isolated product removed from real catalogue and mocked bot. No live supplier catalogue was removed during tests.
