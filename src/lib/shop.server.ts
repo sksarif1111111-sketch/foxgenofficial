@@ -255,6 +255,7 @@ export async function createOrder(input: {
   profileId: string | null;
   telegramUserId: number | null;
   customerName: string | null;
+  customerUserId?: string;
   productId: string;
   quantity: number;
   paymentMethodId?: string | null;
@@ -292,6 +293,7 @@ export async function createOrder(input: {
     .from("shop_orders")
     .insert({
       profile_id: input.profileId,
+      customer_user_id: input.customerUserId ?? null,
       telegram_user_id: input.telegramUserId,
       customer_name: input.customerName,
       channel: input.channel,
