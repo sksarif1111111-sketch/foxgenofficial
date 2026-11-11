@@ -183,6 +183,13 @@
       "when": 1794367047623,
       "tag": "0025_telegram_marketplace_state_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794367294720,
+      "tag": "0026_marketplace_null_safe_wallet_refund",
+      "breakpoints": true
     }
   ]
 }
