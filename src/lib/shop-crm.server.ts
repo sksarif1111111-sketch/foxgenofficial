@@ -34,6 +34,8 @@ export async function flushCrmOutbox() {
     return { ok: false, sent: 0 };
   }
   const identityByOrder = new Map(identities.data.map(o => [o.id, o]));
+  const { data: members } = await db.from("profiles").select("id,member_number,created_at").in("id", identities.data.map(o => o.customer_external_id).filter((id): id is string => id !== null));
+  const memberById = new Map((members ?? []).map(p => [p.id,p]));
   let sent = 0;
   // One version per request preserves every transition and bounds large batches.
   for (const row of [...rows].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))) {
