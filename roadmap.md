@@ -1,5 +1,11 @@
 # Roadmap
 
+## Supplier removal and simple Telegram marketplace (Nov 12 2026)
+- [ ] Supplier identity/status, remove supplier catalogue everywhere without deleting order history, and prevent sync resurrection.
+- [ ] Simple Shop/Wallet/Free Rewards/Profile navigation with credits separate from funded USD/USDT.
+- [ ] Fixed ₹100 = $1 wallet review and dual product prices, preserving existing selling prices.
+- [ ] Diagnose Telegram webhook 500 / referral notification 429 and run focused end-to-end checks.
+
 ## Mobile layout and duplicate Telegram screens (Nov 11 2026)
 - [x] Compact mobile login, Admin/AI pop-ups and storefront spacing; two-column catalogue from 360px, compact navigation and desktop layout preserved. No account/payment logic changed.
 - [x] One Shop/profile menu, distinct credits/rewards entry and shared edit-first text/photo navigation for marketplace, wallet and legacy handlers. Seven mock transport regression tests passed; live Telegram checks remain deployment-dependent.
