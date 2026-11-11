@@ -155,6 +155,13 @@
       "when": 1794362381554,
       "tag": "0021_member_directory_wallet_requests_product_bridge",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794362513887,
+      "tag": "0022_harden_wallet_and_product_bridge",
+      "breakpoints": true
     }
   ]
 }
