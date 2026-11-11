@@ -15,7 +15,7 @@ export async function buyerStats(profile: Profile) {
     for (const o of res.data ?? []) {
       if (o.status === 'delivered') completed++;
       if (!['delivered','cancelled','rejected','expired','refunded'].includes(o.status)) pending++;
-      if (o.status === 'delivered' || ['payment_confirmed','awaiting_fulfillment'].includes(o.status)) totals.set(o.currency, (totals.get(o.currency) ?? 0) + Number(o.currency === 'XTR' ? o.stars_total : o.total));
+      if (o.status === 'delivered' || ['payment_confirmed','awaiting_email','awaiting_fulfillment'].includes(o.status)) totals.set(o.currency, (totals.get(o.currency) ?? 0) + Number(o.currency === 'XTR' ? o.stars_total : o.total));
     }
     if ((res.data?.length ?? 0) < 1000) break;
   }
@@ -78,7 +78,7 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
   }
   const confirm=async(id:string,qty:number)=>{
     const p=await shopProductById(id,'website');if(!p||!p.purchasable||!Number.isInteger(qty)||qty<1||qty>maxUnits(p)){await send('Quantity unavailable. Open the product again.');return;}
-    const methods=await db.from('payment_methods').select('*').eq('enabled',true).order('display_order');
+    const methods=await db.from('payment_methods').select('*').eq('channel','telegram').eq('enabled',true).order('display_order');
     const eligible=(methods.data??[]).filter(m=>['wallet','upi','binance_id','usdt_bep20'].includes(m.provider)&&(m.provider==='wallet'||!!m.recipient)&&(m.currency==='INR'?p.price_inr!==null:p.price_usdt!==null));
     const s=await buyerStats(profile);
     await send(`<b>CONFIRM PURCHASE</b>\n${esc(p.name)} ×${qty}\nUnit: ${esc(p.price_label)}\nTotal: ${((p.price_usdt??0)*qty).toFixed(2)} USDT\nWallet: ${s.balance.toFixed(2)} USD\n\nChoose payment method. Proof is reviewed before delivery.`,[...eligible.map(m=>[{text:`${m.name}${m.currency==='INR'?` · ₹${((p.price_inr??0)*qty).toFixed(2)}`:''}`,callback_data:`pay:${p.id}:${qty}:${m.id}`}]),...(p.price_stars?[[{text:`⭐ Telegram Stars · ${p.price_stars*qty}`,callback_data:`buystars:${p.id}:${qty}`}]]:[]),[{text:'Razer Pay · Coming Soon',callback_data:'soon'},{text:'Visa / Mastercard · Coming Soon',callback_data:'soon'}],[{text:'Change quantity',callback_data:`qty:${p.id}`}],...home]);

@@ -5,7 +5,8 @@ export const Route = createFileRoute('/api/admin/payment-proof/$id')({server:{ha
   if(!z.string().uuid().safeParse(params.id).success)return new Response('Invalid order',{status:400});
   const {db,tg,botToken}=await import('@/lib/hub.server');
   const order=await db.from('shop_orders').select('payment_evidence_url').eq('id',params.id).maybeSingle();
-  const evidence=order.data?.payment_evidence_url;
+  const deposit=order.data ? null : await db.from('wallet_topup_requests').select('evidence_url').eq('id',params.id).maybeSingle();
+  const evidence=order.data?.payment_evidence_url ?? deposit?.data?.evidence_url;
   if(!evidence?.startsWith('telegram-file:'))return new Response('Not found',{status:404});
   const file=await tg<{file_path?:string}>('getFile',{file_id:evidence.slice(14)});
   if(!file.ok||!file.result?.file_path)return new Response('Evidence unavailable',{status:502});
