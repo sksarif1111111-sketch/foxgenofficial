@@ -1646,6 +1646,7 @@ export type Database = {
           last_error: string | null
           locked_until: string | null
           order_id: string
+          payload: Json | null
           sent_at: string | null
         }
         Insert: {
@@ -1656,6 +1657,7 @@ export type Database = {
           last_error?: string | null
           locked_until?: string | null
           order_id: string
+          payload?: Json | null
           sent_at?: string | null
         }
         Update: {
@@ -1666,6 +1668,7 @@ export type Database = {
           last_error?: string | null
           locked_until?: string | null
           order_id?: string
+          payload?: Json | null
           sent_at?: string | null
         }
         Relationships: [
@@ -2294,6 +2297,7 @@ export type Database = {
           last_error: string | null
           locked_until: string | null
           order_id: string
+          payload: Json | null
           sent_at: string | null
         }[]
         SetofOptions: {
@@ -2303,6 +2307,8 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      shop_crm_order_snapshot: { Args: { _order_id: string }; Returns: Json }
+      shop_pause_crm_when_drained: { Args: never; Returns: undefined }
       shop_release_stock: { Args: { _order_id: string }; Returns: boolean }
       shop_reserve_stock: {
         Args: { _product_id: string; _qty: number }

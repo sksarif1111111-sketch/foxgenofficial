@@ -127,6 +127,13 @@
       "when": 1794359621823,
       "tag": "0017_shop_operator_crm_outbox",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794360050235,
+      "tag": "0018_shop_crm_snapshot_queue_and_bounded_retry",
+      "breakpoints": true
     }
   ]
 }
