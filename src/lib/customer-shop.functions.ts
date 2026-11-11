@@ -13,7 +13,9 @@ async function ownOrder(id: string, userId: string) {
 export const customerPlaceOrder = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
  .inputValidator((input: unknown) => z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1).max(50), paymentMethodId: z.string().uuid() }).parse(input))
  .handler(async ({ data, context }) => {
-   const { data: identity, error } = await context.supabase.auth.getUser();
+   // Middleware already verified the caller; this stateless client has no persisted session for getUser().
+   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+   const { data: identity, error } = await supabaseAdmin.auth.admin.getUserById(context.userId);
    if (error || !identity.user?.email_confirmed_at) throw new Error("Verify your email before ordering.");
    const { createOrder } = await import("@/lib/shop.server");
    return createOrder({ channel: "website", profileId: null, telegramUserId: null, customerUserId: context.userId, customerName: identity.user.email ?? null, ...data });
