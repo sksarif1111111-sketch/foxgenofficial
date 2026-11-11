@@ -122,6 +122,7 @@ export async function webhookSecret(): Promise<string> {
 
 export type Profile = {
   id: string;
+  member_number: number | null;
   telegram_user_id: number;
   telegram_username: string | null;
   first_name: string | null;
