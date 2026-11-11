@@ -81,6 +81,14 @@ These call the same server-only helpers as Admin and record actor `crm`. Errors:
 
 ### Push to FoxgenCRM
 
+### Member directory and wallet activity
+
+Every bot profile and website auth account is exported even without orders. Both draw from one member-number sequence, displayed as `M-000123`. Website accounts remain in a server-only account directory; Telegram UUIDs and website UUIDs never merge by email. Customer `data` includes member number, joined/first-seen time, Telegram details, available email, current `wallet_balance` and `wallet_currency: "USD"`. Changes and initial backfill are durably queued alongside the existing order queue and retried by the same managed job.
+
+Bot `/addfunds` offers configured USDT/UPI payment recipients and collects amount, reference and optional HTTPS evidence. Requests remain pending until Admin review. Reference uniqueness is by payment method and lowercased reference. Approval locks the request and calls wallet credit once; rejection adds no credit. USDT credits the same numeric USD amount; INR requires the operator to enter a verified USD credit (no guessed exchange rate). Reviews export a `payments` record with the request UUID and profile-linked `data.customer_external_id`. Corrections require a note and cannot overdraw the wallet. Telegram notification failure is reported without reversing or duplicating the committed credit.
+
+`upsert_product` on the separate actions endpoint accepts `reseller_product_id`, name, optional short description, nullable USDT/INR/Stars prices, nonnegative stock quantity and optional HTTPS image URL. It requires SHOP_CRM_ACTION_KEY. First creation is draft, tracked stock, paid product and `shop_published=false`; matching updates preserve publication and may update price/stock as explicitly authorized. Existing supplier sync still preserves store prices. The read-only GET API remains unchanged.
+
 Sender: `POST https://foxgencrm.lovable.app/api/public/store/sync`, authenticated with server-only **FOXGEN_CRM_API_KEY** issued in CRM → FoxGen Store. This is independent of both Store API keys.
 
 Records use entity `orders`, plain order UUID `external_id`, original raw status and stable source `updated_at`. Names include product quantities and order number. Stars amounts use stored purchase-time `price_usdt` snapshots for the USDT equivalent; original XTR/Stars remain in `data`. Other currencies remain separate.

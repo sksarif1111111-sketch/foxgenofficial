@@ -34,8 +34,9 @@ export async function flushCrmOutbox() {
     return { ok: false, sent: 0 };
   }
   const identityByOrder = new Map(identities.data.map(o => [o.id, o]));
-  const { data: members } = await db.from("profiles").select("id,member_number,created_at").in("id", identities.data.map(o => o.customer_external_id).filter((id): id is string => id !== null));
-  const memberById = new Map((members ?? []).map(p => [p.id,p]));
+  const { data: directoryRecords } = await db.from("shop_crm_entity_outbox").select("external_id,payload").eq("entity","customers").in("external_id", identities.data.map(o => o.customer_external_id).filter((id): id is string => id !== null)).order("created_at", { ascending: false }).limit(1000);
+  const directoryById = new Map<string, Record<string, unknown>>();
+  for (const r of directoryRecords ?? []) if (!directoryById.has(r.external_id)) directoryById.set(r.external_id, r.payload as Record<string, unknown>);
   let sent = 0;
   // One version per request preserves every transition and bounds large batches.
   for (const row of [...rows].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))) {
@@ -46,7 +47,12 @@ export async function flushCrmOutbox() {
     customer_first_seen_at: identity?.customer_first_seen_at ?? snapshot.order["customer_first_seen_at"],
     created_at: identity?.created_at ?? snapshot.order["created_at"],
   } };
-  const body = JSON.stringify({ records: crmSyncRecords([enriched], sla, new Date().toISOString()) });
+  const records = crmSyncRecords([enriched], sla, new Date().toISOString()).map(r => {
+    if (r.entity !== "customers") return r;
+    const member = directoryById.get(r.external_id);
+    return member ? { ...member, updated_at: r.updated_at } : r;
+  });
+  const body = JSON.stringify({ records });
   if (new TextEncoder().encode(body).length > 256 * 1024) { await fail("Order exceeds CRM's 256 KB limit.", [row.id]); continue; }
   try {
     const response = await fetch("https://foxgencrm.lovable.app/api/public/store/sync", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body, signal: AbortSignal.timeout(20000) });
