@@ -259,156 +259,17 @@ export async function createOrder(input: {
   productId: string;
   quantity: number;
   paymentMethodId?: string | null;
+  checkoutKey?: string;
 }) {
-  const product = await shopProductById(input.productId, input.channel);
-  if (!product) throw new Error("This product is no longer available.");
-  if (!product.purchasable) throw new Error("This product cannot be purchased yet.");
-
-  const limit = maxUnits(product);
-  if (!Number.isInteger(input.quantity) || input.quantity < 1) throw new Error("Choose a whole number of units.");
-  if (input.quantity > limit) throw new Error(`You can order at most ${limit} unit(s) of this product.`);
-
-  let method: Record<string, unknown> | null = null;
-  if (input.channel === "website") {
-    if (!input.paymentMethodId) throw new Error("Choose a payment method.");
-    const { data } = await db.from("payment_methods").select("*").eq("id", input.paymentMethodId).maybeSingle();
-    if (!data || data.enabled !== true || data.channel !== "website") throw new Error("That payment method is unavailable.");
-    method = data as Record<string, unknown>;
-    if (String(method["currency"]) === "INR" && product.price_inr === null) {
-      throw new Error("UPI is unavailable for this product until an INR price is configured.");
-    }
-  }
-
-  const currency = input.channel === "telegram" ? "XTR" : String(method?.["currency"] ?? "USDT");
-  const unitPrice =
-    input.channel === "telegram" ? null : currency === "INR" ? product.price_inr : product.price_usdt;
-  if (input.channel === "website" && unitPrice === null) throw new Error("This product has no configured price.");
-  const unitStars = input.channel === "telegram" ? product.price_stars : null;
-
-  const reserved = await db.rpc("shop_reserve_stock", { _product_id: product.id, _qty: input.quantity });
-  if (reserved.error || reserved.data !== true) throw new Error("Not enough stock left for this product.");
-
-  const expiry = await unpaidExpiryMinutes();
-  const { data: order, error } = await db
-    .from("shop_orders")
-    .insert({
-      profile_id: input.profileId,
-      customer_user_id: input.customerUserId ?? null,
-      telegram_user_id: input.telegramUserId,
-      customer_name: input.customerName,
-      channel: input.channel,
-      status: "awaiting_payment",
-      currency,
-      total: unitPrice === null ? null : Number((unitPrice * input.quantity).toFixed(2)),
-      stars_total: unitStars === null ? null : unitStars * input.quantity,
-      payment_method_id: method ? String(method["id"]) : null,
-      payment_method_name: method ? String(method["name"]) : input.channel === "telegram" ? "Telegram Stars" : null,
-      payment_network: method ? ((method["network"] as string) ?? null) : null,
-      payment_recipient: method ? ((method["recipient"] as string) ?? null) : null,
-      stock_reserved: true,
-      expires_at: new Date(Date.now() + expiry * 60_000).toISOString(),
-    })
-    .select("*")
-    .single();
-
-  if (error || !order) {
-    if (product.stock_mode === "tracked") {
-      await db
-        .from("products")
-        .update({ stock_quantity: (product.stock_quantity ?? 0) })
-        .eq("id", product.id);
-    }
-    throw new Error("Could not create this order. Please try again.");
-  }
-
-  await db.from("shop_order_items").insert({
-    order_id: order.id,
-    product_id: product.id,
-    product_name: product.name,
-    quantity: input.quantity,
-    unit_price: unitPrice,
-    line_total: unitPrice === null ? null : Number((unitPrice * input.quantity).toFixed(2)),
-    unit_stars: unitStars,
-    currency,
-    snapshot: {
-      name: product.name,
-      duration_label: product.duration_label,
-      features: product.features,
-      terms: product.terms,
-      delivery_method: product.delivery_method,
-      requires_buyer_email: product.requires_buyer_email,
-      price_usdt: product.price_usdt,
-      price_inr: product.price_inr,
-      price_stars: product.price_stars,
-      recipient: method ? String(method["recipient"] ?? "") : null,
-      network: method ? String(method["network"] ?? "") : null,
-      method_name: method ? String(method["name"] ?? "") : "Telegram Stars",
-    },
-  });
-
-  await orderEvent(order.id, "order_created", "customer", `${product.name} x${input.quantity}`);
-  await logActivity("shop", "Order created", "info", `${order.order_number} — ${product.name} x${input.quantity}`);
-
-  if (method && String(method["provider"]) === "wallet") {
-    const amount = Number(order.total ?? 0);
-    const paid = input.profileId
-      ? await db.rpc("wallet_debit", {
-          _profile_id: input.profileId,
-          _amount: amount,
-          _order_id: order.id as string,
-          _note: `${product.name} x${input.quantity}`,
-        })
-      : { data: false, error: null };
-    if (!input.profileId || paid.error || paid.data !== true) {
-      await db.rpc("shop_release_stock", { _order_id: order.id });
-      await db
-        .from("shop_orders")
-        .update({ status: "cancelled", updated_at: new Date().toISOString() })
-        .eq("id", order.id);
-      await orderEvent(order.id, "cancelled", "system", "Wallet balance was not enough");
-      throw new Error("Your wallet balance is not enough for this order. Ask support to add funds to your wallet.");
-    }
-    const { data: updated } = await db
-      .from("shop_orders")
-      .update({
-        payment_reference: `WALLET-${order.order_number}`,
-        status: input.channel === "telegram" && !product.requires_buyer_email ? "under_review" : "awaiting_email",
-        submitted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", order.id)
-      .select("*")
-      .single();
-    await orderEvent(order.id, "payment_submitted", "customer", `Paid ${amount.toFixed(2)} USD from wallet balance`);
-    if (updated) return updated;
-  }
-
-  return order;
+  const result = await db.rpc("shop_create_order_atomic", { _input: input });
+  if (result.error || !result.data) throw new Error(result.error?.message ?? "Could not create order.");
+  return result.data as unknown as import("@/integrations/supabase/types").Database["public"]["Tables"]["shop_orders"]["Row"];
 }
 
 export async function refundWalletOrder(order: Record<string, unknown>, reason: string) {
-  const reference = String(order["payment_reference"] ?? "");
-  if (!reference.startsWith("WALLET-")) return { refunded: false };
-  const profileId = order["profile_id"] as string | null;
-  const amount = Number(order["total"] ?? 0);
-  if (!profileId || !(amount > 0)) return { refunded: false };
-  const { data: already } = await db
-    .from("wallet_transactions")
-    .select("id")
-    .eq("order_id", order["id"] as string)
-    .eq("kind", "refund")
-    .maybeSingle();
-  if (already) return { refunded: false };
-  await db.rpc("wallet_credit", {
-    _profile_id: profileId,
-    _amount: amount,
-    _kind: "refund",
-    _note: reason,
-    _order_id: order["id"] as string,
-    _actor: "system",
-  });
-  await orderEvent(order["id"] as string, "wallet_refunded", "system", `${amount.toFixed(2)} USD returned to wallet`);
-  return { refunded: true, amount };
+  const result = await db.rpc("shop_refund_wallet_atomic", { _id: String(order["id"]), _reason: reason });
+  if (result.error) throw new Error("Could not refund wallet.");
+  return { refunded: result.data === true, amount: Number(order["total"] ?? 0) };
 }
 
 export async function submitPayment(orderId: string, reference: string, evidenceUrl: string | null) {
