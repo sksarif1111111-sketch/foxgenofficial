@@ -1869,6 +1869,7 @@ export type Database = {
           created_at: string
           currency: string
           customer_name: string | null
+          customer_user_id: string | null
           delivered_at: string | null
           delivery_emails: string | null
           email_body: string | null
@@ -1907,6 +1908,7 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_name?: string | null
+          customer_user_id?: string | null
           delivered_at?: string | null
           delivery_emails?: string | null
           email_body?: string | null
@@ -1945,6 +1947,7 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_name?: string | null
+          customer_user_id?: string | null
           delivered_at?: string | null
           delivery_emails?: string | null
           email_body?: string | null
