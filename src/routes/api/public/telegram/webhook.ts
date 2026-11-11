@@ -368,7 +368,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         if (await walletFundingBot(profile.id, chatId, cb || (text === "/addfunds" ? "addfunds" : ""), text)) return Response.json({ ok: true });
 
         const { marketplaceBot } = await import("@/lib/telegram-marketplace.server");
-        const marketAction = cb || (text.startsWith("/") ? text.slice(1).split(/[ @]/)[0] ?? "" : "");
+        const marketRaw = cb || (text.startsWith("/") ? text.slice(1).split(/[ @]/)[0] ?? "" : "");
+        const marketAction = ({ profile: "storeprofile", orders: "myorders", products: "shop", store: "shop" } as Record<string,string>)[marketRaw] ?? marketRaw;
         try {
           if (await marketplaceBot({ profile, chatId, action: marketAction, text, settings, callbackId: update.callback_query?.id, photoId: update.message?.photo?.at(-1)?.file_id })) return Response.json({ ok: true });
         } catch {
