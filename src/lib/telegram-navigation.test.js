@@ -4,27 +4,27 @@ import { telegramRenderer, telegramHomeKeyboard } from './telegram-navigation';
 describe('single Telegram navigation screen', () => {
   const keyboard = [[{ text: 'Shop', callback_data: 'shop' }]];
   it('edits an existing text screen without sending a second message', async () => {
-    const calls: string[] = [];
+    const calls = [];
     await telegramRenderer(async method => { calls.push(method); return { ok: true }; }, 12, 34)('Products', keyboard);
     expect(calls).toEqual(['editMessageText']);
   });
   it('does not resend an unchanged screen', async () => {
-    const calls: string[] = [];
+    const calls = [];
     await telegramRenderer(async method => { calls.push(method); return { ok: false, description: 'Bad Request: message is not modified' }; }, 12, 34)('Products', keyboard);
     expect(calls).toEqual(['editMessageText']);
   });
   it('replaces a product photo instead of sending another photo', async () => {
-    const calls: string[] = [];
+    const calls = [];
     await telegramRenderer(async method => { calls.push(method); return { ok: true }; }, 12, 34, true)('Product', keyboard, 'https://example.com/product.jpg');
     expect(calls).toEqual(['editMessageMedia']);
   });
   it('edits a photo caption when returning to a short menu', async () => {
-    const calls: string[] = [];
+    const calls = [];
     await telegramRenderer(async method => { calls.push(method); return { ok: true }; }, 12, 34, true)('Home', keyboard);
     expect(calls).toEqual(['editMessageCaption']);
   });
   it('retires the old keyboard when replacing a noneditable screen', async () => {
-    const calls: string[] = [];
+    const calls = [];
     await telegramRenderer(async method => { calls.push(method); return { ok: method !== 'editMessageText' }; }, 12, 34)('Products', keyboard);
     expect(calls).toEqual(['editMessageText', 'sendMessage', 'editMessageReplyMarkup']);
   });
