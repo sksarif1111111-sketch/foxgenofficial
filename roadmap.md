@@ -1,9 +1,9 @@
 # Roadmap
 
 ## CRM buyer history linking
-- [ ] Persist stable buyer IDs and first-seen timestamps without merging website and Telegram accounts.
-- [ ] Send customer upserts alongside linked order snapshots; preserve order numbers, retries and read-only API.
-- [ ] Test identity priority, deduplication and actual CRM acknowledgement; update operator documentation.
+- [x] Persist stable buyer IDs and first-seen timestamps without merging website and Telegram accounts.
+- [x] Send customer upserts alongside linked order snapshots; preserve order numbers, retries and read-only API.
+- [x] Identity priority and deduplication tests passed; actual CRM acknowledged five paired transfers; operator documentation updated.
 
 ## Website customer login
 - [x] Animated glass login/signup, signup-only email OTP form, Google/Microsoft/Apple enabled, recovery and session-aware navigation.
