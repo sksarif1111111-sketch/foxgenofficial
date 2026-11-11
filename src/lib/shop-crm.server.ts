@@ -16,9 +16,11 @@ export async function flushCrmOutbox() {
   const key = process.env["FOXGEN_CRM_API_KEY"];
   if (!key) return { ok: false, error: "CRM_NOT_CONFIGURED" };
   const token = crypto.randomUUID();
+  const { flushCrmDirectory } = await import("./shop-crm-directory.server");
+  const directory = await flushCrmDirectory(key);
   const { data: rows, error } = await db.rpc("shop_claim_crm_outbox", { _token: token });
   if (error) throw new Error("Could not claim CRM queue.");
-  if (!rows?.length) { await db.rpc("shop_pause_crm_when_drained"); return { ok: true, sent: 0 }; }
+  if (!rows?.length) { await db.rpc("shop_pause_crm_when_drained"); return directory; }
   const settings = await getSettings();
   const fail = async (message: string, rowIds: string[]) => {
     const result = await db.from("shop_crm_outbox").update({ last_error: message, locked_until: null, claim_token: null }).in("id", rowIds).eq("claim_token", token);
@@ -58,5 +60,5 @@ export async function flushCrmOutbox() {
   } catch { await fail("CRM connection failed; queued for retry.", [row.id]); }
   }
   await db.rpc("shop_pause_crm_when_drained");
-  return { ok: sent === rows.length, sent };
+  return { ok: sent === rows.length && directory.ok, sent: sent + directory.sent };
 }
