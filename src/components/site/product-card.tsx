@@ -26,8 +26,8 @@ export function PriceTag({ product, size = "md" }: { product: CatalogProduct; si
     return <span className="text-sm font-medium text-muted-foreground">Price on request</span>;
   }
   return (
-    <span className="flex items-baseline gap-1.5">
-      <span className={`font-display font-bold tabular-nums tracking-tight ${size === "lg" ? "text-4xl" : "text-xl"}`}>
+    <span className="flex min-w-0 flex-wrap items-baseline gap-1">
+      <span className={`font-display font-bold tabular-nums ${size === "lg" ? "heading-5 sm:heading-3" : "title-3 sm:title-1"}`}>
         {product.price_usdt.toFixed(2)}
       </span>
       <span className="eyebrow text-muted-foreground">USDT</span>
@@ -71,16 +71,16 @@ export function ProductCard({
           <ArrowUpRight className="size-4" />
         </span>
       </div>
-      <div className="flex flex-1 flex-col gap-2 px-1 pt-4">
-        <div className="flex items-center justify-between gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 px-1 pt-3 sm:pt-4">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-1">
           <span className="eyebrow truncate text-muted-foreground">{categoryLabel(categoryOf(product.name))}</span>
           <StockPill product={product} />
         </div>
-        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight">{product.name}</h3>
+        <h3 className="body-4 line-clamp-2 break-words">{product.name}</h3>
         {product.short_description && (
-          <p className="line-clamp-2 text-sm text-muted-foreground">{product.short_description}</p>
+          <p className="caption-4 sm:body-6 line-clamp-2 text-muted-foreground">{product.short_description}</p>
         )}
-        <div className="mt-auto flex items-end justify-between gap-2 pt-3">
+        <div className="mt-auto flex min-w-0 flex-wrap items-end justify-between gap-1 pt-2 sm:pt-3">
           <PriceTag product={product} />
           {product.duration_label && <span className="text-xs text-muted-foreground">{product.duration_label}</span>}
         </div>
@@ -89,7 +89,7 @@ export function ProductCard({
     </>
   );
   const cls =
-    "group flex h-full flex-col rounded-2xl border border-border bg-card p-3 text-left shadow-soft transition duration-300 hover:-translate-y-1 hover:border-foreground/15 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    "group flex h-full min-w-0 flex-col rounded-lg border border-border bg-card p-2 text-left shadow-soft transition duration-300 hover:-translate-y-1 hover:border-foreground/15 hover:shadow-lift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-3";
   if (onOpen) {
     return (
       <button type="button" onClick={onOpen} className={cls} data-robot-point="">

@@ -21,7 +21,7 @@ export function AdminAccessForm({ redirect, onDone }: { redirect: Destination; o
 
   return (
     <form
-      className="space-y-5"
+      className="space-y-4 sm:space-y-5"
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
@@ -50,12 +50,11 @@ export function AdminAccessForm({ redirect, onDone }: { redirect: Destination; o
             id="admin-password"
             type="password"
             autoComplete="current-password"
-            autoFocus
             required
             maxLength={200}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-11 pl-9"
+            className="h-11 pl-9 text-base sm:text-sm"
             placeholder="••••••••••••"
           />
         </div>
@@ -78,11 +77,11 @@ export function AdminAccessForm({ redirect, onDone }: { redirect: Destination; o
 
 export function AdminAccessHeader({ title = "Control Center" }: { title?: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <img src={BRAND.mark} alt={BRAND.name} width={44} height={44} className="size-11 rounded-xl bg-ink object-cover ring-1 ring-border" />
-      <div>
+    <div className="flex min-w-0 items-center gap-3 pr-5">
+      <img src={BRAND.mark} alt={BRAND.name} width={44} height={44} className="size-9 shrink-0 rounded-lg bg-ink object-cover ring-1 ring-border sm:size-11" />
+      <div className="min-w-0">
         <p className="eyebrow text-primary">{BRAND.name}</p>
-        <h2 className="text-xl font-bold">{title}</h2>
+        <h2 className="text-lg font-bold sm:text-xl">{title}</h2>
       </div>
     </div>
   );
@@ -94,7 +93,7 @@ export function AdminAccessDialog({ trigger, redirect = "/hub-admin" }: { trigge
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-sm gap-6 rounded-2xl p-6 sm:p-7">
+      <DialogContent className="max-w-[336px] gap-4 rounded-lg p-4 sm:max-w-sm sm:gap-6 sm:p-7">
         <DialogTitle className="sr-only">Administrator access</DialogTitle>
         <AdminAccessHeader />
         <DialogDescription className="-mt-2 text-sm text-muted-foreground">

@@ -1,9 +1,11 @@
 import { db, tg } from "@/lib/hub.server";
 import { topupAmount, topupReference, topupEvidence } from "./wallet-topup.contract";
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-export async function walletFundingBot(profileId: string, chatId: number, action: string, text: string, photoId?: string) {
+export async function walletFundingBot(profileId: string, chatId: number, action: string, text: string, photoId?: string, render?: (body: string, buttons: Array<Array<{ text: string; callback_data: string }>>) => Promise<void>) {
   const send = async (body: string, buttons: Array<Array<{ text: string; callback_data: string }>> = []) => {
-    await tg("sendMessage", { chat_id: chatId, text: body, parse_mode: "HTML", reply_markup: { inline_keyboard: [...buttons, [{ text: "⬅️ Home", callback_data: "menu" }]] } });
+    const keyboard = [...buttons, [{ text: "⬅️ Home", callback_data: "menu" }]];
+    if (render) return render(body, keyboard);
+    await tg("sendMessage", { chat_id: chatId, text: body, parse_mode: "HTML", reply_markup: { inline_keyboard: keyboard } });
   };
   if (action === "addfunds") {
     await db.from("wallet_topup_sessions").delete().eq("profile_id", profileId);

@@ -136,7 +136,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-border bg-card p-5 shadow-soft sm:p-7 ${className}`}>{children}</section>;
+  return <section className={`rounded-lg border border-border bg-card p-4 shadow-soft sm:p-7 ${className}`}>{children}</section>;
 }
 
 function Stepper({ step }: { step: Step }) {
@@ -365,8 +365,8 @@ function ShopPage() {
 
       {/* Page header */}
       <div className="border-b border-border bg-card">
-        <div className="container-page flex flex-wrap items-end justify-between gap-4 py-8 sm:py-10">
-          <div>
+        <div className="container-page grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 py-4 sm:flex sm:justify-between sm:py-10">
+          <div className="min-w-0">
             <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <button type="button" onClick={goToList} className="hover:text-foreground">
                 Shop
@@ -378,7 +378,7 @@ function ShopPage() {
                 </>
               )}
             </nav>
-            <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
+            <h1 className="mt-2 heading-5 sm:heading-3">
               {step === "orders" ? "My orders" : inCheckout ? "Checkout" : step === "detail" ? "Product details" : "All products"}
             </h1>
             {step === "list" && (
@@ -387,7 +387,7 @@ function ShopPage() {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row">
             {wallet && (
               <span className="inline-flex h-9 items-center gap-2 rounded-lg bg-accent px-3 text-sm font-medium text-accent-foreground">
                 <Wallet className="size-4" /> ${wallet.balance.toFixed(2)}
@@ -402,7 +402,7 @@ function ShopPage() {
         </div>
       </div>
 
-      <main id="main" className="container-page py-8 sm:py-10">
+      <main id="main" className="container-page py-4 sm:py-10">
         {error && (
           <p role="alert" className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
@@ -486,7 +486,7 @@ function ShopPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                 {visible.map((item) => (
                   <ProductCard key={item.id} product={item} />
                 ))}

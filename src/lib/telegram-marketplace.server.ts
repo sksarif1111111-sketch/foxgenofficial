@@ -22,10 +22,11 @@ export async function buyerStats(profile: Profile) {
   const balance = await db.from('wallets').select('balance_usd').eq('profile_id',profile.id).maybeSingle();
   return { completed, pending, balance: Number(balance.data?.balance_usd ?? 0), spent: [...totals].map(([c,n]) => `${n.toFixed(2)} ${c === 'XTR' ? '⭐' : c}`).join(' · ') || '0.00 USD' };
 }
-export async function marketplaceBot(input: { profile: Profile; chatId: number; action: string; text: string; settings: Record<string,string>; callbackId?: string; photoId?: string }) {
+export async function marketplaceBot(input: { profile: Profile; chatId: number; action: string; text: string; settings: Record<string,string>; callbackId?: string; photoId?: string; render?: (body: string, keys: Keyboard, image?: string | null) => Promise<void> }) {
   const { profile, chatId, action, text, settings } = input;
   const send = async (body: string, keys: Keyboard = home, image?: string | null) => {
     if (image?.startsWith('/')) image = new URL(image, settings['shop_url'] || 'https://foxgenofficial.lovable.app').href;
+    if (input.render) return input.render(body, keys, image && /^https:\/\//.test(image) && body.length <= 1024 ? image : undefined);
     if (image && /^https:\/\//.test(image) && body.length <= 1024) {
       const r = await tg('sendPhoto',{ chat_id:chatId,photo:image,caption:body,parse_mode:'HTML',reply_markup:{inline_keyboard:keys} });
       if (r.ok) return;
