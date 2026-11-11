@@ -120,6 +120,13 @@
       "when": 1794266974425,
       "tag": "0016_store_offers_and_sync_runs",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794359621823,
+      "tag": "0017_shop_operator_crm_outbox",
+      "breakpoints": true
     }
   ]
 }

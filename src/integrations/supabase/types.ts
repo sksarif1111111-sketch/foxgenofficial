@@ -1637,6 +1637,47 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_crm_outbox: {
+        Row: {
+          attempts: number
+          claim_token: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          order_id: string
+          sent_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          claim_token?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          order_id: string
+          sent_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          claim_token?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          order_id?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_crm_outbox_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_delivery_jobs: {
         Row: {
           attempts: number
@@ -2243,6 +2284,25 @@ export type Database = {
       }
       reject_referral: { Args: { _referral_id: string }; Returns: boolean }
       require_admin: { Args: { _user_id: string }; Returns: boolean }
+      shop_claim_crm_outbox: {
+        Args: { _token: string }
+        Returns: {
+          attempts: number
+          claim_token: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          order_id: string
+          sent_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "shop_crm_outbox"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       shop_release_stock: { Args: { _order_id: string }; Returns: boolean }
       shop_reserve_stock: {
         Args: { _product_id: string; _qty: number }
