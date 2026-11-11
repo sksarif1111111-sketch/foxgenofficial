@@ -106,11 +106,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const q = update.pre_checkout_query;
           const { data: order } = await db
             .from("shop_orders")
-            .select("id, status, stars_total")
+            .select("id, status, channel, currency, stars_total, telegram_user_id, expires_at")
             .eq("id", q.invoice_payload)
             .maybeSingle();
           const valid =
-            !!order && order.status === "awaiting_payment" && Number(order.stars_total) === Number(q.total_amount);
+            !!order && order.channel === "telegram" && order.currency === "XTR" && order.telegram_user_id === q.from.id && order.status === "awaiting_payment" && (!order.expires_at || Date.parse(order.expires_at) > Date.now()) && Number(order.stars_total) === Number(q.total_amount);
           await tg("answerPreCheckoutQuery", {
             pre_checkout_query_id: q.id,
             ok: valid,
