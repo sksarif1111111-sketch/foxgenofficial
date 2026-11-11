@@ -1,15 +1,17 @@
 export async function shopApproveOrder(data: { id: string; notes?: string; send?: boolean }, actor: "admin" | "crm" = "admin") {
     const { db, logActivity } = await import("@/lib/hub.server");
-    const { orderEvent, notifyBuyerTelegram, sendFulfillmentEmail } = await import("@/lib/shop.server");
+    const { orderEvent, notifyBuyerTelegram, sendFulfillmentEmail, orderRequiresEmail, sendTelegramDelivery } = await import("@/lib/shop.server");
     const { data: order } = await db.from("shop_orders").select("*").eq("id", data.id).maybeSingle();
     if (!order) throw new Error("Order not found.");
+    const requiresEmail = await orderRequiresEmail(order);
+    const awaitingEmail = requiresEmail && !order.delivery_emails && (order.channel === "telegram" || order.telegram_user_id != null);
 
     if (!order.stock_consumed) {
       const now = new Date().toISOString();
       const { data: updated } = await db
         .from("shop_orders")
         .update({
-          status: "awaiting_fulfillment",
+          status: awaitingEmail ? "awaiting_email" : "awaiting_fulfillment",
           stock_consumed: true,
           confirmed_at: now,
           reviewed_at: now,
@@ -27,13 +29,13 @@ export async function shopApproveOrder(data: { id: string; notes?: string; send?
         await logActivity("shop", "Payment approved", "success", order.order_number);
         await notifyBuyerTelegram(
           data.id,
-          "Payment successful. Please wait while we prepare your access. We will notify you when your activation email is sent.",
+          awaitingEmail ? "Payment successful. This product requires an email. Please send your delivery email address here." : "Payment successful. Please wait while we prepare your access. We will notify you when your access is ready.",
         );
       }
     }
 
     if (data.send) {
-      const result = await sendFulfillmentEmail(data.id, actor);
+      const result = order.telegram_user_id && !requiresEmail ? await sendTelegramDelivery(data.id, actor) : await sendFulfillmentEmail(data.id, actor);
       if (!result.ok) return { ok: true, delivery: result.reason };
       return { ok: true, delivery: "sent" };
     }
@@ -87,7 +89,10 @@ export async function shopRequestInfo(data: { id: string; message: string }, act
 export async function shopAddFulfillment(data: { id: string; kind: "link" | "code" | "instructions"; content: string }, actor: "admin" | "crm" = "admin") {
     const { db } = await import("@/lib/hub.server");
     const { orderEvent } = await import("@/lib/shop.server");
-    await db.from("shop_fulfillments").insert({ order_id: data.id, kind: data.kind, content: data.content });
+    const { data: order } = await db.from("shop_orders").select("id").eq("id", data.id).maybeSingle();
+    if (!order) throw new Error("Order not found.");
+    const { error } = await db.from("shop_fulfillments").insert({ order_id: data.id, kind: data.kind, content: data.content });
+    if (error) throw new Error("Could not save delivery material.");
     await orderEvent(data.id, "fulfillment_added", actor, data.kind);
     return { ok: true };
 }
