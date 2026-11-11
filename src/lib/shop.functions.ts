@@ -139,27 +139,9 @@ export const shopPlaceOrder = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const profile = await requireProfile(data.token);
-    const { createOrder } = await import("@/lib/shop.server");
-    const order = await createOrder({
-      channel: "website",
-      profileId: profile.id,
-      telegramUserId: profile.telegram_user_id ?? null,
-      customerName: [profile.first_name, profile.last_name].filter(Boolean).join(" ") || null,
-      productId: data.productId,
-      quantity: data.quantity,
-      paymentMethodId: data.paymentMethodId,
-    });
-    return {
-      id: order.id as string,
-      order_number: order.order_number as string,
-      total: order.total as number | null,
-      currency: order.currency as string,
-      payment_method_name: order.payment_method_name as string | null,
-      payment_network: order.payment_network as string | null,
-      payment_recipient: order.payment_recipient as string | null,
-      expires_at: order.expires_at as string | null,
-    };
+    // Legacy bot account links may still read existing orders; website purchases require Cloud Auth.
+    void data;
+    throw new Error("Sign in to your website account before ordering.");
   });
 
 export const shopSubmitPayment = createServerFn({ method: "POST" })

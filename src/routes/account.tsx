@@ -62,7 +62,7 @@ function AccountPage() {
       <SiteNav />
       <main id="main" className="container-page py-10 sm:py-14">
         {user ? <section className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4"><div><h1 className="heading-4">My store account</h1><p className="body-6 mt-2 break-all text-muted-foreground">{user.email}</p><p className="caption-3 mt-2 text-success">Email verified</p></div><Button variant="outline" onClick={async () => { await queryClient.cancelQueries(); queryClient.clear(); localStorage.removeItem(TOKEN_KEY); await supabase.auth.signOut(); await navigate({ to: "/login", replace: true }); }}><LogOut className="size-4"/>Sign out</Button></div>
+          <div className="flex flex-wrap items-center justify-between gap-4"><div><h1 className="heading-4">My store account</h1><p className="body-6 mt-2 break-all text-muted-foreground">{user.email}</p><p className="caption-3 mt-2 text-success">Email verified</p></div><Button variant="outline" onClick={async () => { await queryClient.cancelQueries(); queryClient.clear(); localStorage.removeItem(TOKEN_KEY); await supabase.auth.signOut(); await navigate({ to: "/login", search: { redirect: "/account" }, replace: true }); }}><LogOut className="size-4"/>Sign out</Button></div>
           <Button asChild><Link to="/shop" search={{ view: "orders" }}><Receipt className="size-4"/>My website orders</Link></Button>
         </section> : !ready || token === null || (token && hub.isLoading) ? (
           <div className="h-64 animate-pulse rounded-3xl border border-border bg-card" />
