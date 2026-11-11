@@ -1,0 +1,14 @@
+import type { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import { BRAND } from "@/lib/brand";
+
+export function CustomerAuthShell({ children }: { children: ReactNode }) {
+  return <main className="customer-auth-stage min-h-screen px-4 py-8 text-foreground">
+    <Link to="/shop" className="absolute left-6 top-6 z-10 text-sm font-medium">← Back to store</Link>
+    <div aria-hidden="true" className="auth-square auth-square-one" /><div aria-hidden="true" className="auth-square auth-square-two" /><div aria-hidden="true" className="auth-square auth-square-three" />
+    <section className="customer-auth-panel relative z-10 mx-auto w-full max-w-md rounded-lg p-6 sm:p-8">
+      <Link to="/" className="mb-6 flex items-center justify-center gap-3"><img src={BRAND.mark} alt="" width={44} height={44} className="size-11 rounded-lg object-cover" /><span className="title-3 font-bold">{BRAND.name}</span></Link>
+      {children}
+    </section>
+  </main>;
+}

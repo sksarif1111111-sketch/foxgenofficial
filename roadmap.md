@@ -1,5 +1,12 @@
 # Roadmap
 
+## Website customer login
+- [x] Animated glass login/signup, signup-only email OTP form, Google/Microsoft/Apple enabled, recovery and session-aware navigation.
+- [x] Website purchases tied to verified auth users; independent Telegram identities, prices and fulfillment preserved. Legacy token checkout cannot create new website orders.
+- [ ] Branded OTP and account-created emails — waiting for owner email-domain setup.
+- [x] Verified real password sign-in with dedicated confirmed test user, website order create/cancel/readback, logout, 390px layout and 61 tests.
+- [ ] Signup OTP inbox and full Google/Microsoft/Apple roundtrips — need recipient inbox/provider interaction; branded code email requires owner domain setup.
+
 ## Store fulfillment and operator CRM integration (Nov 2026)
 - [x] Direct Telegram fulfillment with conditional email capture and shared admin/CRM actions.
 - [x] Thirty-minute admin SLA badges and overdue KPI.

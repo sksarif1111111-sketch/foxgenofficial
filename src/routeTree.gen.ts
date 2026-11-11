@@ -18,6 +18,7 @@ import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ExtensionRouteImport } from './routes/extension'
 import { Route as HubRouteImport } from './routes/hub'
 import { Route as HubAdminRouteImport } from './routes/hub-admin'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -81,6 +82,11 @@ const HubRoute = HubRouteImport.update({
 const HubAdminRoute = HubAdminRouteImport.update({
   id: '/hub-admin',
   path: '/hub-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OffersRoute = OffersRouteImport.update({
@@ -191,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -221,6 +228,7 @@ export interface FileRoutesByTo {
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -252,6 +260,7 @@ export interface FileRoutesById {
   '/extension': typeof ExtensionRoute
   '/hub': typeof HubRoute
   '/hub-admin': typeof HubAdminRoute
+  '/login': typeof LoginRoute
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/extension'
     | '/hub'
     | '/hub-admin'
+    | '/login'
     | '/offers'
     | '/privacy'
     | '/reset-password'
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
     | '/extension'
     | '/hub'
     | '/hub-admin'
+    | '/login'
     | '/offers'
     | '/privacy'
     | '/reset-password'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/extension'
     | '/hub'
     | '/hub-admin'
+    | '/login'
     | '/offers'
     | '/privacy'
     | '/reset-password'
@@ -375,6 +387,7 @@ export interface RootRouteChildren {
   ExtensionRoute: typeof ExtensionRoute
   HubRoute: typeof HubRoute
   HubAdminRoute: typeof HubAdminRoute
+  LoginRoute: typeof LoginRoute
   OffersRoute: typeof OffersRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -459,6 +472,13 @@ declare module '@tanstack/react-router' {
       path: '/hub-admin'
       fullPath: '/hub-admin'
       preLoaderRoute: typeof HubAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offers': {
@@ -607,6 +627,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExtensionRoute: ExtensionRoute,
   HubRoute: HubRoute,
   HubAdminRoute: HubAdminRoute,
+  LoginRoute: LoginRoute,
   OffersRoute: OffersRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,

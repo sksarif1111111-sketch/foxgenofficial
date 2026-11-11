@@ -32,3 +32,5 @@
 - Product logos resolve through `resolveProductLogo` in `src/lib/brand-logos.ts` (Admin custom logo wins, else official brand logo matched from the product name); new supplier products get real logos without manual setup.
 - Foxgen AI chat lives only in the robot's pop-up (`assistant-robot.tsx` lazy-loads `assistant-chat-popup.tsx`, same `/api/chat` backend); other "Ask Foxgen AI" buttons call `openAssistant()` and `/chat` redirects Home, so there is one chat surface and pages stay light.
 - The walking robot mascot is SVG + CSS keyframes keyed by `data-act` on `.robot-root`; a JS script only moves it and switches acts, and where it walks / when it may fall come from `src/lib/robot-motion.ts`, so motion rules stay testable and it never leaves the viewport. Elements marked `data-robot-point` (product cards, product page buy box) make it point when they scroll into view.
+
+- Website buyers use verified Cloud Auth identities on customer_user_id with server-side ownership checks; Telegram profile tokens stay separate and cannot create customer website orders, so channels never merge by matching email. No customer profile table is needed.

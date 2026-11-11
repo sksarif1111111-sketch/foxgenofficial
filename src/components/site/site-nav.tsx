@@ -1,3 +1,4 @@
+import { useCustomerSession } from "@/components/site/customer-session";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { ShoppingBagOpen, UserCircle } from "@phosphor-icons/react/dist/ssr";
@@ -74,6 +75,7 @@ function MenuToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
 
 /** Compact floating navigation (skill B7) with a full height mobile panel. */
 export function SiteNav({ right, announcement }: { right?: ReactNode; announcement?: ReactNode }) {
+  const { user } = useCustomerSession();
   const pathname = useLocation({ select: (l) => l.pathname });
   const [open, setOpen] = useState(false);
   const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
@@ -124,9 +126,9 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
           <div className="ml-auto flex items-center gap-1 lg:ml-0">
             {right}
             <Link
-              to="/account"
-              aria-label="My account"
-              title="My account"
+              to={user ? "/account" : "/login"}
+              aria-label={user ? "My account" : "Sign in"}
+              title={user ? "My account" : "Sign in"}
               className="hidden size-10 items-center justify-center rounded-full text-muted-foreground transition duration-300 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
             >
               <UserCircle size={22} />

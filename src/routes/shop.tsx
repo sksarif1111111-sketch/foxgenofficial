@@ -1,5 +1,8 @@
+import { Button } from "@/components/ui/button";
+import { useCustomerSession } from "@/components/site/customer-session";
+import { customerPlaceOrder, customerSubmitPayment, customerConfirmEmails, customerCancelOrder, customerMyOrders } from "@/lib/customer-shop.functions";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
@@ -18,12 +21,7 @@ import {
   Wallet,
 } from "lucide-react";
 import {
-  shopCancelOrder,
   shopCatalog,
-  shopConfirmEmails,
-  shopMyOrders,
-  shopPlaceOrder,
-  shopSubmitPayment,
   shopWallet,
   type MyOrder,
   type ShopCatalog,
@@ -41,7 +39,7 @@ export const Route = createFileRoute("/shop")({
     product: typeof s.product === "string" ? s.product : undefined,
     category: typeof s.category === "string" ? s.category : undefined,
     q: typeof s.q === "string" && s.q.trim() ? s.q.trim().slice(0, 80) : undefined,
-    buy: s.buy === true || s.buy === "1" || s.buy === 1 ? true : undefined,
+    buy: s.buy === true || s.buy === "true" || s.buy === "1" || s.buy === 1 ? true : undefined,
     view: s.view === "orders" ? "orders" : undefined,
   }),
   head: () => ({
@@ -166,11 +164,12 @@ function ShopPage() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/shop" });
   const loadCatalog = useServerFn(shopCatalog);
-  const place = useServerFn(shopPlaceOrder);
-  const submit = useServerFn(shopSubmitPayment);
-  const confirmEmails = useServerFn(shopConfirmEmails);
-  const loadOrders = useServerFn(shopMyOrders);
-  const cancel = useServerFn(shopCancelOrder);
+  const { user, ready } = useCustomerSession();
+  const place = useServerFn(customerPlaceOrder);
+  const submit = useServerFn(customerSubmitPayment);
+  const confirmEmails = useServerFn(customerConfirmEmails);
+  const loadOrders = useServerFn(customerMyOrders);
+  const cancel = useServerFn(customerCancelOrder);
   const loadWallet = useServerFn(shopWallet);
 
   const [token, setToken] = useState("");
@@ -224,13 +223,13 @@ function ShopPage() {
   }, [search.view]);
 
   const refreshOrders = useCallback(async () => {
-    if (!token) return;
+    if (!user) { setOrders([]); return; }
     try {
-      setOrders(await loadOrders({ data: { token } }));
+      setOrders(await loadOrders({ data: undefined }));
     } catch {
       /* invalid token — orders stay hidden */
     }
-  }, [loadOrders, token]);
+  }, [loadOrders, user]);
 
   useEffect(() => {
     void refreshOrders();
@@ -251,7 +250,7 @@ function ShopPage() {
 
   const availableMethods = useMemo(() => {
     if (!catalog || !product) return [] as Method[];
-    return catalog.methods.filter((m) => (m.currency === "INR" ? product.price_inr !== null : true));
+    return catalog.methods.filter((m) => m.provider !== "wallet" && (m.currency === "INR" ? product.price_inr !== null : true));
   }, [catalog, product]);
 
   const categories = useMemo(() => {
@@ -410,11 +409,7 @@ function ShopPage() {
           </p>
         )}
 
-        {!token && step !== "list" && step !== "detail" && (
-          <p className="mb-6 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
-            Open “My account” in the Telegram bot and use its link to sign in before ordering.
-          </p>
-        )}
+        {!user && ready && step !== "list" && step !== "detail" && <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4"><p className="text-sm">Sign in to place or track your website order.</p><Button asChild><Link to="/login" search={{ redirect: product ? `/shop?product=${product.id}&buy=true` : "/shop?view=orders" }}>Sign in / Create account</Link></Button></div>}
 
         {/* LIST */}
         {step === "list" && (
@@ -671,11 +666,12 @@ function ShopPage() {
                   <div className="mt-8 flex flex-wrap gap-2">
                     <button
                       type="button"
-                      disabled={busy || !method || !token || walletShort}
+                      disabled={busy || !method || !user || walletShort}
                       onClick={() =>
                         void run(async () => {
+                          if (!method) return;
                           const order = await place({
-                            data: { token, productId: product.id, quantity, paymentMethodId: method!.id },
+                            data: { productId: product.id, quantity, paymentMethodId: method.id },
                           });
                           setDraft(order);
                           if (method?.provider === "wallet") {
@@ -750,7 +746,7 @@ function ShopPage() {
                       disabled={busy}
                       onClick={() =>
                         void run(async () => {
-                          await submit({ data: { token, orderId: draft.id, reference, evidenceUrl: evidence || undefined } });
+                          await submit({ data: { orderId: draft.id, reference, evidenceUrl: evidence || undefined } });
                           setStep("email");
                         })
                       }
@@ -763,7 +759,7 @@ function ShopPage() {
                       disabled={busy}
                       onClick={() =>
                         void run(async () => {
-                          await cancel({ data: { token, orderId: draft.id } });
+                          await cancel({ data: { orderId: draft.id } });
                           setDraft(null);
                           setStep("list");
                         })
@@ -792,7 +788,7 @@ function ShopPage() {
                     disabled={busy}
                     onClick={() =>
                       void run(async () => {
-                        const result = await confirmEmails({ data: { token, orderId: draft.id, emails } });
+                        const result = await confirmEmails({ data: { orderId: draft.id, emails } });
                         setEmailSummary(result.emails.join(", "));
                         setStep("done");
                         void refreshOrders();
@@ -844,12 +840,8 @@ function ShopPage() {
         {/* ORDERS */}
         {step === "orders" && (
           <div className="mx-auto max-w-3xl space-y-3">
-            {!token && (
-              <p className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
-                Open “My account” in the Telegram bot to see your orders here.
-              </p>
-            )}
-            {token && orders.length === 0 && (
+            
+            {user && orders.length === 0 && (
               <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
                 <Receipt className="size-10 text-muted-foreground" />
                 <p className="mt-4 font-semibold">No orders yet</p>

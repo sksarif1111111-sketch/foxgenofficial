@@ -1152,3 +1152,27 @@
 @keyframes delivery-overdue-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.025); opacity: .72; } }
 .delivery-overdue { animation: delivery-overdue-pulse 3s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .delivery-overdue { animation: none; } }
+
+.customer-auth-stage {
+ --auth-pink: oklch(.69 .16 347); --auth-purple: oklch(.6 .18 299); --auth-blue: oklch(.58 .2 275);
+ --auth-glass: oklch(1 0 0 / 78%); --auth-edge: oklch(1 0 0 / 65%); --auth-shadow: oklch(.24 .08 285 / 22%);
+ --google-bg: #ffffff; --google-border: #747775; --google-text: #1f1f1f;
+ --apple-bg: #000000; --apple-text: #ffffff;
+ --ms-red: #f25022; --ms-green: #7fba00; --ms-blue: #00a4ef; --ms-yellow: #ffb900;
+ background: linear-gradient(125deg,var(--auth-pink),var(--auth-purple) 55%,var(--auth-blue));
+ display: grid; place-items: center; position: relative; overflow: hidden;
+}
+.customer-auth-panel { background: var(--auth-glass); border: 1px solid var(--auth-edge); box-shadow: 0 24px 70px var(--auth-shadow); backdrop-filter: blur(24px); margin-top: 40px; animation: auth-enter .8s ease both; }
+.auth-square { position: absolute; pointer-events: none; background: var(--auth-glass); border: 1px solid var(--auth-edge); border-radius: 8px; opacity: .36; animation: auth-drift 9s ease-in-out infinite; }
+.auth-square-one { width: 140px; height: 140px; left: calc(50% - 300px); top: 16%; }
+.auth-square-two { width: 180px; height: 180px; left: calc(50% + 160px); top: 9%; animation-delay: -3s; }
+.auth-square-three { width: 110px; height: 110px; left: calc(50% + 150px); bottom: 8%; animation-delay: -6s; }
+.google-login { background: var(--google-bg); border: 1px solid var(--google-border); color: var(--google-text); font-size: 14px; font-weight: 500; min-height: 44px; }
+.google-login:hover { background: var(--google-bg); }
+.apple-login { background: var(--apple-bg); color: var(--apple-text); min-height: 44px; font-size: 19px; font-family: system-ui,sans-serif; }
+.apple-login:hover { background: var(--apple-bg); }
+.microsoft-mark { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 18px; height: 18px; }
+.microsoft-mark i:nth-child(1) { background: var(--ms-red); }.microsoft-mark i:nth-child(2) { background: var(--ms-green); }.microsoft-mark i:nth-child(3) { background: var(--ms-blue); }.microsoft-mark i:nth-child(4) { background: var(--ms-yellow); }
+@keyframes auth-drift { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-24px) rotate(5deg); } }
+@keyframes auth-enter { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .auth-square,.customer-auth-panel { animation: none; } }

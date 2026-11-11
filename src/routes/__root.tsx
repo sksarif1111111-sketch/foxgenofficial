@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { BRAND } from "@/lib/brand";
+import { CustomerSession } from "@/components/site/customer-session";
 
 function NotFoundComponent() {
   return (
@@ -125,6 +126,7 @@ function RootComponent() {
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      window.dispatchEvent(new Event("foxgen-session-change"));
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });
@@ -134,7 +136,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <CustomerSession><Outlet /></CustomerSession>
     </QueryClientProvider>
   );
 }
