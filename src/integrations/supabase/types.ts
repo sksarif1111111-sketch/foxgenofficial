@@ -1509,6 +1509,7 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
+          member_number: number | null
           referral_code: string
           referred_by: string | null
           status: string
@@ -1525,6 +1526,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          member_number?: number | null
           referral_code: string
           referred_by?: string | null
           status?: string
@@ -1541,6 +1543,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          member_number?: number | null
           referral_code?: string
           referred_by?: string | null
           status?: string
@@ -1637,6 +1640,45 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_crm_entity_outbox: {
+        Row: {
+          attempts: number
+          claim_token: string | null
+          created_at: string
+          entity: string
+          external_id: string
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          payload: Json
+          sent_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          claim_token?: string | null
+          created_at?: string
+          entity: string
+          external_id: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          payload: Json
+          sent_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          claim_token?: string | null
+          created_at?: string
+          entity?: string
+          external_id?: string
+          id?: string
+          last_error?: string | null
+          locked_until?: string | null
+          payload?: Json
+          sent_at?: string | null
+        }
+        Relationships: []
+      }
       shop_crm_outbox: {
         Row: {
           attempts: number
@@ -1680,6 +1722,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shop_customer_accounts: {
+        Row: {
+          created_at: string
+          email: string | null
+          member_number: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          member_number?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          member_number?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       shop_delivery_jobs: {
         Row: {
@@ -2175,6 +2241,104 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_topup_requests: {
+        Row: {
+          admin_note: string | null
+          amount: number
+          created_at: string
+          credit_usd: number | null
+          currency: string
+          evidence_url: string | null
+          id: string
+          method: string
+          network: string | null
+          profile_id: string
+          recipient_used: string
+          reference: string | null
+          reviewed_at: string | null
+          status: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount: number
+          created_at?: string
+          credit_usd?: number | null
+          currency: string
+          evidence_url?: string | null
+          id?: string
+          method: string
+          network?: string | null
+          profile_id: string
+          recipient_used: string
+          reference?: string | null
+          reviewed_at?: string | null
+          status?: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          credit_usd?: number | null
+          currency?: string
+          evidence_url?: string | null
+          id?: string
+          method?: string
+          network?: string | null
+          profile_id?: string
+          recipient_used?: string
+          reference?: string | null
+          reviewed_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_topup_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_topup_sessions: {
+        Row: {
+          amount: number | null
+          method_id: string
+          profile_id: string
+          reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          method_id: string
+          profile_id: string
+          reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          method_id?: string
+          profile_id?: string
+          reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_topup_sessions_method_id_fkey"
+            columns: ["method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_topup_sessions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallet_transactions: {
         Row: {
           actor: string
@@ -2296,6 +2460,31 @@ export type Database = {
       }
       reject_referral: { Args: { _referral_id: string }; Returns: boolean }
       require_admin: { Args: { _user_id: string }; Returns: boolean }
+      shop_admin_wallet_deduct: {
+        Args: { _amount: number; _note: string; _profile: string }
+        Returns: boolean
+      }
+      shop_claim_crm_entities: {
+        Args: { _token: string }
+        Returns: {
+          attempts: number
+          claim_token: string | null
+          created_at: string
+          entity: string
+          external_id: string
+          id: string
+          last_error: string | null
+          locked_until: string | null
+          payload: Json
+          sent_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "shop_crm_entity_outbox"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       shop_claim_crm_outbox: {
         Args: { _token: string }
         Returns: {
@@ -2326,11 +2515,22 @@ export type Database = {
         Returns: string
       }
       shop_crm_order_snapshot: { Args: { _order_id: string }; Returns: Json }
+      shop_crm_upsert_product: { Args: { _input: Json }; Returns: string }
+      shop_enqueue_customer: { Args: { _id: string }; Returns: undefined }
       shop_pause_crm_when_drained: { Args: never; Returns: undefined }
       shop_release_stock: { Args: { _order_id: string }; Returns: boolean }
       shop_reserve_stock: {
         Args: { _product_id: string; _qty: number }
         Returns: boolean
+      }
+      shop_review_wallet_topup: {
+        Args: {
+          _approve: boolean
+          _credit_usd?: number
+          _id: string
+          _note: string
+        }
+        Returns: Json
       }
       wallet_credit: {
         Args: {

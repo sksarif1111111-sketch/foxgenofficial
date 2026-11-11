@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { DeliveryCountdown } from "@/components/admin/delivery-countdown";
+import { memberLabel } from "@/lib/member-number";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { useServerFn } from "@tanstack/react-start";
@@ -25,6 +26,9 @@ import {
   shopSummary,
   shopWalletAccounts,
   shopWalletTopUp,
+  shopWalletPendingTopUps,
+  shopWalletReviewTopUp,
+  shopWalletDeduct,
   type BuyingSummary,
 } from "@/lib/shopadmin.functions";
 
@@ -999,6 +1003,7 @@ function PaymentMethodsEditor({
 
 type WalletAccount = {
   id: string;
+  member_number?: number | null;
   name: string;
   username: string | null;
   telegram_user_id: number | null;
@@ -1008,6 +1013,12 @@ type WalletAccount = {
 export function WalletPanel({ notify }: { notify: Notify }) {
   const fAccounts = useServerFn(shopWalletAccounts);
   const fTopUp = useServerFn(shopWalletTopUp);
+  const fPending = useServerFn(shopWalletPendingTopUps);
+  const fReview = useServerFn(shopWalletReviewTopUp);
+  const fDeduct = useServerFn(shopWalletDeduct);
+  const [pending, setPending] = useState<Awaited<ReturnType<typeof shopWalletPendingTopUps>>>([]);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [credits, setCredits] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<WalletAccount[]>([]);
   const [amounts, setAmounts] = useState<Record<string, string>>({});
@@ -1016,10 +1027,11 @@ export function WalletPanel({ notify }: { notify: Notify }) {
   const load = useCallback(async () => {
     try {
       setRows(await fAccounts({ data: { search: search.trim() || undefined } }));
+      setPending(await fPending());
     } catch {
       notify("Could not load wallets.");
     }
-  }, [fAccounts, notify, search]);
+  }, [fAccounts, fPending, notify, search]);
 
   useEffect(() => {
     void load();
@@ -1046,6 +1058,21 @@ export function WalletPanel({ notify }: { notify: Notify }) {
 
   return (
     <section className="space-y-4 rounded-2xl border border-border bg-card/60 p-5">
+      <h3 className="text-lg font-bold">Pending top ups</h3>
+      <div className="space-y-3">
+        {pending.map(r => <div key={r.id} className="border-b border-border pb-4 space-y-2">
+          <p className="font-semibold">{r.amount} {r.currency} · {r.reference}</p>
+          <p className="text-xs text-muted-foreground break-all">{r.profile_id} · {r.network} · {r.recipient_used}</p>
+          {r.evidence_url && <a href={r.evidence_url} target="_blank" rel="noreferrer" className="text-primary text-sm">Payment evidence</a>}
+          <input aria-label={`Review note ${r.id}`} placeholder="Review note or rejection reason" className={input} value={notes[r.id] ?? ""} onChange={e => setNotes(p => ({ ...p, [r.id]: e.target.value }))} />
+          {r.currency === "INR" && <input aria-label={`USD credit ${r.id}`} placeholder="Verified USD wallet credit" inputMode="decimal" className={input} value={credits[r.id] ?? ""} onChange={e => setCredits(p => ({ ...p, [r.id]: e.target.value }))} />}
+          <div className="flex gap-2">{[true,false].map(approve => <Button key={String(approve)} variant={approve ? "default" : "outline"} disabled={busy} onClick={async () => {
+            if ((notes[r.id] ?? "").trim().length < 3 || (approve && r.currency === "INR" && !(Number(credits[r.id]) > 0))) { notify("Enter a review note and verified USD credit for INR."); return; }
+            setBusy(true); try { const result = await fReview({ data: { id: r.id, approve, note: notes[r.id], creditUsd: r.currency === "INR" && approve ? Number(credits[r.id]) : undefined } }); notify(result.notified ? "Top up reviewed." : "Reviewed; Telegram notification failed."); await load(); } catch(e) { notify(e instanceof Error ? e.message : "Review failed."); } finally { setBusy(false); }
+          }}>{approve ? "Approve" : "Reject"}</Button>)}</div>
+        </div>)}
+        {!pending.length && <p className="text-sm text-muted-foreground">No pending top ups.</p>}
+      </div>
       <div>
         <h3 className="text-lg font-black">Customer wallets</h3>
         <p className="text-sm text-muted-foreground">
@@ -1073,10 +1100,10 @@ export function WalletPanel({ notify }: { notify: Notify }) {
             <div>
               <p className="text-sm font-semibold">{row.name}</p>
               <p className="text-xs text-muted-foreground">
-                {row.username ? `@${row.username}` : row.telegram_user_id ?? "—"}
+                {memberLabel(row.member_number)} · {row.username ? `@${row.username}` : row.telegram_user_id ?? "—"}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 max-w-full">
               <span className="text-sm font-black text-primary">${row.balance.toFixed(2)}</span>
               <input
                 value={amounts[row.id] ?? ""}
@@ -1093,6 +1120,11 @@ export function WalletPanel({ notify }: { notify: Notify }) {
               >
                 Add funds
               </button>
+              <input aria-label={`Deduction note ${row.id}`} placeholder="Deduction note" className="min-w-0 w-32 border border-border rounded-md p-2 text-sm" value={notes[row.id] ?? ""} onChange={e => setNotes(p => ({ ...p, [row.id]: e.target.value }))} />
+              <Button variant="outline" disabled={busy} onClick={async () => {
+                if (!(Number(amounts[row.id]) > 0) || (notes[row.id] ?? "").trim().length < 3) { notify("Enter an amount and short deduction note."); return; }
+                setBusy(true); try { await fDeduct({ data: { profileId: row.id, amount: Number(amounts[row.id]), note: notes[row.id] } }); await load(); notify("Wallet corrected."); } catch(e) { notify(e instanceof Error ? e.message : "Deduction failed."); } finally { setBusy(false); }
+              }}>Deduct</Button>
             </div>
           </div>
         ))}
