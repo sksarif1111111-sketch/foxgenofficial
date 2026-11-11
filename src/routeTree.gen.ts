@@ -27,6 +27,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TutorialsRouteImport } from './routes/tutorials'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
+import { Route as ApiPublicCronCrmSyncRouteImport } from './routes/api/public/cron/crm-sync'
 import { Route as ApiPublicCronSupplierSyncRouteImport } from './routes/api/public/cron/supplier-sync'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
 import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/license/issue'
@@ -35,6 +36,7 @@ import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/med
 import { Route as ApiPublicTelegramAvatarRouteImport } from './routes/api/public/telegram/avatar'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicShopV1ResourceRouteImport } from './routes/api/public/shop/v1/$resource'
+import { Route as ApiPublicShopV1ActionsRouteImport } from './routes/api/public/shop/v1/actions'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -126,6 +128,11 @@ const ProductProductIdRoute = ProductProductIdRouteImport.update({
   path: '/product/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCronCrmSyncRoute = ApiPublicCronCrmSyncRouteImport.update({
+  id: '/api/public/cron/crm-sync',
+  path: '/api/public/cron/crm-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronSupplierSyncRoute =
   ApiPublicCronSupplierSyncRouteImport.update({
     id: '/api/public/cron/supplier-sync',
@@ -168,6 +175,11 @@ const ApiPublicShopV1ResourceRoute = ApiPublicShopV1ResourceRouteImport.update({
   path: '/api/public/shop/v1/$resource',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicShopV1ActionsRoute = ApiPublicShopV1ActionsRouteImport.update({
+  id: '/api/public/shop/v1/actions',
+  path: '/api/public/shop/v1/actions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -188,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/api/public/cron/crm-sync': typeof ApiPublicCronCrmSyncRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
@@ -196,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
+  '/api/public/shop/v1/actions': typeof ApiPublicShopV1ActionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -216,6 +230,7 @@ export interface FileRoutesByTo {
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/api/public/cron/crm-sync': typeof ApiPublicCronCrmSyncRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
@@ -224,6 +239,7 @@ export interface FileRoutesByTo {
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
+  '/api/public/shop/v1/actions': typeof ApiPublicShopV1ActionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -245,6 +261,7 @@ export interface FileRoutesById {
   '/tutorials': typeof TutorialsRoute
   '/api/chat': typeof ApiChatRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/api/public/cron/crm-sync': typeof ApiPublicCronCrmSyncRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
@@ -253,6 +270,7 @@ export interface FileRoutesById {
   '/api/public/telegram/avatar': typeof ApiPublicTelegramAvatarRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
+  '/api/public/shop/v1/actions': typeof ApiPublicShopV1ActionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -275,6 +293,7 @@ export interface FileRouteTypes {
     | '/tutorials'
     | '/api/chat'
     | '/product/$productId'
+    | '/api/public/cron/crm-sync'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
@@ -283,6 +302,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
     | '/api/public/shop/v1/$resource'
+    | '/api/public/shop/v1/actions'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -303,6 +323,7 @@ export interface FileRouteTypes {
     | '/tutorials'
     | '/api/chat'
     | '/product/$productId'
+    | '/api/public/cron/crm-sync'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
@@ -311,6 +332,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
     | '/api/public/shop/v1/$resource'
+    | '/api/public/shop/v1/actions'
   id:
     | '__root__'
     | '/'
@@ -331,6 +353,7 @@ export interface FileRouteTypes {
     | '/tutorials'
     | '/api/chat'
     | '/product/$productId'
+    | '/api/public/cron/crm-sync'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
     | '/api/public/license/issue'
@@ -339,6 +362,7 @@ export interface FileRouteTypes {
     | '/api/public/telegram/avatar'
     | '/api/public/telegram/webhook'
     | '/api/public/shop/v1/$resource'
+    | '/api/public/shop/v1/actions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -360,6 +384,7 @@ export interface RootRouteChildren {
   TutorialsRoute: typeof TutorialsRoute
   ApiChatRoute: typeof ApiChatRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
+  ApiPublicCronCrmSyncRoute: typeof ApiPublicCronCrmSyncRoute
   ApiPublicCronSupplierSyncRoute: typeof ApiPublicCronSupplierSyncRoute
   ApiPublicExtCoreRoute: typeof ApiPublicExtCoreRoute
   ApiPublicLicenseIssueRoute: typeof ApiPublicLicenseIssueRoute
@@ -368,6 +393,7 @@ export interface RootRouteChildren {
   ApiPublicTelegramAvatarRoute: typeof ApiPublicTelegramAvatarRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   ApiPublicShopV1ResourceRoute: typeof ApiPublicShopV1ResourceRoute
+  ApiPublicShopV1ActionsRoute: typeof ApiPublicShopV1ActionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -498,6 +524,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/crm-sync': {
+      id: '/api/public/cron/crm-sync'
+      path: '/api/public/cron/crm-sync'
+      fullPath: '/api/public/cron/crm-sync'
+      preLoaderRoute: typeof ApiPublicCronCrmSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/supplier-sync': {
       id: '/api/public/cron/supplier-sync'
       path: '/api/public/cron/supplier-sync'
@@ -554,6 +587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicShopV1ResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/shop/v1/actions': {
+      id: '/api/public/shop/v1/actions'
+      path: '/api/public/shop/v1/actions'
+      fullPath: '/api/public/shop/v1/actions'
+      preLoaderRoute: typeof ApiPublicShopV1ActionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -576,6 +616,7 @@ const rootRouteChildren: RootRouteChildren = {
   TutorialsRoute: TutorialsRoute,
   ApiChatRoute: ApiChatRoute,
   ProductProductIdRoute: ProductProductIdRoute,
+  ApiPublicCronCrmSyncRoute: ApiPublicCronCrmSyncRoute,
   ApiPublicCronSupplierSyncRoute: ApiPublicCronSupplierSyncRoute,
   ApiPublicExtCoreRoute: ApiPublicExtCoreRoute,
   ApiPublicLicenseIssueRoute: ApiPublicLicenseIssueRoute,
@@ -584,6 +625,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTelegramAvatarRoute: ApiPublicTelegramAvatarRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   ApiPublicShopV1ResourceRoute: ApiPublicShopV1ResourceRoute,
+  ApiPublicShopV1ActionsRoute: ApiPublicShopV1ActionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

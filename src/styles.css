@@ -1148,3 +1148,7 @@
   .robot-root .rb-figure, .robot-hit:hover { transform: none !important; }
   .robot-bubble { transition-property: opacity !important; transition-duration: 400ms !important; }
 }
+
+@keyframes delivery-overdue-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.025); opacity: .72; } }
+.delivery-overdue { animation: delivery-overdue-pulse 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .delivery-overdue { animation: none; } }

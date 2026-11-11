@@ -7,6 +7,9 @@ const idInput = z.object({ id: z.string().uuid() });
 /* --------------------------------- Buying --------------------------------- */
 
 export type BuyingSummary = {
+  deliverySlaMinutes: number;
+  crmSync: { configured: boolean; lastSuccess: string | null; pending: number; stuck: number };
+  ordersOverdue: number;
   pendingReview: number;
   awaitingEmail: number;
   awaitingDelivery: number;
@@ -16,9 +19,18 @@ export type BuyingSummary = {
 };
 
 export const shopSummary = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async (): Promise<BuyingSummary> => {
-  const { db } = await import("@/lib/hub.server");
-  const { data } = await db.from("shop_orders").select("status, currency, total, stars_total");
-  const rows = data ?? [];
+  const { db, getSettings } = await import("@/lib/hub.server");
+  const { deliverySlaMinutes: parseSla, deliveryClock } = await import("@/lib/shop-fulfillment");
+  const { crmSyncStatus } = await import("@/lib/shop-crm.server");
+  const [settings, crmSync] = await Promise.all([getSettings(), crmSyncStatus()]);
+  const deliverySlaMinutes = parseSla(settings["shop_delivery_sla_minutes"]);
+  const rows: Array<{ status: string; currency: string; total: number | null; stars_total: number | null; confirmed_at: string | null; delivered_at: string | null }> = [];
+  for (let offset = 0; ; offset += 1000) {
+    const result = await db.from("shop_orders").select("status,currency,total,stars_total,confirmed_at,delivered_at").order("id").range(offset, offset + 999);
+    if (result.error) throw new Error("Could not load order summary.");
+    rows.push(...(result.data ?? []));
+    if ((result.data ?? []).length < 1000) break;
+  }
   const revenueMap = new Map<string, number>();
   for (const row of rows) {
     if (!["payment_confirmed", "awaiting_fulfillment", "delivered"].includes(row.status)) continue;
@@ -29,6 +41,8 @@ export const shopSummary = createServerFn({ method: "POST" }).middleware([requir
     }
   }
   return {
+    deliverySlaMinutes, crmSync,
+    ordersOverdue: rows.filter(r => deliveryClock(r, deliverySlaMinutes)?.overdue).length,
     pendingReview: rows.filter((r) => r.status === "under_review" || r.status === "payment_submitted").length,
     awaitingEmail: rows.filter((r) => r.status === "awaiting_email").length,
     awaitingDelivery: rows.filter((r) => r.status === "awaiting_fulfillment" || r.status === "payment_confirmed").length,
