@@ -47,20 +47,8 @@ export async function shopRejectOrder(data: { id: string; reason: string }, acto
     const { orderEvent, notifyBuyerTelegram, refundWalletOrder } = await import("@/lib/shop.server");
     const { data: order } = await db.from("shop_orders").select("*").eq("id", data.id).maybeSingle();
     if (!order) throw new Error("Order not found.");
-    if (order.stock_consumed) throw new Error("A confirmed order cannot be rejected here.");
-    await db.rpc("shop_release_stock", { _order_id: data.id });
-    await db
-      .from("shop_orders")
-      .update({
-        status: "rejected",
-        reject_reason: data.reason,
-        rejected_at: new Date().toISOString(),
-        reviewed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", data.id);
-    await orderEvent(data.id, "rejected", actor, data.reason);
-    await refundWalletOrder(order as Record<string, unknown>, `Order ${order.order_number} rejected`);
+    const result=await db.rpc("shop_cancel_atomic",{_id:data.id,_status:"rejected",_reason:data.reason,_actor:actor});
+    if(result.error)throw new Error(result.error.message);
     await logActivity("shop", "Payment rejected", "warning", `${order.order_number} — ${data.reason}`);
     await notifyBuyerTelegram(
       data.id,

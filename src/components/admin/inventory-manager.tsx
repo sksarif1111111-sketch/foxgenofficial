@@ -1,0 +1,9 @@
+import {useState} from 'react';
+import {useServerFn} from '@tanstack/react-start';
+import {Button} from '@/components/ui/button';
+import {marketplaceAddInventory,marketplaceInventory} from '@/lib/marketplace-admin.functions';
+export function InventoryManager({productId}:{productId:string}){
+  const list=useServerFn(marketplaceInventory);const add=useServerFn(marketplaceAddInventory);
+  const [items,setItems]=useState('');const [status,setStatus]=useState('');const [busy,setBusy]=useState(false);
+  return <div className="space-y-2 border-t border-border pt-4"><h4 className="font-semibold">Private ready-account inventory</h4><textarea aria-label="Private inventory items" className="w-full rounded-lg border border-border bg-background p-3 text-sm" rows={4} value={items} onChange={e=>setItems(e.target.value)} placeholder="One complete delivery item per line"/><div className="flex gap-2"><Button disabled={busy||!items.trim()} onClick={async()=>{setBusy(true);try{await add({data:{productId,items:items.split('\n').map(s=>s.trim()).filter(Boolean)}});setItems('');setStatus('Inventory saved.');}catch(e){setStatus(e instanceof Error?e.message:'Save failed');}finally{setBusy(false);}}}>Add inventory</Button><Button variant="outline" onClick={async()=>{try{const r=await list({data:{productId}});setStatus(`${r.filter(i=>i.status==='available').length} available · ${r.filter(i=>i.status==='assigned').length} assigned (latest 200)`);}catch{setStatus('Could not read inventory');}}}>Check inventory</Button></div><p role="status" className="text-sm text-muted-foreground">{status}</p></div>;
+}

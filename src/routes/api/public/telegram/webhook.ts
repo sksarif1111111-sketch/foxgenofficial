@@ -69,6 +69,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             chat: { id: number };
             from?: TgUser;
             text?: string;
+            photo?: Array<{ file_id: string }>;
             successful_payment?: {
               currency: string;
               total_amount: number;
@@ -90,31 +91,26 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           void tg("answerCallbackQuery", { callback_query_id: update.callback_query.id }).catch(() => undefined);
         }
 
-        if (typeof update.update_id === "number") {
-          const { error: updateError } = await db
-            .from("telegram_processed_updates")
-            .insert({ update_id: update.update_id });
-          if (updateError?.code === "23505") return Response.json({ ok: true, duplicate: true });
-          if (updateError) {
-            await logBotError("webhook", updateError.message, update.callback_query?.from.id ?? null, "dedupe insert");
-            return Response.json({ ok: false }, { status: 500 });
-          }
-          if (update.update_id % 100 === 0) {
-            const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-            await db.from("telegram_processed_updates").delete().lt("processed_at", cutoff);
-          }
+        const updateId = update.update_id;
+        const claimToken = crypto.randomUUID();
+        if (typeof updateId === "number") {
+          const claimed = await db.rpc("shop_claim_webhook", { _id: updateId, _token: claimToken });
+          if (claimed.error) return Response.json({ ok: false }, { status: 500 });
+          if (claimed.data === "completed") return Response.json({ ok: true, duplicate: true });
+          if (claimed.data !== "claimed") return Response.json({ ok: false }, { status: 503 });
         }
-
+        let workFailed = false;
+        try {
         // ---------- Telegram Stars: pre-checkout validation ----------
         if (update.pre_checkout_query) {
           const q = update.pre_checkout_query;
           const { data: order } = await db
             .from("shop_orders")
-            .select("id, status, stars_total")
+            .select("id, status, channel, currency, stars_total, telegram_user_id, expires_at")
             .eq("id", q.invoice_payload)
             .maybeSingle();
           const valid =
-            !!order && order.status === "awaiting_payment" && Number(order.stars_total) === Number(q.total_amount);
+            !!order && order.channel === "telegram" && order.currency === "XTR" && order.telegram_user_id === q.from.id && order.status === "awaiting_payment" && (!order.expires_at || Date.parse(order.expires_at) > Date.now()) && Number(order.stars_total) === Number(q.total_amount);
           await tg("answerPreCheckoutQuery", {
             pre_checkout_query_id: q.id,
             ok: valid,
@@ -130,11 +126,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           // Match currency and amount against the order before accepting the payment.
           const { data: pending } = await db
             .from("shop_orders")
-            .select("id, status, stars_total, telegram_charge_id, telegram_user_id")
+            .select("id, status, channel, stars_total, telegram_charge_id, telegram_user_id")
             .eq("id", sp.invoice_payload)
             .maybeSingle();
           const amountOk =
-            !!pending && pending.telegram_user_id === update.message.from?.id && sp.currency === "XTR" && Number(pending.stars_total) === Number(sp.total_amount);
+            !!pending && pending.channel === "telegram" && pending.status === "awaiting_payment" && pending.telegram_user_id === update.message.from?.id && sp.currency === "XTR" && Number(pending.stars_total) === Number(sp.total_amount);
           if (!pending || pending.telegram_charge_id) {
             // Unknown order or this payment was already processed: never confirm twice.
             return Response.json({ ok: true, duplicate: !!pending });
@@ -266,7 +262,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const backRow = (to = "menu"): Btn[] => [{ text: `${E("back", "⬅️")} Back`, callback_data: to }];
 
         const buildHomeKeyboard = (isActive: boolean): Keyboard => [
-          [{ text: "💰 Add funds", callback_data: "addfunds" }],
+          [{ text: "🛍️ SHOP", callback_data: "shop" }, { text: "📱 Virtual Numbers (OTP)", callback_data: "virtual" }],
+          [{ text: "📦 My Orders", callback_data: "myorders" }, { text: "👤 Profile", callback_data: "storeprofile" }],
+          [{ text: "👛 Wallet", callback_data: "wallet" }, { text: "🔍 Search", callback_data: "search" }],
+          [{ text: "🛠️ Reseller API", callback_data: "reseller" }],
           [
             { text: `${E("shop", "🛍️")} Shop`, callback_data: "shop" },
             { text: `${E("rewards", "🎁")} Free Rewards`, callback_data: "rewards" },
@@ -331,33 +330,19 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         /** Premium home screen with live stats. */
         const homeBody = async (p: { id: string; credits_available: number; credits_earned: number }) => {
-          const [refs, lic, ahead] = await Promise.all([
-            db
-              .from("referrals")
-              .select("id", { count: "exact", head: true })
-              .eq("referrer_id", p.id)
-              .eq("status", "verified"),
-            db.from("license_redemptions").select("id", { count: "exact", head: true }).eq("user_id", p.id),
-            db.from("profiles").select("id", { count: "exact", head: true }).gt("credits_earned", p.credits_earned),
-          ]);
-          return (
-            `${E("brand", "🦊")} <b>${esc(storeName.toUpperCase())}</b>\n` +
-            `<i>${esc(storeTagline)}</i>\n` +
-            `${LINE}\n` +
-            `${E("credits", "💰")} Credits: <b>${p.credits_available}</b>\n` +
-            `${E("invite", "👥")} Joined Referrals: <b>${refs.count ?? 0}</b>\n` +
-            `${E("license", "🔑")} Licenses Claimed: <b>${lic.count ?? 0}</b>\n` +
-            `${E("rank", "🏆")} Global Rank: <b>#${(ahead.count ?? 0) + 1}</b>\n` +
-            `${LINE}\n` +
-            `Choose an option below.`
-          );
+          const { buyerStats } = await import("@/lib/telegram-marketplace.server");
+          const { memberLabel } = await import("@/lib/member-number");
+          const full = await profileByTelegramId(from.id);
+          if (!full) return welcomeText;
+          const stats = await buyerStats(full);
+          return `<b>${esc(storeName.toUpperCase())}</b>\n${LINE}\nWelcome back, ${esc(from.first_name || "Customer")}!\n${esc(storeTagline)}\n\nUsername: ${esc(from.username ? "@" + from.username : "Not set")}\nCustomer ID: ${memberLabel(full.member_number)}\nUser ID: <code>${from.id}</code>\nOrders: ${stats.completed}\nBalance: ${stats.balance.toFixed(2)} USD\nTotal spent: ${esc(stats.spent)}\nCredits: ${p.credits_available}`;
         };
 
         // ---------- /start ----------
         if (text.startsWith("/start")) {
           const payload = text.split(/\s+/)[1] ?? "";
           const { profile: startedProfile } = await ensureProfile(from, payload);
-          await send(welcomeText, buildHomeKeyboard(startedProfile.status === "active"));
+          await send(await homeBody(startedProfile), buildHomeKeyboard(startedProfile.status === "active"));
           void tg("setMyCommands", {
             commands: [
               { command: "start", description: `${E("brand", "🦊")} Open ${storeName}` },
@@ -382,7 +367,18 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         }
 
         const { walletFundingBot } = await import("@/lib/wallet-topup.server");
-        if (await walletFundingBot(profile.id, chatId, cb || (text === "/addfunds" ? "addfunds" : ""), text)) return Response.json({ ok: true });
+        if (await walletFundingBot(profile.id, chatId, cb || (text === "/addfunds" ? "addfunds" : ""), text, update.message?.photo?.at(-1)?.file_id)) return Response.json({ ok: true });
+
+        const { marketplaceBot } = await import("@/lib/telegram-marketplace.server");
+        const marketRaw = cb || (text.startsWith("/") ? text.slice(1).split(/[ @]/)[0] ?? "" : "");
+        const marketAction = ({ profile: "storeprofile", orders: "myorders", products: "shop", store: "shop" } as Record<string,string>)[marketRaw] ?? marketRaw;
+        try {
+          if (await marketplaceBot({ profile, chatId, action: marketAction, text, settings, callbackId: update.callback_query?.id, photoId: update.message?.photo?.at(-1)?.file_id })) return Response.json({ ok: true });
+        } catch {
+          workFailed = true;
+          await send("Could not complete this action. Please try again or contact Support.", [[{ text: "Home", callback_data: "menu" }]]);
+          return Response.json({ ok: false }, { status: 500 });
+        }
 
         // ---------- delivery email capture for a paid Telegram order ----------
         if (text && !text.startsWith("/") && text.includes("@")) {
@@ -1137,6 +1133,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await render(await homeBody(fresh), buildHomeKeyboard(fresh.status === "active"));
           return Response.json({ ok: true });
         } catch (err) {
+          workFailed = true;
           await logBotError("callback", err instanceof Error ? err.message : "unhandled error", from.id, action);
           await render(`${E("error", "⚠️")} Something went wrong. Please try again shortly.`, [
             [{ text: "🏠 Home", callback_data: "menu" }],
@@ -1144,6 +1141,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: true });
         } finally {
           await unlock();
+        }
+        } catch {
+          workFailed = true;
+          return Response.json({ ok: false }, { status: 500 });
+        } finally {
+          if (typeof updateId === "number") await db.from("shop_webhook_work").update({ status: workFailed ? "failed" : "completed", locked_until: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("update_id", updateId).eq("claim_token", claimToken);
         }
       },
     },

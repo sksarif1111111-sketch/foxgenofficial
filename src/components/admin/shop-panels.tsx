@@ -1,3 +1,6 @@
+import { InventoryManager } from "@/components/admin/inventory-manager";
+import { marketplaceAssignInventory, marketplaceGenerateImage } from "@/lib/marketplace-admin.functions";
+import { catalogCategories } from "@/lib/hubcatalog.functions";
 import { Button } from "@/components/ui/button";
 import { DeliveryCountdown } from "@/components/admin/delivery-countdown";
 import { memberLabel } from "@/lib/member-number";
@@ -81,6 +84,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export function BuyingPanel({ notify }: { notify: Notify }) {
   const fSummary = useServerFn(shopSummary);
+  const fAssignInventory = useServerFn(marketplaceAssignInventory);
   const fOrders = useServerFn(shopOrders);
   const fDetail = useServerFn(shopOrderDetail);
   const fApprove = useServerFn(shopApproveOrder);
@@ -261,7 +265,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
             <p>Method: {String(open.order["payment_method_name"] ?? "—")}</p>
             <p>Recipient used: {String(open.order["payment_recipient"] ?? "—")}</p>
             <p>Reference: {String(open.order["payment_reference"] ?? "—")}</p>
-            <p>Evidence: {String(open.order["payment_evidence_url"] ?? "—")}</p>
+            <p>Evidence: {open.order.payment_evidence_url ? <a href={open.order.payment_evidence_url} target="_blank" rel="noreferrer" className="text-primary">View private screenshot</a> : "—"}</p>
             <p>Emails: {String(open.order["delivery_emails"] ?? "—")}</p>
             <p>
               Telegram: {open.telegram?.username ? `@${open.telegram.username}` : "—"}{" "}
@@ -360,6 +364,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
 
           <div className="space-y-2">
             <p className="text-sm font-bold">Delivery material</p>
+            <Button variant="outline" disabled={busy} onClick={()=>void act(async()=>{const r=await fAssignInventory({data:{id:open.order.id}});notify(`${r.assigned} private items assigned.`);await openOrder(open.order.id);})}>Assign private inventory</Button>
             {open.fulfillments.map((f: Row) => (
               <p key={String(f["id"])} className="whitespace-pre-line rounded-xl border border-border p-3 text-xs">
                 [{String(f["kind"])}] {String(f["content"])}
@@ -495,6 +500,9 @@ const emptyProduct = {
   featured: false,
   reseller_product_id: "",
   duration_label: "",
+  warranty_label: "",
+  category_id: "",
+  min_per_order: "1",
   credits_per_interval: "",
   renewal_interval: "",
   price_usdt: "",
@@ -525,6 +533,10 @@ const numOrNull = (value: string) => {
 
 export function ShopProductsPanel({ notify }: { notify: Notify }) {
   const fProducts = useServerFn(shopAdminProducts);
+  const fCategories = useServerFn(catalogCategories);
+  const fGenerateImage = useServerFn(marketplaceGenerateImage);
+  const [generating,setGenerating] = useState(false);
+  const [categories,setCategories] = useState<Array<{id:string;name:string}>>([]);
   const fSave = useServerFn(shopSaveProduct);
   const fDuplicate = useServerFn(shopDuplicateProduct);
   const fState = useServerFn(shopSetProductState);
@@ -539,10 +551,11 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
   const [draft, setDraft] = useState<Draft | null>(null);
 
   const load = useCallback(async () => {
-    const [p, m] = await Promise.all([fProducts({ data: undefined }), fMethods({ data: undefined })]);
+    const [p, m, c] = await Promise.all([fProducts({ data: undefined }), fMethods({ data: undefined }), fCategories()]);
+    setCategories(c);
     setRows(p as Row[]);
     setMethods(m as Row[]);
-  }, [fMethods, fProducts]);
+  }, [fMethods, fProducts, fCategories]);
 
   useEffect(() => {
     void load();
@@ -585,6 +598,9 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
       featured: row["featured"] === true,
       reseller_product_id: row["reseller_product_id"] ? String(row["reseller_product_id"]) : "",
       duration_label: String(row["duration_label"] ?? ""),
+      warranty_label: String(row["warranty_label"] ?? ""),
+      category_id: String(row["category_id"] ?? ""),
+      min_per_order: String(row["min_per_order"] ?? 1),
       credits_per_interval: row["credits_per_interval"] === null ? "" : String(row["credits_per_interval"]),
       renewal_interval: String(row["renewal_interval"] ?? ""),
       price_usdt: row["price_usdt"] === null ? "" : String(row["price_usdt"]),
@@ -621,6 +637,9 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
           logo_url: draft.logo_url,
           featured: draft.featured,
           duration_label: draft.duration_label,
+          warranty_label: draft.warranty_label,
+          category_id: draft.category_id || null,
+          min_per_order: Number(draft.min_per_order || 1),
           credits_per_interval: numOrNull(draft.credits_per_interval),
           renewal_interval: draft.renewal_interval,
           price_usdt: numOrNull(draft.price_usdt),
@@ -761,6 +780,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
               <ImageUpload folder="products" label="Product image (cards & product page)" value={draft.image_url} onChange={(url) => setDraft({ ...draft, image_url: url })} />
               <ImageUpload folder="products" label="Brand logo (square)" value={draft.logo_url} onChange={(url) => setDraft({ ...draft, logo_url: url })} />
             </div>
+            <Button variant="outline" disabled={generating||!draft.name.trim()} onClick={async()=>{if(!window.confirm("Generate a product thumbnail using paid AI credits?"))return;setGenerating(true);try{const r=await fGenerateImage({data:{name:draft.name,description:draft.description}});setDraft({...draft,image_url:r.url});notify("Image saved. Save the product to use it.");}catch(e){notify(e instanceof Error?e.message:"Image generation unavailable. Upload an image instead.");}finally{setGenerating(false);}}}>{generating?"Generating…":"Generate image · AI credits"}</Button>
             {draft.reseller_product_id && (
               <p className="sm:col-span-2 rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground">
                 Connected to supplier product <span className="font-mono">{draft.reseller_product_id}</span>. Name, USDT price and stock are refreshed on each sync; everything else you edit here is kept.
@@ -774,6 +794,13 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
             </Field>
             <Field label="Price in Telegram Stars (whole number, blank = Telegram purchase off)">
               <input className={input} value={draft.price_stars} onChange={(e) => setDraft({ ...draft, price_stars: e.target.value })} />
+            </Field>
+            <Field label="Bot category"><select className={input} value={draft.category_id} onChange={e=>setDraft({...draft,category_id:e.target.value})}><option value="">Uncategorised</option>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
+            <Field label="Warranty">
+              <input className={input} value={draft.warranty_label} onChange={e => setDraft({...draft,warranty_label:e.target.value})} />
+            </Field>
+            <Field label="Minimum quantity">
+              <input type="number" min="1" max="100" className={input} value={draft.min_per_order} onChange={e=>setDraft({...draft,min_per_order:e.target.value})} />
             </Field>
             <Field label="Duration label">
               <input className={input} value={draft.duration_label} onChange={(e) => setDraft({ ...draft, duration_label: e.target.value })} />
@@ -820,6 +847,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
               <input className={input} value={draft.download_url} onChange={(e) => setDraft({ ...draft, download_url: e.target.value })} />
             </Field>
           </div>
+          {draft.id && <InventoryManager productId={draft.id} />}
           <Field label="Short description">
             <input className={input} value={draft.short_description} onChange={(e) => setDraft({ ...draft, short_description: e.target.value })} />
           </Field>
@@ -910,7 +938,7 @@ function PaymentMethodsEditor({
       </div>
       {rows.map((row) => (
         <article key={String(row["id"])} className={`${card} flex flex-wrap items-center justify-between gap-2`}>
-          <span className="text-sm">
+          <span className="min-w-0 max-w-full break-all text-sm">
             <strong>{String(row["name"])}</strong> · {String(row["currency"])} ·{" "}
             {String(row["network"] ?? "no network")} · {String(row["recipient"] ?? "—")} ·{" "}
             {row["enabled"] ? "enabled" : "disabled"}
@@ -947,6 +975,8 @@ function PaymentMethodsEditor({
               <input className={input} value={String(draft["display_order"] ?? 0)} onChange={(e) => setDraft({ ...draft, display_order: e.target.value })} />
             </Field>
           </div>
+          <Field label="Account / recipient name"><input className={input} value={String((draft["config"] as Row | undefined)?.["account_name"] ?? (draft["config"] as Row | undefined)?.["recipient_name"] ?? "")} onChange={e=>setDraft({...draft,config:{...((draft["config"] as Row)||{}),account_name:e.target.value,recipient_name:e.target.value}})} /></Field>
+          <Field label="Payment QR"><ImageUpload folder="products" label="QR image" value={String((draft["config"] as Row | undefined)?.["qr_url"]??"")} onChange={url=>setDraft({...draft,config:{...((draft["config"] as Row)||{}),qr_url:url}})} /></Field>
           <Field label="Instructions">
             <textarea rows={3} className={input} value={field("instructions")} onChange={(e) => setDraft({ ...draft, instructions: e.target.value })} />
           </Field>
@@ -974,6 +1004,7 @@ function PaymentMethodsEditor({
                         settlement_asset: String(draft["settlement_asset"] ?? ""),
                         reference_label: String(draft["reference_label"] ?? ""),
                         instructions: String(draft["instructions"] ?? ""),
+                        config: {account_name:String((draft["config"] as Row|undefined)?.["account_name"]??""),recipient_name:String((draft["config"] as Row|undefined)?.["recipient_name"]??""),qr_url:String((draft["config"] as Row|undefined)?.["qr_url"]??"")},
                         enabled: draft["enabled"] === true,
                         display_order: Number(draft["display_order"] ?? 0),
                       },
@@ -1063,7 +1094,7 @@ export function WalletPanel({ notify }: { notify: Notify }) {
         {pending.map(r => <div key={r.id} className="border-b border-border pb-4 space-y-2">
           <p className="font-semibold">{r.amount} {r.currency} · {r.reference}</p>
           <p className="text-xs text-muted-foreground break-all">{r.profile_id} · {r.network} · {r.recipient_used}</p>
-          {r.evidence_url && <a href={r.evidence_url} target="_blank" rel="noreferrer" className="text-primary text-sm">Payment evidence</a>}
+          {r.evidence_url && <a href={r.evidence_url.startsWith('telegram-file:') ? `/api/admin/payment-proof/${r.id}` : r.evidence_url} target="_blank" rel="noreferrer" className="text-primary text-sm">Payment evidence</a>}
           <input aria-label={`Review note ${r.id}`} placeholder="Review note or rejection reason" className={input} value={notes[r.id] ?? ""} onChange={e => setNotes(p => ({ ...p, [r.id]: e.target.value }))} />
           {r.currency === "INR" && <input aria-label={`USD credit ${r.id}`} placeholder="Verified USD wallet credit" inputMode="decimal" className={input} value={credits[r.id] ?? ""} onChange={e => setCredits(p => ({ ...p, [r.id]: e.target.value }))} />}
           <div className="flex gap-2">{[true,false].map(approve => <Button key={String(approve)} variant={approve ? "default" : "outline"} disabled={busy} onClick={async () => {

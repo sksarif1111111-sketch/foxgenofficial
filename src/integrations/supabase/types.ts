@@ -1367,6 +1367,7 @@ export type Database = {
           license_required: boolean
           logo_url: string | null
           max_per_order: number
+          min_per_order: number
           name: string
           price: number
           price_inr: number | null
@@ -1389,6 +1390,7 @@ export type Database = {
           terms: string | null
           tutorial_url: string | null
           updated_at: string
+          warranty_label: string | null
         }
         Insert: {
           availability?: string
@@ -1417,6 +1419,7 @@ export type Database = {
           license_required?: boolean
           logo_url?: string | null
           max_per_order?: number
+          min_per_order?: number
           name: string
           price?: number
           price_inr?: number | null
@@ -1439,6 +1442,7 @@ export type Database = {
           terms?: string | null
           tutorial_url?: string | null
           updated_at?: string
+          warranty_label?: string | null
         }
         Update: {
           availability?: string
@@ -1467,6 +1471,7 @@ export type Database = {
           license_required?: boolean
           logo_url?: string | null
           max_per_order?: number
+          min_per_order?: number
           name?: string
           price?: number
           price_inr?: number | null
@@ -1489,6 +1494,7 @@ export type Database = {
           terms?: string | null
           tutorial_url?: string | null
           updated_at?: string
+          warranty_label?: string | null
         }
         Relationships: [
           {
@@ -1639,6 +1645,35 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      shop_bot_sessions: {
+        Row: {
+          data: Json
+          profile_id: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          data?: Json
+          profile_id: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          data?: Json
+          profile_id?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_bot_sessions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shop_crm_entity_outbox: {
         Row: {
@@ -1832,6 +1867,51 @@ export type Database = {
           },
         ]
       }
+      shop_inventory_items: {
+        Row: {
+          assigned_at: string | null
+          content: string
+          created_at: string
+          id: string
+          order_id: string | null
+          product_id: string
+          status: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          product_id: string
+          status?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          product_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_inventory_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "shop_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_inventory_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_order_events: {
         Row: {
           actor: string | null
@@ -1931,6 +2011,7 @@ export type Database = {
         Row: {
           approved_by: string | null
           channel: string
+          checkout_key: string | null
           confirmed_at: string | null
           created_at: string
           currency: string
@@ -1938,6 +2019,7 @@ export type Database = {
           customer_first_seen_at: string | null
           customer_name: string | null
           customer_user_id: string | null
+          delayed_at: string | null
           delivered_at: string | null
           delivery_emails: string | null
           email_body: string | null
@@ -1972,6 +2054,7 @@ export type Database = {
         Insert: {
           approved_by?: string | null
           channel?: string
+          checkout_key?: string | null
           confirmed_at?: string | null
           created_at?: string
           currency?: string
@@ -1979,6 +2062,7 @@ export type Database = {
           customer_first_seen_at?: string | null
           customer_name?: string | null
           customer_user_id?: string | null
+          delayed_at?: string | null
           delivered_at?: string | null
           delivery_emails?: string | null
           email_body?: string | null
@@ -2013,6 +2097,7 @@ export type Database = {
         Update: {
           approved_by?: string | null
           channel?: string
+          checkout_key?: string | null
           confirmed_at?: string | null
           created_at?: string
           currency?: string
@@ -2020,6 +2105,7 @@ export type Database = {
           customer_first_seen_at?: string | null
           customer_name?: string | null
           customer_user_id?: string | null
+          delayed_at?: string | null
           delivered_at?: string | null
           delivery_emails?: string | null
           email_body?: string | null
@@ -2067,6 +2153,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shop_webhook_work: {
+        Row: {
+          attempts: number
+          claim_token: string | null
+          locked_until: string
+          status: string
+          update_id: number
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          claim_token?: string | null
+          locked_until?: string
+          status?: string
+          update_id: number
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          claim_token?: string | null
+          locked_until?: string
+          status?: string
+          update_id?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       social_tasks: {
         Row: {
@@ -2464,6 +2577,11 @@ export type Database = {
         Args: { _amount: number; _note: string; _profile: string }
         Returns: boolean
       }
+      shop_assign_inventory: { Args: { _order: string }; Returns: number }
+      shop_cancel_atomic: {
+        Args: { _actor: string; _id: string; _reason: string; _status: string }
+        Returns: boolean
+      }
       shop_claim_crm_entities: {
         Args: { _token: string }
         Returns: {
@@ -2505,6 +2623,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      shop_claim_webhook:
+        | { Args: { _id: number }; Returns: boolean }
+        | { Args: { _id: number; _token: string }; Returns: string }
+      shop_create_order_atomic: { Args: { _input: Json }; Returns: Json }
       shop_crm_customer_id: {
         Args: {
           _customer: string
@@ -2517,7 +2639,12 @@ export type Database = {
       shop_crm_order_snapshot: { Args: { _order_id: string }; Returns: Json }
       shop_crm_upsert_product: { Args: { _input: Json }; Returns: string }
       shop_enqueue_customer: { Args: { _id: string }; Returns: undefined }
+      shop_mark_delayed: { Args: never; Returns: number }
       shop_pause_crm_when_drained: { Args: never; Returns: undefined }
+      shop_refund_wallet_atomic: {
+        Args: { _id: string; _reason: string }
+        Returns: boolean
+      }
       shop_release_stock: { Args: { _order_id: string }; Returns: boolean }
       shop_reserve_stock: {
         Args: { _product_id: string; _qty: number }
