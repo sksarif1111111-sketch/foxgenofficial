@@ -261,7 +261,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
             <p>Method: {String(open.order["payment_method_name"] ?? "—")}</p>
             <p>Recipient used: {String(open.order["payment_recipient"] ?? "—")}</p>
             <p>Reference: {String(open.order["payment_reference"] ?? "—")}</p>
-            <p>Evidence: {String(open.order["payment_evidence_url"] ?? "—")}</p>
+            <p>Evidence: {open.order.payment_evidence_url ? <a href={open.order.payment_evidence_url} target="_blank" rel="noreferrer" className="text-primary">View private screenshot</a> : "—"}</p>
             <p>Emails: {String(open.order["delivery_emails"] ?? "—")}</p>
             <p>
               Telegram: {open.telegram?.username ? `@${open.telegram.username}` : "—"}{" "}
@@ -495,6 +495,9 @@ const emptyProduct = {
   featured: false,
   reseller_product_id: "",
   duration_label: "",
+  warranty_label: "",
+  category_id: "",
+  min_per_order: "1",
   credits_per_interval: "",
   renewal_interval: "",
   price_usdt: "",
@@ -585,6 +588,9 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
       featured: row["featured"] === true,
       reseller_product_id: row["reseller_product_id"] ? String(row["reseller_product_id"]) : "",
       duration_label: String(row["duration_label"] ?? ""),
+      warranty_label: String(row["warranty_label"] ?? ""),
+      category_id: String(row["category_id"] ?? ""),
+      min_per_order: String(row["min_per_order"] ?? 1),
       credits_per_interval: row["credits_per_interval"] === null ? "" : String(row["credits_per_interval"]),
       renewal_interval: String(row["renewal_interval"] ?? ""),
       price_usdt: row["price_usdt"] === null ? "" : String(row["price_usdt"]),
@@ -621,6 +627,9 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
           logo_url: draft.logo_url,
           featured: draft.featured,
           duration_label: draft.duration_label,
+          warranty_label: draft.warranty_label,
+          category_id: draft.category_id || null,
+          min_per_order: Number(draft.min_per_order || 1),
           credits_per_interval: numOrNull(draft.credits_per_interval),
           renewal_interval: draft.renewal_interval,
           price_usdt: numOrNull(draft.price_usdt),
@@ -774,6 +783,12 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
             </Field>
             <Field label="Price in Telegram Stars (whole number, blank = Telegram purchase off)">
               <input className={input} value={draft.price_stars} onChange={(e) => setDraft({ ...draft, price_stars: e.target.value })} />
+            </Field>
+            <Field label="Warranty">
+              <input className={input} value={draft.warranty_label} onChange={e => setDraft({...draft,warranty_label:e.target.value})} />
+            </Field>
+            <Field label="Minimum quantity">
+              <input type="number" min="1" max="100" className={input} value={draft.min_per_order} onChange={e=>setDraft({...draft,min_per_order:e.target.value})} />
             </Field>
             <Field label="Duration label">
               <input className={input} value={draft.duration_label} onChange={(e) => setDraft({ ...draft, duration_label: e.target.value })} />
@@ -947,6 +962,8 @@ function PaymentMethodsEditor({
               <input className={input} value={String(draft["display_order"] ?? 0)} onChange={(e) => setDraft({ ...draft, display_order: e.target.value })} />
             </Field>
           </div>
+          <Field label="Account / recipient name"><input className={input} value={String((draft["config"] as Row | undefined)?.["account_name"] ?? (draft["config"] as Row | undefined)?.["recipient_name"] ?? "")} onChange={e=>setDraft({...draft,config:{...((draft["config"] as Row)||{}),account_name:e.target.value,recipient_name:e.target.value}})} /></Field>
+          <Field label="Payment QR"><ImageUpload folder="products" label="QR image" value={String((draft["config"] as Row | undefined)?.["qr_url"]??"")} onChange={url=>setDraft({...draft,config:{...((draft["config"] as Row)||{}),qr_url:url}})} /></Field>
           <Field label="Instructions">
             <textarea rows={3} className={input} value={field("instructions")} onChange={(e) => setDraft({ ...draft, instructions: e.target.value })} />
           </Field>
@@ -974,6 +991,7 @@ function PaymentMethodsEditor({
                         settlement_asset: String(draft["settlement_asset"] ?? ""),
                         reference_label: String(draft["reference_label"] ?? ""),
                         instructions: String(draft["instructions"] ?? ""),
+                        config: {account_name:String((draft["config"] as Row|undefined)?.["account_name"]??""),recipient_name:String((draft["config"] as Row|undefined)?.["recipient_name"]??""),qr_url:String((draft["config"] as Row|undefined)?.["qr_url"]??"")},
                         enabled: draft["enabled"] === true,
                         display_order: Number(draft["display_order"] ?? 0),
                       },

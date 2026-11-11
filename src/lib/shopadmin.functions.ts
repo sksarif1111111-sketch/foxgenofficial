@@ -125,7 +125,7 @@ export const shopOrderDetail = createServerFn({ method: "POST" }).middleware([re
         telegram = { username: profile.telegram_username, telegram_user_id: profile.telegram_user_id };
     }
     return {
-      order: { ...order, total: order.total === null ? null : Number(order.total) },
+      order: { ...order, payment_evidence_url: order.payment_evidence_url?.startsWith("telegram-file:") ? `/api/admin/payment-proof/${order.id}` : order.payment_evidence_url, total: order.total === null ? null : Number(order.total) },
       items: items ?? [],
       events: events ?? [],
       fulfillments: fulfillments ?? [],
@@ -207,6 +207,9 @@ const productShopSchema = z.object({
   logo_url: z.string().trim().max(700).optional(),
   featured: z.boolean().optional(),
   duration_label: z.string().trim().max(60).optional(),
+  warranty_label: z.string().trim().max(120).optional(),
+  category_id: z.string().uuid().nullable().optional(),
+  min_per_order: z.number().int().min(1).max(100).optional(),
   credits_per_interval: z.number().int().min(0).max(1000000).nullable().optional(),
   renewal_interval: z.string().trim().max(30).optional(),
   price_usdt: z.number().min(0).max(1000000).nullable().optional(),
@@ -358,6 +361,7 @@ export const shopSavePaymentMethod = createServerFn({ method: "POST" }).middlewa
         settlement_asset: z.string().trim().max(20).optional(),
         reference_label: z.string().trim().max(80).optional(),
         instructions: z.string().trim().max(1500).optional(),
+        config: z.object({ account_name: z.string().max(120).optional(), recipient_name: z.string().max(120).optional(), qr_url: z.string().max(1000).optional() }).optional(),
         enabled: z.boolean(),
         display_order: z.number().int().min(0).max(999),
       })
