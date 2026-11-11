@@ -1,5 +1,9 @@
 # Roadmap
 
+## Live Telegram navigation failure (Nov 12 2026)
+- [ ] Identify the hosted 500 boundary and repair it without changing payment/referral rules.
+- [ ] Verify Shop, Wallet and Free Rewards navigation and isolated DIGIHUP rejection handling; report hosted verification limits.
+
 ## Supplier removal and simple Telegram marketplace (Nov 12 2026)
 - [x] Supplier identity/status and atomic removal controls added; removed product tombstones prevent republishing. Authenticated Admin controls checked at 1280/390px; isolated product removed from real catalogue and mocked bot. No live supplier catalogue was removed during tests.
 - [x] Simple Shop/Wallet/Free Rewards/Profile navigation; extension/tasks/credits live under rewards and invite/earn under Profile. Referral credits remain separate from wallet funds.
