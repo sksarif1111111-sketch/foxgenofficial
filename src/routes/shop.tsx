@@ -21,12 +21,7 @@ import {
   Wallet,
 } from "lucide-react";
 import {
-  shopCancelOrder,
   shopCatalog,
-  shopConfirmEmails,
-  shopMyOrders,
-  shopPlaceOrder,
-  shopSubmitPayment,
   shopWallet,
   type MyOrder,
   type ShopCatalog,
