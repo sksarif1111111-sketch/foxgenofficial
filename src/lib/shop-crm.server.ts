@@ -3,13 +3,16 @@ import { deliverySlaMinutes } from "@/lib/shop-fulfillment";
 import { crmSyncRecords, type CrmSnapshot } from "@/lib/shop-crm.payload";
 
 export async function crmSyncStatus() {
-  const [last, pending, stuck] = await Promise.all([
+  const [last, pending, stuck, memberLast, memberPending, memberStuck] = await Promise.all([
     db.from("shop_crm_outbox").select("sent_at").not("sent_at", "is", null).order("sent_at", { ascending: false }).limit(1).maybeSingle(),
     db.from("shop_crm_outbox").select("id", { head: true, count: "exact" }).is("sent_at", null),
     db.from("shop_crm_outbox").select("id", { head: true, count: "exact" }).is("sent_at", null).gte("attempts", 5),
+    db.from("shop_crm_entity_outbox").select("sent_at").not("sent_at", "is", null).order("sent_at", { ascending: false }).limit(1).maybeSingle(),
+    db.from("shop_crm_entity_outbox").select("id", { head: true, count: "exact" }).is("sent_at", null),
+    db.from("shop_crm_entity_outbox").select("id", { head: true, count: "exact" }).is("sent_at", null).gte("attempts", 5),
   ]);
-  if (last.error || pending.error || stuck.error) throw new Error("Could not read CRM sync status.");
-  return { configured: Boolean(process.env["FOXGEN_CRM_API_KEY"]), lastSuccess: last.data?.sent_at ?? null, pending: pending.count ?? 0, stuck: stuck.count ?? 0 };
+  if (last.error || pending.error || stuck.error || memberLast.error || memberPending.error || memberStuck.error) throw new Error("Could not read CRM sync status.");
+  return { configured: Boolean(process.env["FOXGEN_CRM_API_KEY"]), lastSuccess: [last.data?.sent_at, memberLast.data?.sent_at].filter((s): s is string => Boolean(s)).sort().at(-1) ?? null, pending: (pending.count ?? 0) + (memberPending.count ?? 0), stuck: (stuck.count ?? 0) + (memberStuck.count ?? 0) };
 }
 
 export async function flushCrmOutbox() {

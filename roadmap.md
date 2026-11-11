@@ -1,9 +1,10 @@
 # Roadmap
 
 ## Member feed, bot funding and CRM product bridge
-- [ ] Number every bot member and website account; durable customer directory and wallet payment exports.
-- [ ] Bot USDT/UPI funding requests, atomic Admin approve/reject and noted deductions.
-- [ ] Authenticated CRM product upsert with draft-only first creation; test rules and document.
+- [x] Number every bot member and website account; durable customer directory/payment exports acknowledged by CRM.
+- [x] Bot USDT/UPI request flow tested with real pending readback and mocked Telegram transport; atomic review, duplicate rejection, noted deductions verified; Admin approval and mobile checked.
+- [x] Authenticated CRM product upsert with draft-only creation and published update tested; rules and operator documentation updated.
+- [ ] Live bot transfer/notification — needs buyer interaction; no real funds transferred. Publish and verify hosted managed retry callback before relying on automatic sync.
 
 ## CRM buyer history linking
 - [x] Persist stable buyer IDs and first-seen timestamps without merging website and Telegram accounts.
