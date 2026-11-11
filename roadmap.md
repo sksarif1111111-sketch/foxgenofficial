@@ -1,5 +1,16 @@
 # Roadmap
 
+## Complete Telegram marketplace upgrade (Nov 11 2026)
+- [x] Inspect 11 uploaded bot screenshots, supplied PhonePe QR, current bot checkout, wallet, Admin, payment methods and security architecture.
+- [ ] Phase 1: transaction-safe order creation, stock rollback, payment/wallet idempotency and webhook retry recovery.
+- [ ] Phase 2: reference-style bot Home, dynamic categories/search, images/details, quantity confirmation, individual orders/profile/wallet views.
+- [ ] Phase 3: Telegram UPI/Binance/wallet checkout, private screenshot collection, verified recipients/QR, Coming Soon methods.
+- [ ] Phase 4: durable delivery reminders/retries, private inventory assignment, file delivery and explicit refund tracking.
+- [ ] Phase 5: unified Admin management, editable settings, image generation/fallback, coupons and scoped staff permissions.
+- [ ] Phase 6: end-to-end and concurrency/security tests, hosted webhook/job verification and owner launch checklist.
+- [ ] Enable USDT BEP-20 — awaiting a verified BNB Smart Chain recipient; never reuse the existing Solana address.
+- [ ] Approve any ad-hoc rate-limit approach after explaining platform limitations; current shared Admin access must remain working during staff-auth rollout.
+
 ## Compact login and customer account
 - [x] Smaller 368px glass login with moving background; sign-in/recovery controls preserved and exercised without sending emails.
 - [x] Customer display name, paginated currency-separated paid spending, order totals and My orders interface; website and Telegram records stay separate.
