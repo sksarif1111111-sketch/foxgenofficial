@@ -1,5 +1,10 @@
 # Roadmap
 
+## CRM buyer history linking
+- [ ] Persist stable buyer IDs and first-seen timestamps without merging website and Telegram accounts.
+- [ ] Send customer upserts alongside linked order snapshots; preserve order numbers, retries and read-only API.
+- [ ] Test identity priority, deduplication and actual CRM acknowledgement; update operator documentation.
+
 ## Website customer login
 - [x] Animated glass login/signup, signup-only email OTP form, Google/Microsoft/Apple enabled, recovery and session-aware navigation.
 - [x] Website purchases tied to verified auth users; independent Telegram identities, prices and fulfillment preserved. Legacy token checkout cannot create new website orders.
