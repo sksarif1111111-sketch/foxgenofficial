@@ -1,12 +1,15 @@
-export type TelegramButton = { text: string; url?: string; callback_data?: string; copy_text?: { text: string } };
+export type TelegramButton = { text: string; url?: string; callback_data?: string; copy_text?: { text: string }; style?: 'primary' | 'success' | 'danger' };
 export type TelegramKeyboard = TelegramButton[][];
+export function styledKeyboard(keyboard: TelegramKeyboard): TelegramKeyboard {
+  return keyboard.map(row => row.map(button => ({ ...button, style: button.style ?? (/^(cancel|support)/.test(button.callback_data ?? '') ? 'danger' : /^(prod:|qty:|buy:|pay:|fundsubmit|redeem)/.test(button.callback_data ?? '') ? 'success' : 'primary') })));
+}
 type TelegramResult = { ok: boolean; description?: string; error_code?: number; parameters?: { retry_after?: number } };
 type TelegramCall = (method: string, body: Record<string, unknown>) => Promise<TelegramResult>;
 
 /** Replace callback screens; new user messages still receive a new reply. */
 export function telegramRenderer(call: TelegramCall, chatId: number, messageId?: number, hasPhoto = false) {
   return async (body: string, keyboard: TelegramKeyboard, image?: string | null) => {
-    const reply_markup = { inline_keyboard: keyboard };
+    const reply_markup = { inline_keyboard: styledKeyboard(keyboard) };
     if (messageId) {
       const method = image ? 'editMessageMedia' : hasPhoto && body.length <= 1024 ? 'editMessageCaption' : 'editMessageText';
       const content = image ? { media: { type: 'photo', media: image, caption: body, parse_mode: 'HTML' } }
