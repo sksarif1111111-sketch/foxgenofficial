@@ -2,12 +2,15 @@
 
 ## Complete Telegram marketplace upgrade (Nov 11 2026)
 - [x] Inspect 11 uploaded bot screenshots, supplied PhonePe QR, current bot checkout, wallet, Admin, payment methods and security architecture.
-- [ ] Phase 1: transaction-safe order creation, stock rollback, payment/wallet idempotency and webhook retry recovery.
-- [ ] Phase 2: reference-style bot Home, dynamic categories/search, images/details, quantity confirmation, individual orders/profile/wallet views.
-- [ ] Phase 3: Telegram UPI/Binance/wallet checkout, private screenshot collection, verified recipients/QR, Coming Soon methods.
+- [x] Atomic checkout, unpaid cancellation and null-safe row-locked wallet refund added; duplicate checkout, overselling, stock return and webhook lease fencing verified against isolated database records. Broader paid concurrency checks remain below.
+- [x] Bot catalogue/search/categories/details, quantity confirmation and individual order/profile/wallet views added; mocked Telegram transport with real isolated database readback verified catalogue → product → quantity → pending INR order → photo proof → tracking.
+- [x] Separate Telegram UPI/Binance/wallet methods, private order/deposit screenshot collection and Coming Soon methods; generated QR decoded and matched supplied UPI/account. Original uploaded QR was not decoded. Website recipients and prices preserved.
 - [ ] Phase 4: durable delivery reminders/retries, private inventory assignment, file delivery and explicit refund tracking.
-- [ ] Phase 5: unified Admin management, editable settings, image generation/fallback, coupons and scoped staff permissions.
+- [x] Existing Admin product warranty/minimum/category, inventory, image generation, payment recipient/QR and private evidence controls extended; authenticated editor checked desktop/mobile without page overflow.
+- [ ] Coupons, scoped staff accounts, CSV/file delivery, comprehensive job health and explicit external refund recording remain unimplemented; further implementation required, not production-complete.
 - [ ] Phase 6: end-to-end and concurrency/security tests, hosted webhook/job verification and owner launch checklist.
+- [x] 18 focused rule tests passed; real pending order/payment photo and wallet photo readbacks passed with mocked Telegram transport. Temporary test products/accounts/orders removed. Current build is healthy.
+- [ ] Live paid Telegram approval → fulfillment, insufficient-wallet/refund concurrency and hosted scheduler/webhook checks need completion; no real payment or Telegram delivery was performed. Review/publish before hosted checks.
 - [ ] Enable USDT BEP-20 — awaiting a verified BNB Smart Chain recipient; never reuse the existing Solana address.
 - [ ] Approve any ad-hoc rate-limit approach after explaining platform limitations; current shared Admin access must remain working during staff-auth rollout.
 

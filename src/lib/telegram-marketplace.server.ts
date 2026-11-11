@@ -25,6 +25,7 @@ export async function buyerStats(profile: Profile) {
 export async function marketplaceBot(input: { profile: Profile; chatId: number; action: string; text: string; settings: Record<string,string>; callbackId?: string; photoId?: string }) {
   const { profile, chatId, action, text, settings } = input;
   const send = async (body: string, keys: Keyboard = home, image?: string | null) => {
+    if (image?.startsWith('/')) image = new URL(image, settings['shop_url'] || 'https://foxgenofficial.lovable.app').href;
     if (image && /^https:\/\//.test(image) && body.length <= 1024) {
       const r = await tg('sendPhoto',{ chat_id:chatId,photo:image,caption:body,parse_mode:'HTML',reply_markup:{inline_keyboard:keys} });
       if (r.ok) return;
