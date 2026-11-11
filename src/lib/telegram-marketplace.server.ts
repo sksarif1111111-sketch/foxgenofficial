@@ -3,6 +3,7 @@ import { createOrder, maxUnits, shopProductById, shopProductRows, cancelOrder, s
 import { quantityChoices, orderTime } from './telegram-marketplace.policy';
 import { memberLabel } from './member-number';
 import { dualPrice } from './wallet-rate';
+import { categoryOf, categoryLabel } from './store-categories';
 import type { Json } from '@/integrations/supabase/types';
 type Button = { text: string; callback_data?: string; url?: string; copy_text?: { text: string } };
 type Keyboard = Button[][];
@@ -62,12 +63,13 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
   }
   if(action==='search'){await saveState('search',{});await send('🔍 Send a product name to search.');return true;}
   if(action==='categories') {
-    const cats=await db.from('product_categories').select('id,name').eq('enabled',true).order('display_order');
-    await send('<b>PRODUCT CATEGORIES</b>',[...(cats.data??[]).map(c=>[{text:c.name,callback_data:`category:${c.id}`}]),[{text:'All products',callback_data:'shop'}],...home]);return true;
+    const products=await shopProductRows('website');
+    const categories=[...new Set(products.map(p=>categoryOf(p.name)))];
+    await send('<b>PRODUCT CATEGORIES</b>',[...categories.map(id=>[{text:categoryLabel(id),callback_data:`category:${id}`}]),[{text:'All products',callback_data:'shop'}],...home]);return true;
   }
   if(action==='shop'||action.startsWith('shop:')||action.startsWith('category:')||(state?.state==='search'&&text&&!text.startsWith('/'))) {
     const all=await shopProductRows('website'); let filtered=all; let page=Number(action.split(':')[1])||1;
-    if(action.startsWith('category:')) { const ids=await db.from('products').select('id').eq('category_id',action.slice(9)).eq('shop_published',true);const allowed=new Set(ids.data?.map(p=>p.id));filtered=all.filter(p=>allowed.has(p.id));page=1; }
+    if(action.startsWith('category:')) { filtered=all.filter(p=>categoryOf(p.name)===action.slice(9));page=1; }
     if(state?.state==='search'&&text&&!text.startsWith('/')) { const q=text.trim().slice(0,120).toLowerCase();filtered=all.filter(p=>p.name.toLowerCase().includes(q));await clear();page=1; }
     const pages=Math.max(1,Math.ceil(filtered.length/8));page=Math.min(pages,Math.max(1,page));
     const rows=filtered.slice((page-1)*8,page*8);

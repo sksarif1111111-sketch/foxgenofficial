@@ -1050,7 +1050,6 @@ export function WalletPanel({ notify }: { notify: Notify }) {
   const fDeduct = useServerFn(shopWalletDeduct);
   const [pending, setPending] = useState<Awaited<ReturnType<typeof shopWalletPendingTopUps>>>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [credits, setCredits] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<WalletAccount[]>([]);
   const [amounts, setAmounts] = useState<Record<string, string>>({});

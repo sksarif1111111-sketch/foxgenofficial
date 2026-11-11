@@ -252,6 +252,7 @@ export async function syncSuppliers(trigger: "manual" | "auto") {
       const { error: e } = await db.from("products").insert({
         ...refresh,
         price_usdt: price,
+        price_inr: Math.round(price * 10000) / 100,
         price,
         currency: "USD",
         is_free: false,
