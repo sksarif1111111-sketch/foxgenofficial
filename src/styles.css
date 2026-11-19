@@ -1382,3 +1382,106 @@
   50% { transform: translate3d(var(--universe-drift), 0, 0); }
   75% { transform: translate3d(0, var(--universe-drift), 0); }
 }
+
+/* ---------- Dark luxury theme (toggle in the top nav). Palette from the Foxgen logo: chrome on black, cyan → magenta neon. ---------- */
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.13 0.025 275);
+  --foreground: oklch(0.96 0.01 270);
+  --card: oklch(0.18 0.03 275);
+  --card-foreground: oklch(0.96 0.01 270);
+  --popover: oklch(0.18 0.03 275);
+  --popover-foreground: oklch(0.96 0.01 270);
+  --primary: oklch(0.78 0.14 215);
+  --primary-foreground: oklch(0.14 0.03 275);
+  --secondary: oklch(0.23 0.035 275);
+  --secondary-foreground: oklch(0.94 0.01 270);
+  --muted: oklch(0.22 0.03 275);
+  --muted-foreground: oklch(0.72 0.03 270);
+  --accent: oklch(0.27 0.07 300);
+  --accent-foreground: oklch(0.88 0.1 310);
+  --success: oklch(0.76 0.15 158);
+  --warning: oklch(0.82 0.15 80);
+  --destructive: oklch(0.66 0.2 22);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.78 0.14 215);
+  --navy: oklch(0.7 0.19 305);
+  --navy-foreground: oklch(0.13 0.025 275);
+  --ink: oklch(0.1 0.02 275);
+  --tint-violet: oklch(0.25 0.06 300);
+  --tint-amber: oklch(0.26 0.05 80);
+  --tint-rose: oklch(0.25 0.05 15);
+  --tint-green: oklch(0.25 0.05 158);
+  --studio: oklch(0.13 0.025 275);
+  --studio-grey: oklch(0.2 0.03 275);
+  --studio-silver: oklch(1 0 0 / 14%);
+  --studio-muted: oklch(0.72 0.03 270);
+  --studio-ink: oklch(0.96 0.01 270);
+  --sidebar: oklch(0.16 0.028 275);
+  --sidebar-foreground: oklch(0.8 0.02 270);
+  --sidebar-accent: oklch(0.25 0.06 300);
+  --sidebar-accent-foreground: oklch(0.9 0.08 310);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --shadow-soft: 0 1px 0 oklch(1 0 0 / 5%) inset, 0 10px 30px -18px oklch(0 0 0 / 80%);
+  --shadow-lift: 0 1px 0 oklch(1 0 0 / 7%) inset, 0 24px 50px -24px oklch(0.7 0.19 305 / 45%);
+  --shadow-ember: 0 16px 40px -16px oklch(0.78 0.14 215 / 55%);
+}
+.dark body {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(50% 40% at 0% 0%, oklch(0.6 0.16 230 / 16%), transparent 70%),
+    radial-gradient(50% 40% at 100% 0%, oklch(0.6 0.22 310 / 14%), transparent 70%);
+  background-attachment: fixed;
+}
+.dark .hero-studio { background-image: radial-gradient(60% 45% at 62% 0%, oklch(0.5 0.15 260 / 22%), transparent 75%); }
+
+/* Showcase on a deep stage with gold side light and violet top glow. */
+.dark .showcase-stage {
+  background:
+    radial-gradient(38% 90% at 0% 50%, oklch(0.75 0.13 80 / 16%), transparent 70%),
+    radial-gradient(38% 90% at 100% 50%, oklch(0.75 0.13 80 / 16%), transparent 70%),
+    radial-gradient(70% 120% at 50% -20%, oklch(0.6 0.2 300 / 22%), transparent 70%),
+    linear-gradient(180deg, oklch(0.12 0.03 275), oklch(0.1 0.025 275));
+  border-block-color: oklch(0.75 0.13 80 / 45%);
+}
+.dark .showcase-stage::before { background: linear-gradient(90deg, oklch(0.11 0.028 275), transparent); }
+.dark .showcase-stage::after { background: linear-gradient(270deg, oklch(0.11 0.028 275), transparent); }
+.dark .showcase-chip {
+  color: oklch(0.97 0.005 270);
+  background: linear-gradient(135deg, color-mix(in oklch, var(--tone) 22%, oklch(0.16 0.03 275)), oklch(0.13 0.025 275) 75%);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 8%), 0 10px 24px -14px var(--tone);
+}
+.dark .showcase-chip::after { background: linear-gradient(105deg, transparent 35%, oklch(1 0 0 / 18%) 50%, transparent 65%); }
+.dark .showcase-chip-skeleton { background: oklch(0.18 0.03 275); border-color: oklch(1 0 0 / 8%); }
+
+/* Store cards and product page: glass panels with neon rim light. */
+.dark .catalog-card {
+  background: linear-gradient(160deg, oklch(0.2 0.035 275), oklch(0.15 0.028 275));
+  border-color: oklch(1 0 0 / 9%);
+}
+.dark .catalog-card-image { background: radial-gradient(70% 80% at 50% 30%, oklch(0.3 0.08 280 / 70%), oklch(0.16 0.03 275)); }
+.dark .catalog-card-image > span, .dark .catalog-card-image > span { background: oklch(0.98 0 0); }
+@media (hover: hover) and (pointer: fine) {
+  .dark .catalog-card:hover { border-color: oklch(0.78 0.14 215 / 70%); box-shadow: 0 0 0 1px oklch(0.78 0.14 215 / 35%), 0 22px 44px -22px oklch(0.7 0.19 305 / 60%); }
+}
+.dark .catalog-card-amount { color: oklch(0.86 0.12 205); }
+.dark .product-detail-image {
+  background: radial-gradient(60% 70% at 50% 35%, oklch(0.32 0.1 285 / 75%), oklch(0.15 0.028 275));
+  border-color: oklch(1 0 0 / 10%);
+  box-shadow: 0 0 0 1px oklch(0.7 0.19 305 / 18%), 0 30px 60px -30px oklch(0.78 0.14 215 / 45%);
+}
+.dark .product-detail-image > span { background: oklch(0.98 0 0); border-radius: 24px; }
+.dark .product-mobile-purchase { background: oklch(0.15 0.028 275 / 92%); backdrop-filter: blur(16px); }
+.dark .hm-featured { background: oklch(0.18 0.03 275 / 88%); }
+.dark .hm-featured-logo, .dark .hm-orbit-tile { background: oklch(0.98 0 0); }
+.dark .theme-toggle { color: oklch(0.88 0.12 85); }
+.dark .text-hero-gradient { background-image: linear-gradient(100deg, oklch(0.97 0.01 270) 10%, oklch(0.82 0.13 215) 55%, oklch(0.75 0.19 310)); background-clip: text; color: transparent; }
+.dark .hm-backdrop { background-image: radial-gradient(50% 40% at 50% 46%, oklch(0.55 0.16 250 / 28%), transparent 70%), radial-gradient(42% 9% at 50% 86%, oklch(0.7 0.19 305 / 18%), transparent 70%); }
+.dark .hm-disc {
+  background-color: oklch(0.2 0.035 275 / 85%);
+  background-image: radial-gradient(70% 70% at 35% 30%, oklch(0.32 0.07 270), oklch(0.17 0.03 275) 70%);
+  box-shadow: inset 0 0 0 6px oklch(1 0 0 / 4%), 0 0 40px -10px oklch(0.78 0.14 215 / 45%);
+}
+.dark .hm-disc-edge { background: oklch(0.16 0.03 275); }
+.dark .hm-ring { border-color: oklch(0.78 0.14 215 / 28%); }

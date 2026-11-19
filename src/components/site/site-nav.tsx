@@ -6,6 +6,7 @@ import { AdminAccessDialog } from "@/components/admin/admin-access-form";
 import { BRAND } from "@/lib/brand";
 import { AssistantRobot } from "@/components/site/assistant-robot";
 import { openAssistant } from "@/lib/assistant-events";
+import { ThemeToggle } from "@/components/site/theme-toggle";
 
 const LINKS = [
   { to: "/", label: "Home" },
@@ -125,6 +126,7 @@ export function SiteNav({ right, announcement }: { right?: ReactNode; announceme
           </ul>
           <div className="ml-auto flex shrink-0 items-center gap-1 lg:ml-0">
             {right}
+            <ThemeToggle />
             <Link
               to={user ? "/account" : "/login"}
               aria-label={user ? "My account" : "Sign in"}

@@ -43,3 +43,4 @@
 - All bot callback navigation shares the edit-first renderer in `telegram-navigation.ts`, including marketplace, wallet and legacy pages; one home action per button and retiring noneditable keyboards prevents duplicate active screens.
 - Payment methods are channel-specific; Telegram proof photos retain file IDs and are served only behind the Admin session, including wallet top-up evidence, so neither credentials nor screenshots become public.
 - Private non-extension inventory is assigned under order locks; licence products keep their existing separate manager, and marketplace jobs use the existing cron-secret boundary for delayed delivery notices.
+- Dark mode is a `.dark` class on <html> toggled by `ThemeToggle` in SiteNav (`src/lib/theme.ts`, saved per device, boot script in __root head); all dark colours are token overrides and `.dark` rules in `src/styles.css` so components stay theme-agnostic.
