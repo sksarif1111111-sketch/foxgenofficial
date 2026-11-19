@@ -86,7 +86,7 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
   const groupLabel = (p: HeroSceneProduct) => HERO_GROUPS.find((g) => g.id === heroGroupOf(p.name))?.label;
 
   return (
-    <div ref={rootRef} className={`hm-root mx-auto w-full max-w-[640px] lg:max-w-none ${children ? "py-10 lg:py-16" : "h-[320px] sm:h-[420px] lg:h-[560px]"}`}>
+    <div ref={rootRef} className={`hm-root mx-auto w-full max-w-[640px] lg:max-w-none ${children ? "py-10 lg:py-16" : "h-[280px] sm:h-[420px] lg:h-[560px]"}`}>
       <div aria-hidden="true" className={children ? "absolute inset-x-[-8%] inset-y-0 hidden lg:block" : "absolute inset-0"}>
         <div className="hm-backdrop" />
         <div className="hm-stage">
@@ -108,17 +108,17 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
                 <div className="hm-enter hm-anim">
                   <div className="hm-shadow hm-anim" style={{ ["--shadow-gap" as string]: "26px" }} />
                   <div className="hm-idle hm-anim">
-                    <div className="hm-glass w-[196px] rounded-2xl p-3 sm:w-[236px] sm:rounded-3xl sm:p-4">
+                    <div className="hm-glass w-[156px] rounded-xl p-2 sm:w-[236px] sm:rounded-3xl sm:p-4">
                       {current ? (
-                        <div key={current.id} className="hm-swap flex items-center gap-3">
-                          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-studio-silver bg-card sm:size-14">
-                            <LogoMark product={current} className="size-7 sm:size-8" />
+                        <div key={current.id} className="hm-swap flex items-center gap-2 sm:gap-3">
+                          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-studio-silver bg-card sm:size-14 sm:rounded-2xl">
+                            <LogoMark product={current} className="size-6 sm:size-8" />
                           </span>
                           <span className="min-w-0">
                             <span className="caption-5 block text-studio-muted">{groupLabel(current)}</span>
-                            <span className="title-4 block truncate text-studio-ink sm:title-3">{shortProductName(current.name)}</span>
-                            <span className="caption-4 mt-1 inline-flex items-center gap-1.5 text-success">
-                              <span className="size-1.5 rounded-full bg-current" /> In stock
+                            <span className="body-4 block truncate text-studio-ink sm:title-3">{shortProductName(current.name)}</span>
+                            <span className="caption-5 mt-1 inline-flex items-center gap-1 text-success sm:caption-4 sm:gap-1.5">
+                              <span className="size-1 rounded-full bg-current sm:size-1.5" /> In stock
                             </span>
                           </span>
                         </div>

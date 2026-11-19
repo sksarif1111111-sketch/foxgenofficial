@@ -1,5 +1,11 @@
 # Roadmap
 
+## Mobile hero and product cards (Nov 19 2026)
+- [x] Reduced only mobile hero scene dimensions, orbit, motion and spacing; desktop/tablet sizes remain 560px/420px and mobile CTAs stay clear.
+- [x] Compact two-column grids on 320px and 390px phones; Home shows six real products in three rows and Shop naturally shows six across three rows.
+- [x] One consistent navy/blue HOT badge on every storefront product card; real names, prices, stock and existing purchase links preserved.
+- [x] Browser checks passed at 320/390/768/1280px with no page overflow or runtime errors; Buy now opens the selected product checkout and reduced motion stops the orbit.
+
 ## Telegram payment summary and premium menus (Nov 12 2026)
 - [x] Fixed >64-byte payment callbacks; UPI/Binance/wallet summary, card/bank Coming Soon, screenshot-first order proof and required funding photo, QR/copy controls.
 - [x] Native green/blue/red Telegram button styles and exact member count added. Isolated database flow verified UPI proof under review, ₹100 approval → $1, automatic wallet debit → $0 with 7 referral credits unchanged; checkout channel-variable ambiguity fixed. 25 focused tests passed; no real transfers or Telegram client navigation performed.

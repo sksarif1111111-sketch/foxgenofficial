@@ -720,6 +720,37 @@
     transform: translate(-50%, -50%);
   }
 
+  /* Phones keep the same scene, but with a smaller orbit, lighter tiles and slower movement.
+     Desktop and tablet values above remain untouched. */
+  @media (width < 640px) {
+    .hm-root {
+      --amp-k: 0.28;
+      --orbit-r: 100px;
+      --orbit-tilt: -18deg;
+      --orbit-y: 67%;
+      overflow: clip;
+    }
+    .hm-stage { perspective: 1000px; }
+    .hm-plane { top: 75%; width: 56%; }
+    .hm-tile { border-radius: 12px; }
+    .hm-node { width: 6px; height: 6px; }
+    .hm-enter {
+      animation-duration: 700ms;
+      animation-delay: calc(var(--enter-delay, 0ms) * 0.35);
+    }
+    .hm-idle,
+    .hm-shadow { animation-duration: calc(var(--dur, 10s) * 1.35); }
+    .hm-orbit-spin,
+    .hm-orbit-counter { animation-duration: calc(var(--orbit-dur, 46s) * 1.3); }
+    .hm-orbit-fade {
+      animation-duration: calc(var(--orbit-dur, 46s) * 1.3);
+      animation-delay: calc(var(--fade-delay, 0s) * 1.3);
+    }
+    .hm-ring-spin { animation-duration: 200s; }
+    .hm-ring-spin.is-reverse { animation-duration: 280s; }
+    .hm-swap { animation-duration: 500ms; }
+  }
+
   .hm-root[data-paused] .hm-anim { animation-play-state: paused; }
   .hm-root[data-lite] .hm-idle,
   .hm-root[data-lite] .hm-shadow,

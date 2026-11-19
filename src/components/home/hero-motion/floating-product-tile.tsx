@@ -41,8 +41,8 @@ export function FloatingProductTile({ product, index, total }: { product: HeroSc
             <div className="hm-orbit-face">
               <div className="hm-enter hm-anim">
                 <div className="hm-idle hm-anim relative">
-                  <div className="hm-tile size-14 sm:size-[72px] lg:size-20">
-                    <LogoMark product={product} className="size-7 sm:size-9 lg:size-10" />
+                  <div className="hm-tile size-10 sm:size-[72px] lg:size-20">
+                    <LogoMark product={product} className="size-5 sm:size-9 lg:size-10" />
                   </div>
                 </div>
               </div>

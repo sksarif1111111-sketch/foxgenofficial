@@ -278,7 +278,7 @@ function Home() {
             )}
 
             {catalog.isLoading ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <OfferCardSkeleton key={i} />)}</div>
+              <div className="grid grid-cols-2 gap-2 [&>*:nth-child(n+7)]:hidden sm:gap-4 sm:[&>*:nth-child(n+7)]:flex lg:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <OfferCardSkeleton key={i} />)}</div>
             ) : catalog.isError ? (
               <div role="alert" className="flex flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <p className="body-5 flex items-center gap-2 text-destructive"><Warning size={18} /> Offers could not be loaded. Check your connection and try again.</p>
@@ -292,14 +292,21 @@ function Home() {
                 <Link to="/support" className="button-sm mt-6 rounded-full bg-ink px-3 py-2 text-ink-foreground">Contact support</Link>
               </div>
             ) : (
-              <div className="grid gap-4 min-[480px]:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 [&>*:nth-child(n+7)]:hidden sm:gap-4 sm:[&>*:nth-child(n+7)]:flex lg:grid-cols-4">
                 {shown.map((p) => (
                   <HomeOfferCard key={p.id} product={p} category={groupOf(p).label} />
                 ))}
               </div>
             )}
             {!catalog.isLoading && live.length > shown.length && (
-              <div className="mt-10 flex justify-center">
+              <div className="mt-8 flex justify-center sm:mt-10">
+                <Link to="/shop" className="button-sm inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 transition duration-300 hover:bg-muted">
+                  View all {live.length} products <ArrowRight size={14} />
+                </Link>
+              </div>
+            )}
+            {!catalog.isLoading && live.length > 6 && live.length <= shown.length && (
+              <div className="mt-8 flex justify-center sm:hidden">
                 <Link to="/shop" className="button-sm inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 transition duration-300 hover:bg-muted">
                   View all {live.length} products <ArrowRight size={14} />
                 </Link>

@@ -464,7 +464,7 @@ function ShopPage() {
               ))}
             </div>
             {!catalog ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="h-80 animate-pulse rounded-2xl border border-border bg-card" />
                 ))}
@@ -486,7 +486,7 @@ function ShopPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
                 {visible.map((item) => (
                   <ProductCard key={item.id} product={item} />
                 ))}

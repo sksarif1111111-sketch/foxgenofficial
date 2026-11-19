@@ -21,12 +21,12 @@ export function FloatingCategoryCard({ id, label, count, slot }: { id: HeroGroup
     <div className={`hm-slot ${visibility[slot.from]}`} style={style}>
       <div className="hm-enter hm-anim">
         <div className="hm-idle hm-anim">
-          <div className="hm-glass flex items-center gap-2 whitespace-nowrap rounded-xl py-1.5 pl-1.5 pr-3 sm:rounded-2xl sm:py-2 sm:pl-2 sm:pr-4">
-            <span className="flex size-6 items-center justify-center rounded-lg bg-studio-grey text-studio-ink sm:size-8 sm:rounded-xl">
-              <Icon size={14} weight="bold" />
+          <div className="hm-glass flex items-center gap-1.5 whitespace-nowrap rounded-lg py-1 pl-1 pr-2 sm:gap-2 sm:rounded-2xl sm:py-2 sm:pl-2 sm:pr-4">
+            <span className="flex size-5 items-center justify-center rounded-md bg-studio-grey text-studio-ink sm:size-8 sm:rounded-xl">
+              <Icon size={12} weight="bold" />
             </span>
             <span className="leading-tight">
-              <span className="title-5 block text-studio-ink sm:title-4">{label}</span>
+              <span className="caption-3 block text-studio-ink sm:title-4">{label}</span>
               <span className="caption-5 hidden tabular-nums text-studio-muted sm:block">{count} in stock</span>
             </span>
           </div>

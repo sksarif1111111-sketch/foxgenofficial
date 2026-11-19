@@ -139,13 +139,13 @@ function OffersPage() {
             <Link to="/shop" className="text-sm font-semibold hover:text-primary">Browse all products →</Link>
           </div>
           {catalogQ.isLoading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-80 animate-pulse rounded-2xl border border-border bg-card" />)}
             </div>
           ) : supplierDeals.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center text-sm text-muted-foreground">No supplier products are in stock right now.</div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
               {supplierDeals.map((p) => (
                 <ProductCard key={p.id} product={p} footnote={`Updated ${timeAgo(p.updated_at)} · Supplier API`} />
               ))}

@@ -193,7 +193,7 @@ function ProductPage() {
         {related.length > 0 && (
           <section className="mt-16">
             <h2 className="mb-6 text-2xl font-bold">More in {categoryLabel(category)}</h2>
-            <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
               {related.map((r) => (
                 <ProductCard key={r.id} product={r} />
               ))}
