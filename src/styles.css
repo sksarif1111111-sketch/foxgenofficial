@@ -784,40 +784,40 @@
   .showcase-segment { display: flex; gap: 8px; padding-right: 8px; }
   /* Premium dark stage: gold side light, violet top glow, faded edges, colour-coded product chips. */
   .showcase-stage {
-    --stage-gold: oklch(0.8 0.13 82);
+    --stage-gold: oklch(0.72 0.14 75);
     position: relative; isolation: isolate; overflow: hidden; padding-block: 18px;
     background:
-      radial-gradient(38% 90% at 0% 50%, oklch(0.8 0.13 82 / 30%), transparent 70%),
-      radial-gradient(38% 90% at 100% 50%, oklch(0.8 0.13 82 / 30%), transparent 70%),
-      radial-gradient(70% 120% at 50% -20%, oklch(0.42 0.16 292 / 45%), transparent 70%),
-      linear-gradient(180deg, oklch(0.17 0.02 285), oklch(0.12 0.015 285));
+      radial-gradient(38% 90% at 0% 50%, oklch(0.85 0.12 82 / 22%), transparent 70%),
+      radial-gradient(38% 90% at 100% 50%, oklch(0.85 0.12 82 / 22%), transparent 70%),
+      radial-gradient(70% 120% at 50% -20%, oklch(0.75 0.12 292 / 18%), transparent 70%),
+      linear-gradient(180deg, oklch(1 0 0), oklch(0.98 0.005 260));
     border-block: 1px solid oklch(0.8 0.13 82 / 40%);
-    box-shadow: inset 0 1px 0 oklch(1 0 0 / 6%), 0 30px 60px -40px oklch(0.42 0.16 292 / 60%);
+    box-shadow: 0 30px 60px -45px oklch(0.6 0.12 292 / 35%);
   }
   .showcase-stage::before, .showcase-stage::after {
     content: ""; position: absolute; inset-block: 0; width: 9%; z-index: 2; pointer-events: none;
   }
-  .showcase-stage::before { left: 0; background: linear-gradient(90deg, oklch(0.14 0.02 285), transparent); }
-  .showcase-stage::after { right: 0; background: linear-gradient(270deg, oklch(0.14 0.02 285), transparent); }
+  .showcase-stage::before { left: 0; background: linear-gradient(90deg, oklch(1 0 0), transparent); }
+  .showcase-stage::after { right: 0; background: linear-gradient(270deg, oklch(1 0 0), transparent); }
   .showcase-rows { position: relative; z-index: 1; display: grid; gap: 4px; }
   .showcase-chip {
     --tone: var(--stage-gold);
     position: relative; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; gap: 10px;
     width: 172px; height: 56px; padding: 0 12px 0 8px; border-radius: 12px;
-    color: oklch(0.96 0.01 90);
-    border: 1px solid color-mix(in oklch, var(--tone) 38%, transparent);
-    background: linear-gradient(135deg, color-mix(in oklch, var(--tone) 20%, oklch(0.2 0.02 285)), oklch(0.16 0.015 285) 72%);
-    box-shadow: inset 0 1px 0 oklch(1 0 0 / 7%), 0 10px 22px -16px var(--tone);
+    color: oklch(0.2 0.02 270);
+    border: 1px solid color-mix(in oklch, var(--tone) 45%, transparent);
+    background: linear-gradient(135deg, color-mix(in oklch, var(--tone) 16%, oklch(1 0 0)), oklch(1 0 0) 72%);
+    box-shadow: inset 0 1px 0 oklch(1 0 0), 0 10px 22px -14px var(--tone);
     transition: transform 250ms, box-shadow 250ms, border-color 250ms;
   }
-  .showcase-chip[data-tone="gold"] { --tone: oklch(0.82 0.14 80); }
-  .showcase-chip[data-tone="violet"] { --tone: oklch(0.7 0.2 300); }
-  .showcase-chip[data-tone="cyan"] { --tone: oklch(0.78 0.14 215); }
-  .showcase-chip[data-tone="emerald"] { --tone: oklch(0.76 0.16 158); }
+  .showcase-chip[data-tone="gold"] { --tone: oklch(0.72 0.15 75); }
+  .showcase-chip[data-tone="violet"] { --tone: oklch(0.6 0.2 300); }
+  .showcase-chip[data-tone="cyan"] { --tone: oklch(0.65 0.13 220); }
+  .showcase-chip[data-tone="emerald"] { --tone: oklch(0.65 0.15 158); }
   /* Light sweep across the chip on hover. */
   .showcase-chip::after {
     content: ""; position: absolute; inset: 0; transform: translateX(-120%);
-    background: linear-gradient(105deg, transparent 35%, oklch(1 0 0 / 16%) 50%, transparent 65%);
+    background: linear-gradient(105deg, transparent 35%, oklch(1 0 0 / 70%) 50%, transparent 65%);
     transition: transform 700ms;
   }
   @media (hover: hover) and (pointer: fine) {
@@ -834,7 +834,7 @@
     font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.01em; overflow-wrap: anywhere;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .showcase-chip-skeleton { background: oklch(1 0 0 / 6%); border-color: oklch(1 0 0 / 8%); }
+  .showcase-chip-skeleton { background: oklch(0.95 0.005 260); border-color: oklch(0.9 0.01 260); }
   @media (width >= 640px) {
     .showcase-stage { padding-block: 24px; }
     .showcase-rows { gap: 6px; }
