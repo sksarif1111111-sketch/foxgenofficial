@@ -1,5 +1,10 @@
 # Roadmap
 
+## Premium galaxy and four-row showcase (Nov 19 2026)
+- [x] Upper featured rotation requires verified positive tracked stock labels from the existing refreshed catalogue; unknown/manual quantities excluded. Original orbit retained with nine stable logos and 16-second group fades.
+- [x] Four colorful independently moving alternating rows, larger logos and store-card hover/press feedback; other homepage content and all commerce functionality unchanged.
+- [x] 24 focused tests passed; 360/390/430/768/1280/1920px verified without overflow, out-of-bounds orbit tiles, broken images or runtime errors. Live featured rotation, group replacement, four directions, manual pause, hover and reduced motion checked. Product → existing checkout opens with matching item/price; no payment or order submitted. Build OK.
+
 ## Original orbit restoration and separate compact slider (Nov 19 2026)
 - [x] Restored original orbit/platform/featured card from Git 1f13bb3, with two speeds and independent featured/icon rotation; removed the incorrect floating-logo layout.
 - [x] Compact horizontal slider with automatic native scrolling and touch/pointer/focus pause, official logos/category fallbacks and exact variant names; remains separate from the orbit.

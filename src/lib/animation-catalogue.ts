@@ -3,6 +3,18 @@ import { SUPPLIED_ANIMATION_NAMES } from "@/config/animation-products";
 
 export type AnimationProduct = HeroSceneProduct & { liveProductId?: string; stockReliable?: boolean; animationCategory?: string };
 
+export function showcaseRows<T>(products: T[]) {
+  return [20, 24, 18, 22].map((speed, row) => ({ speed, reverse: row % 2 === 1, items: products.filter((_, i) => i % 4 === row) }));
+}
+
+/** Only the catalogue's tracked-stock label verifies a positive quantity; manual availability is not a count. */
+export function liveFeaturedProducts<T extends HeroSceneProduct>(products: T[]): T[] {
+  return animationCatalogue(products).filter(p => {
+    const quantity = /^In stock — (\d+) available$/.exec(p.stock_label ?? "")?.[1];
+    return p.availability === "in_stock" && quantity !== undefined && Number(quantity) > 0;
+  });
+}
+
 /** Supplied names are a decorative showcase, never store listings or inventory. Exact matches only. */
 export function fullAnimationCatalogue(products: HeroSceneProduct[]): AnimationProduct[] {
   const live = animationCatalogue(products);

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HERO_GROUPS, heroGroupOf, type HeroSceneProduct } from "@/lib/hero-scene";
 import { GlassPlatform } from "./glass-platform";
 import { FloatingProductTile, LogoMark, ORBIT_SECONDS } from "./floating-product-tile";
-import { fullAnimationCatalogue, catalogueWindow } from "@/lib/animation-catalogue";
+import { fullAnimationCatalogue, catalogueWindow, liveFeaturedProducts } from "@/lib/animation-catalogue";
 import { cleanProductText } from "@/lib/product-content";
 
 const CYCLE_MS = 6500;
@@ -19,9 +19,9 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
   const catalogue = useMemo(() => fullAnimationCatalogue(products), [products]);
   const [index, setIndex] = useState(0);
   const [ringIndex, setRingIndex] = useState(0);
-  const featured = catalogue;
-  const floating = catalogueWindow(catalogue, ringIndex, 8);
-  const inner = catalogueWindow(catalogue, ringIndex + 8, Math.max(0, Math.min(4, catalogue.length - 8)));
+  const featured = useMemo(() => liveFeaturedProducts(products), [products]);
+  const floating = catalogueWindow(catalogue, ringIndex, 6);
+  const inner = catalogueWindow(catalogue, ringIndex + 6, Math.max(0, Math.min(3, catalogue.length - 6)));
 
   // Visibility pause, low power mode and desktop mouse parallax. Writes CSS variables only (no React state per frame).
   useEffect(() => {
@@ -82,8 +82,8 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
     if (catalogue.length < 2) return;
     const timer = window.setInterval(() => {
       if (rootRef.current?.dataset.paused !== undefined || rootRef.current?.dataset.lite !== undefined || document.hidden || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      setRingIndex(i => (i + 1) % catalogue.length);
-    }, 11000);
+      setRingIndex(i => (i + 9) % catalogue.length);
+    }, 16000);
     return () => window.clearInterval(timer);
   }, [catalogue.length]);
 
@@ -100,29 +100,27 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
             {floating.length > 0 && (
               <div className="hm-orbit" style={{ ["--orbit-dur" as string]: `${ORBIT_SECONDS}s` }}>
                 <div className="hm-orbit-spin hm-anim">
-                  {floating.map((p, i) => <FloatingProductTile key={i} product={p} index={i} total={floating.length} />)}
+                  {floating.map((p, i) => <FloatingProductTile key={`outer-${i}`} product={p} index={i} total={floating.length} />)}
                 </div>
               </div>
             )}
             {inner.length > 0 && <div className="hm-orbit hm-orbit-inner" style={{ ["--orbit-dur" as string]: "63s" }}><div className="hm-orbit-spin hm-anim">{inner.map((p, i) => <FloatingProductTile key={`inner-${i}`} product={p} index={i} total={inner.length} seconds={63} />)}</div></div>}
 
-            {!children && (
+            {!children && (current || loading) && (
               <div className="hm-slot" style={{ left: "50%", top: "30%", ["--z" as string]: "0px", ["--dur" as string]: "12s", ["--delay" as string]: "-2s", ["--amp" as string]: "6px", ["--rot" as string]: "1deg", ["--enter-delay" as string]: "800ms", ["--enter-dur" as string]: "1200ms", ["--from-y" as string]: "60px", ["--from-z" as string]: "-60px" }}>
                 <div className="hm-enter hm-anim">
                   <div className="hm-shadow hm-anim" style={{ ["--shadow-gap" as string]: "26px" }} />
                   <div className="hm-idle hm-anim">
                     <div className="hm-glass hm-featured">
                       {current ? (
-                        <div key={current.id} className="hm-swap flex items-center gap-2 sm:gap-3">
-                          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-studio-silver bg-card sm:size-14 sm:rounded-2xl">
-                            <LogoMark product={current} className="size-6 sm:size-8" />
+                        <div key={current.id} data-featured-product={current.id} className={`hm-swap ${featured.length > 1 ? "hm-featured-cycle" : ""} hm-anim flex items-center gap-2 sm:gap-3`}>
+                          <span className="hm-featured-logo">
+                            <LogoMark product={current} className="size-9 sm:size-12" />
                           </span>
                           <span className="min-w-0">
-                            <span className="caption-5 block text-studio-muted">{current.animationCategory ?? groupLabel(current)}</span>
+                            <span className="caption-5 block text-studio-muted">{groupLabel(current)}</span>
                             <span className="hm-featured-name block text-studio-ink">{cleanProductText(current.name)}</span>
-                            {current.stockReliable && current.purchasable && <span className="caption-5 mt-1 inline-flex items-center gap-1 text-success sm:caption-4 sm:gap-1.5">
-                              <span className="size-1 rounded-full bg-current sm:size-1.5" /> In stock
-                            </span>}
+                            <span className="caption-5 mt-1 block text-success sm:caption-4">{current.stock_label}</span>
                           </span>
                         </div>
                       ) : (

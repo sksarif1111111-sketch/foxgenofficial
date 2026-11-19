@@ -19,8 +19,8 @@ export function FloatingProductTile({ product, index, total, seconds = ORBIT_SEC
     ["--fade-delay" as string]: `${-(angle / 360) * seconds}s`,
     ["--dur" as string]: `${8 + (index % 4) * 1.3}s`,
     ["--delay" as string]: `${-index * 1.7}s`,
-    ["--amp" as string]: "8px",
-    ["--rot" as string]: "2deg",
+    ["--amp" as string]: "3px",
+    ["--rot" as string]: "0deg",
     ["--enter-delay" as string]: `${900 + index * 90}ms`,
     ["--from-z" as string]: "-160px",
   } as CSSProperties;
@@ -30,7 +30,7 @@ export function FloatingProductTile({ product, index, total, seconds = ORBIT_SEC
         <div className="hm-orbit-untilt">
           <div className="hm-orbit-fade hm-anim">
             <div className="hm-orbit-face">
-              <div className="hm-enter hm-anim">
+              <div key={product.id} className="hm-group-cycle hm-anim">
                 <div className="hm-idle hm-anim relative">
                   <div className="hm-tile hm-orbit-tile">
                     <LogoMark product={product} className="hm-orbit-logo" />

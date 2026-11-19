@@ -14,6 +14,8 @@ export type HeroSceneProduct = {
   logo_url: string | null;
   purchasable: boolean;
   featured: boolean;
+  availability?: string;
+  stock_label?: string;
 };
 
 export type HeroGroupId = "ai" | "dev" | "productivity" | "ott" | "software";
