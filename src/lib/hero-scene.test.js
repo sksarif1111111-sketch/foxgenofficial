@@ -13,6 +13,13 @@ describe("hero scene products", () => {
     const picked = pickHeroProducts([p("Mobbin Pro 12m", { logo_url: logo }), p("Mobbin Team 12m", { logo_url: logo })], 5);
     expect(picked).toHaveLength(1);
   });
+  it("keeps the small universe diverse instead of filling it with AI plans", () => {
+    const picked = pickHeroProducts([
+      p("Gemini AI Pro"), p("ChatGPT Plus"), p("Claude Pro"), p("Grok Super"),
+      p("Notion Plus"), p("Netflix Premium"), p("Canva Pro"), p("Lovable Pro"),
+    ], 5);
+    expect(picked.map((x) => x.name)).toEqual(["Gemini AI Pro", "Lovable Pro", "Notion Plus", "Netflix Premium", "Canva Pro"]);
+  });
   it("puts AI tools with real logos first", () => {
     const picked = pickHeroProducts([p("Notion Plus 12M", { logo_url: "n" }), p("Windows 11 Pro"), p("Gemini AI Pro", { logo_url: "g" })], 3);
     expect(picked.map((x) => x.name)).toEqual(["Gemini AI Pro", "Notion Plus 12M", "Windows 11 Pro"]);

@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { HERO_GROUPS, heroGroupCounts, heroGroupOf, pickHeroProducts, shortProductName, type HeroSceneProduct } from "@/lib/hero-scene";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { pickHeroProducts, type HeroSceneProduct } from "@/lib/hero-scene";
 import { GlassPlatform } from "./glass-platform";
-import { FloatingProductTile, LogoMark, ORBIT_SECONDS } from "./floating-product-tile";
-import { FloatingCategoryCard } from "./floating-category-card";
-import { CATEGORY_SLOTS } from "./slots";
+import { FloatingProductTile } from "./floating-product-tile";
 
-const ORBIT_TILES = 8;
-
-const CYCLE_MS = 6500;
+const UNIVERSE_TILES = 20;
 const clamp = (v: number) => Math.max(-1, Math.min(1, v));
 
 /**
@@ -18,14 +14,7 @@ const clamp = (v: number) => Math.max(-1, Math.min(1, v));
  */
 export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading, children }: { products: T[]; loading: boolean; children?: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const tiles = useMemo(() => pickHeroProducts(products, ORBIT_TILES + 5), [products]);
-  const groups = useMemo(() => heroGroupCounts(products), [products]);
-  // The first few picks rotate slowly on the showcase card; the rest float as tiles.
-  const featured = tiles.slice(0, children ? 0 : Math.min(5, Math.max(1, tiles.length - ORBIT_TILES)));
-  const ring = tiles.slice(featured.length, featured.length + ORBIT_TILES);
-  // Keep an even count so hiding every second tile on phones still leaves them evenly spaced.
-  const floating = ring.length > 2 && ring.length % 2 === 1 ? ring.slice(0, -1) : ring;
-  const [index, setIndex] = useState(0);
+  const tiles = useMemo(() => pickHeroProducts(products, UNIVERSE_TILES), [products]);
 
   // Visibility pause, low power mode and desktop mouse parallax. Writes CSS variables only (no React state per frame).
   useEffect(() => {
@@ -72,74 +61,19 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
     };
   }, []);
 
-  // Slowly rotate the showcase through the featured products while the hero is on screen.
-  useEffect(() => {
-    if (featured.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = window.setInterval(() => {
-      if (rootRef.current?.dataset.paused !== undefined) return;
-      setIndex((i) => (i + 1) % featured.length);
-    }, CYCLE_MS);
-    return () => window.clearInterval(id);
-  }, [featured.length]);
-
-  const current = featured.length > 0 ? featured[index % featured.length] : null;
-  const groupLabel = (p: HeroSceneProduct) => HERO_GROUPS.find((g) => g.id === heroGroupOf(p.name))?.label;
-
   return (
-    <div ref={rootRef} className={`hm-root mx-auto w-full max-w-[640px] lg:max-w-none ${children ? "py-10 lg:py-16" : "h-[280px] sm:h-[420px] lg:h-[560px]"}`}>
-      <div aria-hidden="true" className={children ? "absolute inset-x-[-8%] inset-y-0 hidden lg:block" : "absolute inset-0"}>
+    <div ref={rootRef} className="hm-root hm-universe mx-auto w-full max-w-[640px] lg:max-w-none">
+      <div aria-hidden="true" className="hm-universe-art absolute inset-0">
         <div className="hm-backdrop" />
-        <div className="hm-stage">
-          <div className="hm-world">
-            <GlassPlatform />
-            {floating.length > 0 && (
-              <div className="hm-orbit" style={{ ["--orbit-dur" as string]: `${ORBIT_SECONDS}s` }}>
-                <div className="hm-orbit-spin hm-anim">
-                  {floating.map((p, i) => <FloatingProductTile key={p.id} product={p} index={i} total={floating.length} />)}
-                </div>
-              </div>
-            )}
-            {groups.slice(0, CATEGORY_SLOTS.length).map((g, i) => (
-              <FloatingCategoryCard key={g.id} id={g.id} label={g.label} count={g.count} slot={CATEGORY_SLOTS[i]!} />
-            ))}
-
-            {!children && (
-              <div className="hm-slot" style={{ left: "50%", top: "38%", ["--z" as string]: "0px", ["--dur" as string]: "12s", ["--delay" as string]: "-2s", ["--amp" as string]: "6px", ["--rot" as string]: "1deg", ["--enter-delay" as string]: "800ms", ["--enter-dur" as string]: "1200ms", ["--from-y" as string]: "60px", ["--from-z" as string]: "-60px" }}>
-                <div className="hm-enter hm-anim">
-                  <div className="hm-shadow hm-anim" style={{ ["--shadow-gap" as string]: "26px" }} />
-                  <div className="hm-idle hm-anim">
-                    <div className="hm-glass w-[156px] rounded-xl p-2 sm:w-[236px] sm:rounded-3xl sm:p-4">
-                      {current ? (
-                        <div key={current.id} className="hm-swap flex items-center gap-2 sm:gap-3">
-                          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-studio-silver bg-card sm:size-14 sm:rounded-2xl">
-                            <LogoMark product={current} className="size-6 sm:size-8" />
-                          </span>
-                          <span className="min-w-0">
-                            <span className="caption-5 block text-studio-muted">{groupLabel(current)}</span>
-                            <span className="body-4 block truncate text-studio-ink sm:title-3">{shortProductName(current.name)}</span>
-                            <span className="caption-5 mt-1 inline-flex items-center gap-1 text-success sm:caption-4 sm:gap-1.5">
-                              <span className="size-1 rounded-full bg-current sm:size-1.5" /> In stock
-                            </span>
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <span className={`size-12 shrink-0 rounded-2xl bg-studio-grey sm:size-14 ${loading ? "animate-pulse" : ""}`} />
-                          <span className="flex-1 space-y-2">
-                            <span className={`block h-2.5 w-16 rounded bg-studio-grey ${loading ? "animate-pulse" : ""}`} />
-                            <span className={`block h-3.5 w-28 rounded bg-studio-grey ${loading ? "animate-pulse" : ""}`} />
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <div className="hm-platform-layer"><GlassPlatform /></div>
+        {tiles.map((product, i) => (
+          <FloatingProductTile key={product.id} product={product} index={i} total={tiles.length} />
+        ))}
+        {loading && tiles.length === 0 && Array.from({ length: 12 }, (_, i) => (
+          <span key={i} className="hm-universe-placeholder bg-muted animate-pulse" />
+        ))}
       </div>
-      {children && <div className="relative z-10 mx-auto max-w-[460px]">{children}</div>}
+      {children && <div className="hm-universe-offer relative z-10 mx-auto max-w-[460px]">{children}</div>}
     </div>
   );
 }

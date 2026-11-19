@@ -15,40 +15,27 @@ export function LogoMark({ product, className }: { product: HeroSceneProduct; cl
   return <span className="text-xl font-semibold leading-none text-studio-ink">{shortProductName(product.name).charAt(0).toUpperCase()}</span>;
 }
 
-/**
- * One app tile on the orbit ring. Layers: place on the ring → cancel the ring spin and tilt so the
- * tile always faces the viewer → dim while passing behind → entrance → gentle bob → tile.
- * Every second tile is hidden on phones, which keeps the rest evenly spaced. The product name
- * shows on the showcase card; ring tiles carry the logo only so passing tiles never overlap text.
- */
+/** Two compact elliptical layers, bounded inside the actual scene rather than a fixed pixel orbit. */
 export function FloatingProductTile({ product, index, total }: { product: HeroSceneProduct; index: number; total: number }) {
-  const angle = (360 / total) * index;
+  const outerCount = Math.min(12, total);
+  const outer = index < outerCount;
+  const count = outer ? outerCount : total - outerCount;
+  const slot = outer ? index : index - outerCount;
+  const angle = (slot / count) * Math.PI * 2 - Math.PI / 2 + (outer ? 0 : 0.18);
   const style = {
-    ["--a" as string]: `${angle}deg`,
-    ["--fade-delay" as string]: `${-(angle / 360) * ORBIT_SECONDS}s`,
-    ["--dur" as string]: `${8 + (index % 4) * 1.3}s`,
-    ["--delay" as string]: `${-index * 1.7}s`,
-    ["--amp" as string]: "8px",
-    ["--rot" as string]: "2deg",
-    ["--enter-delay" as string]: `${900 + index * 90}ms`,
-    ["--from-z" as string]: "-160px",
+    "--tile-x": `${50 + Math.cos(angle) * (outer ? 40 : 23)}%`,
+    "--tile-y": `${46 + Math.sin(angle) * (outer ? 34 : 18)}%`,
+    "--tile-turn": `${(index % 5 - 2) * 3}deg`,
+    "--dur": `${14 + index % 5 * 2}s`,
+    "--delay": `${-index * 2.3}s`,
   } as CSSProperties;
   return (
-    <div className={`hm-orbit-slot ${index % 2 === 1 ? "hidden sm:block" : ""}`} style={style}>
-      <div className="hm-orbit-counter hm-anim">
-        <div className="hm-orbit-untilt">
-          <div className="hm-orbit-fade hm-anim">
-            <div className="hm-orbit-face">
-              <div className="hm-enter hm-anim">
-                <div className="hm-idle hm-anim relative">
-                  <div className="hm-tile size-10 sm:size-[72px] lg:size-20">
-                    <LogoMark product={product} className="size-5 sm:size-9 lg:size-10" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className={`hm-universe-slot ${outer ? "is-outer" : "is-inner"}`} style={style}>
+      <div className="hm-universe-drift hm-anim">
+        <div className="hm-universe-tile" title={shortProductName(product.name)}>
+          <LogoMark product={product} className="hm-universe-logo" />
         </div>
+        <span className="hm-universe-name">{shortProductName(product.name)}</span>
       </div>
     </div>
   );

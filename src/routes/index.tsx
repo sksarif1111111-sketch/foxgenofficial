@@ -227,7 +227,7 @@ function Home() {
               <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
                 <div className="max-w-[680px]">
                   <p className="caption-3 uppercase tracking-wider text-primary">Available offers</p>
-                  <h2 id="offers-title" className="heading-4 mt-3 sm:heading-3">Pick a product and press Buy now</h2>
+                  <h2 id="offers-title" className="heading-4 mt-3 sm:heading-3">Find your next digital tool</h2>
                   <p className="body-3 mt-3 text-muted-foreground">Prices and stock come straight from the store. Only products you can order right now are shown here.</p>
                 </div>
                 <Link to="/shop" className="body-5 inline-flex items-center gap-1 rounded-full border border-border px-3 py-2 transition duration-300 hover:bg-muted">
@@ -258,7 +258,7 @@ function Home() {
             )}
 
             {groups.length > 0 && (
-              <div role="tablist" aria-label="Filter offers by category" className="no-scrollbar -mx-4 mb-8 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+              <div role="tablist" aria-label="Filter offers by category" className="mb-8 flex flex-wrap gap-2">
                 {[{ id: "all", label: "All offers", count: live.length }, ...groups].map((g) => (
                   <button
                     key={g.id}

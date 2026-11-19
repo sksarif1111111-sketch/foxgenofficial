@@ -14,6 +14,13 @@ const BRANDS: Array<[keywords: string[], url: string]> = [
   [["claude", "anthropic"], favicon("claude.ai")],
   [["gemini"], favicon("gemini.google.com")],
   [["grok", "gro.k"], favicon("grok.com")],
+  [["perplexity"], favicon("perplexity.ai")],
+  [["deepseek"], favicon("deepseek.com")],
+  [["copilot"], favicon("copilot.microsoft.com")],
+  [["amazon prime", "prime video"], favicon("primevideo.com")],
+  [["disney+", "disney plus", "disney"], favicon("disneyplus.com")],
+  [["apple music"], favicon("music.apple.com")],
+  [["elevenlabs"], favicon("elevenlabs.io")],
   [["lovable"], favicon("lovable.dev")],
   [["google ai", "google one", "google"], favicon("google.com")],
   [["gmail", "gmails"], simpleIcon("gmail")],
@@ -65,7 +72,7 @@ export function brandLogoFor(name: string): string | null {
   for (const m of MATCHERS) {
     const hit = m.re.exec(name);
     if (!hit) continue;
-    const at = hit.index + hit[1]!.length;
+    const at = hit.index + (hit[1]?.length ?? 0);
     if (!best || at < best.at) best = { at, url: m.url };
   }
   return best?.url ?? null;

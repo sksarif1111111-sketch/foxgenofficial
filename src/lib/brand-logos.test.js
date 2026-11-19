@@ -13,6 +13,14 @@ describe("official product logos", () => {
   it("keeps a custom logo set in Admin", () => {
     expect(resolveProductLogo("Notion Plus", "/foxgen-logo.png")).toBe("/foxgen-logo.png");
   });
+  it("recognizes the requested AI, streaming and audio identities without adding products", () => {
+    expect(brandLogoFor("Perplexity Pro")).toContain("perplexity.ai");
+    expect(brandLogoFor("DeepSeek Pro")).toContain("deepseek.com");
+    expect(brandLogoFor("Copilot Pro")).toContain("copilot.microsoft.com");
+    expect(brandLogoFor("Amazon Prime Video")).toContain("primevideo.com");
+    expect(brandLogoFor("Disney+ Premium")).toContain("disneyplus.com");
+    expect(brandLogoFor("ElevenLabs Creator")).toContain("elevenlabs.io");
+  });
   it("upgrades an old small site icon for unknown brands", () => {
     expect(resolveProductLogo("Acme Pro", "https://www.google.com/s2/favicons?sz=128&domain=acme.com")).toBe("https://www.google.com/s2/favicons?sz=256&domain=acme.com");
   });

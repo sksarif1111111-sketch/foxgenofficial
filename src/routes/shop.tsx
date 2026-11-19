@@ -448,7 +448,7 @@ function ShopPage() {
                 </button>
               </div>
             </div>
-            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+            <div className="flex flex-wrap gap-2">
               {[{ id: "all", label: "All", count: catalog?.products.length ?? 0 }, ...categories].map((c) => (
                 <button
                   key={c.id}

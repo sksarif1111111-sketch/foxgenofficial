@@ -1,5 +1,11 @@
 # Roadmap
 
+## Responsive product universe and minimal cards (Nov 19 2026)
+- [x] Replaced oversized centerpiece with 20 compact live-catalogue logo tiles balanced across available categories; all tile bounds checked at multiple motion phases at 320/394/768/1280px, reduced motion stops drift.
+- [x] Home and Shop share compact image/name/price-only cards in two mobile columns; HOT omitted because catalogue has no actual hot marker. No product, price, inventory, payment or backend changes.
+- [x] Real catalogue → selected product details → existing checkout verified at all four sizes; no horizontal page overflow or runtime errors, 16 focused tests passed, preview build OK. No order/payment submitted.
+- [ ] Additional product-details requirements — awaiting the missing end of the user's request; retain the existing page meanwhile.
+
 ## Mobile hero and product cards (Nov 19 2026)
 - [x] Reduced only mobile hero scene dimensions, orbit, motion and spacing; desktop/tablet sizes remain 560px/420px and mobile CTAs stay clear.
 - [x] Compact two-column grids on 320px and 390px phones; Home shows six real products in three rows and Shop naturally shows six across three rows.
