@@ -84,7 +84,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Foxgen AI Store — Premium AI & Software Marketplace" },
       { name: "description", content: "Premium AI tools, software plans and licences from Foxgen AI Store." },
       { name: "author", content: "Foxgen AI Store" },
-      { name: "theme-color", content: "#181818" },
     ],
     links: [
       {

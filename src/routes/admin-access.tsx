@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { adminDestination } from "@/lib/admin-access.policy";
+import { ThemeToggle } from "@/components/site/theme-toggle";
 import { AdminAccessForm, AdminAccessHeader } from "@/components/admin/admin-access-form";
 
 export const Route = createFileRoute("/admin-access")({
@@ -24,6 +25,7 @@ function AdminAccess() {
   return (
     <main className="surface-ink relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
       <div className="bg-grid-ink pointer-events-none absolute inset-0 opacity-70" />
+      <ThemeToggle className="absolute right-4 top-4 z-10" />
       <div className="pointer-events-none absolute left-1/2 top-1/3 size-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-[140px]" />
       <div className="relative w-full max-w-sm">
         <Link to="/" className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">

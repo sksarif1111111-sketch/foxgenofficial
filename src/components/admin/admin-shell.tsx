@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { ThemeToggle } from "@/components/site/theme-toggle";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -365,6 +366,7 @@ export function AdminShell({
           <div className="ml-auto flex shrink-0 items-center gap-2">
             <BotStatusPill />
             {actions}
+            <ThemeToggle />
           </div>
         </div>
       </header>
