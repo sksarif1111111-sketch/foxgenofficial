@@ -43,7 +43,7 @@ describe("existing theme preference rules", () => {
     const env = environment("dark");
     runInNewContext(THEME_BOOT_SCRIPT, env.context);
     expect(env.classes.has("dark")).toBe(true);
-    expect(env.meta.content).toBe("#17181c");
+    expect(env.meta.content).toBe("#0b0d1a");
   });
   it("uses device dark on first visit", () => {
     const env = environment(undefined, true);

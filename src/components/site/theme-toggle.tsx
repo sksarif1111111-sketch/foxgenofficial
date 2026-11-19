@@ -27,10 +27,10 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       aria-pressed={dark}
       title={dark ? "Switch to light mode" : "Switch to dark mode"}
       data-on={dark ? "" : undefined}
-      className={`theme-switch ${className}`}
+      className={`theme-switch h-[26px] w-11 rounded-full p-0 ${className}`}
     >
-      <span aria-hidden="true" className="theme-switch-sun"><Sun size={14} weight="fill" /></span>
-      <span aria-hidden="true" className="theme-switch-moon"><Moon size={13} weight="fill" /></span>
+      <span aria-hidden="true" className="theme-switch-sun"><Sun size={12} weight="fill" /></span>
+      <span aria-hidden="true" className="theme-switch-moon"><Moon size={12} weight="fill" /></span>
       <span aria-hidden="true" className="theme-switch-stars"><i /><i /><i /></span>
       <span aria-hidden="true" className="theme-switch-knob" />
     </Button>

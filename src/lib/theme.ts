@@ -2,7 +2,7 @@
 export type Theme = "light" | "dark";
 export const THEME_KEY = "foxgen-theme";
 export const THEME_EVENT = "foxgen-theme-change";
-export const THEME_COLORS: Record<Theme, string> = { light: "#ffffff", dark: "#17181c" };
+export const THEME_COLORS: Record<Theme, string> = { light: "#ffffff", dark: "#0b0d1a" };
 
 /**
  * Runs in <head> before paint: saved choice wins, otherwise the device setting. Also sets the
