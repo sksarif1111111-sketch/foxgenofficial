@@ -114,7 +114,7 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
                       {current ? (
                         <div key={current.id} data-featured-product={current.id} className={`hm-swap ${featured.length > 1 ? "hm-featured-cycle" : ""} hm-anim flex items-center gap-2 sm:gap-3`}>
                           <span className="hm-featured-logo">
-                            <LogoMark product={current} className="size-9 sm:size-12" />
+                            <LogoMark product={current} className="size-7 sm:size-8" />
                           </span>
                           <span className="min-w-0">
                             <span className="caption-5 block text-studio-muted">{groupLabel(current)}</span>

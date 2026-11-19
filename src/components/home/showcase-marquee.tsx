@@ -22,7 +22,7 @@ function ShowcaseTile({ product, tone }: { product: AnimationProduct; tone: (typ
     : <div className="showcase-chip" data-tone={tone}>{content}</div>;
 }
 
-/** Native scrolling owns swipe/touch input; automatic scroll yields to pointer, focus and wheel. */
+/** Native scrolling owns swipe/touch input; automatic scroll keeps running on hover and touch. */
 function Row({ items, reverse = false, speed = 20, row }: { items: AnimationProduct[]; reverse?: boolean; speed?: number; row: number }) {
   const ref = useRef<HTMLDivElement>(null);
   items = uniqueByName(items);
@@ -30,32 +30,23 @@ function Row({ items, reverse = false, speed = 20, row }: { items: AnimationProd
     const el = ref.current;
     if (!el) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let visible = false, active = false, until = 0, raf = 0, last = 0, position = el.scrollLeft;
+    let visible = false, raf = 0, last = 0, position = el.scrollLeft;
     const observer = new IntersectionObserver(([entry]) => { visible = entry?.isIntersecting ?? false; }, { rootMargin: "100px" });
     observer.observe(el);
-    const pause = () => { until = performance.now() + 3500; };
-    const enter = () => { active = true; };
-    const leave = () => { active = false; pause(); };
-    const down = () => { active = true; pause(); };
-    const up = () => { active = false; pause(); };
-    const focus = () => { active = true; };
-    const blur = () => { active = false; pause(); };
-    el.addEventListener("pointerenter", enter); el.addEventListener("pointerleave", leave);
-    el.addEventListener("pointerdown", down); window.addEventListener("pointerup", up);
-    el.addEventListener("wheel", pause, { passive: true }); el.addEventListener("touchstart", pause, { passive: true });
-    el.addEventListener("focusin", focus); el.addEventListener("focusout", blur);
     const loop = (now: number) => {
       const dt = Math.min(now - last, 50); last = now;
       const segment = el.querySelector<HTMLElement>(".showcase-segment");
       const distance = segment?.getBoundingClientRect().width ?? 0;
-      if (visible && !document.hidden && !reduce.matches && !active && now > until && distance > el.clientWidth) {
+      // Never pauses on hover/touch; a manual swipe just shifts where the loop continues from.
+      if (Math.abs(el.scrollLeft - position) > 2) position = el.scrollLeft;
+      if (visible && !document.hidden && !reduce.matches && distance > el.clientWidth) {
         position = (position + (reverse ? -1 : 1) * dt * speed / 1000 + distance) % distance;
         el.scrollLeft = position;
       } else position = el.scrollLeft;
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
-    return () => { cancelAnimationFrame(raf); observer.disconnect(); el.removeEventListener("pointerenter", enter); el.removeEventListener("pointerleave", leave); el.removeEventListener("pointerdown", down); window.removeEventListener("pointerup", up); el.removeEventListener("wheel", pause); el.removeEventListener("touchstart", pause); el.removeEventListener("focusin", focus); el.removeEventListener("focusout", blur); };
+    return () => { cancelAnimationFrame(raf); observer.disconnect(); };
   }, [items.length, reverse, speed]);
   return <div ref={ref} className="showcase-scroll no-scrollbar" data-direction={reverse ? "reverse" : "forward"} aria-label={`Sliding product showcase row ${row}`}>
     <div className="showcase-track">
