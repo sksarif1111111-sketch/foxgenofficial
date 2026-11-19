@@ -4,13 +4,24 @@ import { showcaseRows, type AnimationProduct } from "@/lib/animation-catalogue";
 import { AnimationLogo } from "./animation-logo";
 import { cleanProductText } from "@/lib/product-content";
 
+/** Display-only short name: drops plan, duration and variant details after a dash or bracket. */
+export function showcaseName(name: string) {
+  return cleanProductText(name).split(/\s+[—–-]\s+|\s*\(/)[0]!.trim();
+}
+
+/** Keeps the first product per short name so a row never repeats the same label. */
+function uniqueByName(items: AnimationProduct[]) {
+  const seen = new Set<string>();
+  return items.filter(p => { const k = showcaseName(p.name).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+}
+
 /** Every row is its own colour series (gold, violet, cyan, emerald) on the dark stage. */
 const SERIES = ["gold", "violet", "cyan", "emerald"] as const;
 
 function ShowcaseTile({ product, tone }: { product: AnimationProduct; tone: (typeof SERIES)[number] }) {
   const content = <>
     <span className="showcase-chip-logo"><AnimationLogo product={product} className="size-6 sm:size-7" /></span>
-    <span className="showcase-chip-name">{cleanProductText(product.name)}</span>
+    <span className="showcase-chip-name">{showcaseName(product.name)}</span>
   </>;
   return product.liveProductId
     ? <Link to="/product/$productId" params={{ productId: product.liveProductId }} aria-label={`${product.name} details`} className="showcase-chip" data-tone={tone}>{content}</Link>
@@ -20,6 +31,7 @@ function ShowcaseTile({ product, tone }: { product: AnimationProduct; tone: (typ
 /** Native scrolling owns swipe/touch input; automatic scroll yields to pointer, focus and wheel. */
 function Row({ items, reverse = false, speed = 20, row }: { items: AnimationProduct[]; reverse?: boolean; speed?: number; row: number }) {
   const ref = useRef<HTMLDivElement>(null);
+  items = uniqueByName(items);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
