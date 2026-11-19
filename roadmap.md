@@ -1,5 +1,10 @@
 # Roadmap
 
+## Soft luxury theme refinement
+- [x] Refined existing tokens to graphite/charcoal, muted blue and restrained violet; clean white light mode and inherited surfaces preserved. No layout or commerce changes.
+- [x] Preserved central controller, storage key and early boot; refined switch and interruption-safe circular reveal, blocked-storage device fallback, reduced motion and colour fade.
+- [x] 21 tests passed; 48 public route/theme/viewport checks plus signed-in account/My orders, product → quantity → payment selection and unlocked Admin at 390/1280px. No overflow/runtime errors; reload persistence, stable switch bounds, four moving rows, circular reveal and fallback checked. No order/payment submitted; separate licence unlock and every Admin subview were not exercised.
+
 ## Premium galaxy and four-row showcase (Nov 19 2026)
 - [x] Upper featured rotation requires verified positive tracked stock labels from the existing refreshed catalogue; unknown/manual quantities excluded. Original orbit retained with nine stable logos and 16-second group fades.
 - [x] Four colorful independently moving alternating rows, larger logos and store-card hover/press feedback; other homepage content and all commerce functionality unchanged.

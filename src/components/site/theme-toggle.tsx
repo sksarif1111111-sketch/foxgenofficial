@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "@phosphor-icons/react/dist/ssr";
+import { Button } from "@/components/ui/button";
 import { currentTheme, switchTheme, THEME_EVENT } from "@/lib/theme";
 
 /**
@@ -15,11 +16,12 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     return () => window.removeEventListener(THEME_EVENT, sync);
   }, []);
   return (
-    <button
+    <Button
+      variant="ghost"
       type="button"
       onClick={(e) => {
         const r = e.currentTarget.getBoundingClientRect();
-        switchTheme(dark ? "light" : "dark", { x: r.left + r.width / 2, y: r.top + r.height / 2 });
+        switchTheme(currentTheme() === "dark" ? "light" : "dark", { x: r.left + r.width / 2, y: r.top + r.height / 2 });
       }}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
       aria-pressed={dark}
@@ -31,6 +33,6 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       <span aria-hidden="true" className="theme-switch-moon"><Moon size={13} weight="fill" /></span>
       <span aria-hidden="true" className="theme-switch-stars"><i /><i /><i /></span>
       <span aria-hidden="true" className="theme-switch-knob" />
-    </button>
+    </Button>
   );
 }
