@@ -31,6 +31,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { ProductLogo } from "@/components/site/product-logo";
 import { PriceTag, ProductCard, StockPill } from "@/components/site/product-card";
 import { MORE_CATEGORY, STORE_CATEGORIES, categoryLabel, categoryOf } from "@/lib/store-categories";
+import { cleanProductText } from "@/lib/product-content";
 
 type ShopSearch = { product?: string; category?: string; q?: string; buy?: boolean; view?: "orders" };
 
@@ -309,9 +310,9 @@ function ShopPage() {
       <Panel className="!p-5">
         <p className="eyebrow text-muted-foreground">Order summary</p>
         <div className="mt-4 flex items-center gap-3">
-          <ProductLogo name={product.name} logoUrl={product.logo_url} emoji={product.emoji} size="md" />
+          <ProductLogo name={cleanProductText(product.name)} logoUrl={product.logo_url} emoji={null} size="md" />
           <div className="min-w-0">
-            <p className="truncate font-semibold">{product.name}</p>
+            <p className="truncate font-semibold">{cleanProductText(product.name)}</p>
             <p className="text-xs text-muted-foreground">{product.duration_label ?? categoryLabel(categoryOf(product.name))}</p>
           </div>
         </div>
@@ -505,20 +506,20 @@ function ShopPage() {
                 ) : (
                   <>
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,var(--color-accent),transparent_65%)]" />
-                    <ProductLogo name={product.name} logoUrl={product.logo_url} emoji={product.emoji} size="xl" />
+                    <ProductLogo name={cleanProductText(product.name)} logoUrl={product.logo_url} emoji={null} size="xl" />
                   </>
                 )}
               </div>
               {(product.description || product.features.length > 0) && (
                 <Panel>
                   <h2 className="text-lg font-semibold">About this product</h2>
-                  {product.description && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{product.description}</p>}
+                  {product.description && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{cleanProductText(product.description)}</p>}
                   {product.features.length > 0 && (
                     <ul className="mt-5 grid gap-2.5 sm:grid-cols-2">
                       {product.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-2 text-sm">
                           <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
-                          {feature}
+                          {cleanProductText(feature)}
                         </li>
                       ))}
                     </ul>
@@ -532,8 +533,8 @@ function ShopPage() {
                   <span className="eyebrow text-muted-foreground">{categoryLabel(categoryOf(product.name))}</span>
                   <StockPill product={product} />
                 </div>
-                <h2 className="mt-3 text-2xl font-bold leading-tight sm:text-3xl">{product.name}</h2>
-                {product.short_description && <p className="mt-2 text-sm text-muted-foreground">{product.short_description}</p>}
+                <h2 className="mt-3 text-2xl font-bold leading-tight sm:text-3xl">{cleanProductText(product.name)}</h2>
+                {product.short_description && <p className="mt-2 text-sm text-muted-foreground">{cleanProductText(product.short_description)}</p>}
                 <div className="mt-6 border-y border-border py-5">
                   <PriceTag product={product} size="lg" />
                   {product.duration_label && <p className="mt-1 text-sm text-muted-foreground">{product.duration_label}</p>}

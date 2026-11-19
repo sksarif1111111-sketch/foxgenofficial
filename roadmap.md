@@ -1,10 +1,15 @@
 # Roadmap
 
+## Professional product details (Nov 19 2026)
+- [x] Clean displayed product names/content without modifying stored data; minimal two-column listing cards keep official logos and omit emoji fallback.
+- [x] Dedicated image-first header, desktop tabs/mobile accordions and fixed mobile purchase bar; conditional overview/usage/activation/delivery/warranty/terms sections preserve all source prose. Existing warranty label exposed read-only; no schema, pricing or purchase changes.
+- [x] 22 focused tests passed, build OK, real Shop → product → existing checkout checked at 320/394/903/1280px with no overflow/runtime errors. Source fields absent on a product stay absent; no invented activation or warranty content, no payment submitted.
+
 ## Responsive product universe and minimal cards (Nov 19 2026)
 - [x] Replaced oversized centerpiece with 20 compact live-catalogue logo tiles balanced across available categories; all tile bounds checked at multiple motion phases at 320/394/768/1280px, reduced motion stops drift.
 - [x] Home and Shop share compact image/name/price-only cards in two mobile columns; HOT omitted because catalogue has no actual hot marker. No product, price, inventory, payment or backend changes.
 - [x] Real catalogue → selected product details → existing checkout verified at all four sizes; no horizontal page overflow or runtime errors, 16 focused tests passed, preview build OK. No order/payment submitted.
-- [ ] Additional product-details requirements — awaiting the missing end of the user's request; retain the existing page meanwhile.
+- [x] Additional product-details requirements supplied; implementation tracked above.
 
 ## Mobile hero and product cards (Nov 19 2026)
 - [x] Reduced only mobile hero scene dimensions, orbit, motion and spacing; desktop/tablet sizes remain 560px/420px and mobile CTAs stay clear.

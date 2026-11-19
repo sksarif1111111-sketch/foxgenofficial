@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { ShopCatalog } from "@/lib/shop.functions";
 import { ProductLogo } from "@/components/site/product-logo";
 import { Button } from "@/components/ui/button";
+import { cleanProductText } from "@/lib/product-content";
 
 export type CatalogProduct = ShopCatalog["products"][number];
 
@@ -45,11 +46,11 @@ export function ProductCard({ product, onOpen }: { product: CatalogProduct; onOp
         {product.image_url ? (
           <img src={product.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
         ) : (
-          <ProductLogo name={product.name} logoUrl={product.logo_url} emoji={product.emoji} size="lg" />
+          <ProductLogo name={cleanProductText(product.name)} logoUrl={product.logo_url} emoji={null} size="lg" />
         )}
       </div>
       <div className="catalog-card-content">
-        <h3 className="catalog-card-name">{product.name}</h3>
+        <h3 className="catalog-card-name">{cleanProductText(product.name)}</h3>
         <div className="catalog-card-price">
           {product.price_usdt === null ? (
             <span className="caption-3 text-muted-foreground">Price on request</span>

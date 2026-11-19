@@ -27,6 +27,7 @@ export type ShopProduct = {
   delivery_method: string;
   requires_buyer_email: boolean;
   installation_instructions: string | null;
+  warranty_label?: string | null;
   download_url: string | null;
   tutorial_url: string | null;
   shop_order: number;
@@ -120,6 +121,7 @@ export function shapeProduct(row: Record<string, unknown>, channel: ShopChannel)
     delivery_method: String(row["delivery_method"] ?? "email_manual"),
     requires_buyer_email: channel === "telegram" ? row["requires_buyer_email"] === true : row["requires_buyer_email"] !== false,
     installation_instructions: (row["installation_instructions"] as string) ?? null,
+    warranty_label: (row["warranty_label"] as string) ?? null,
     download_url: (row["download_url"] as string) ?? null,
     tutorial_url: (row["tutorial_url"] as string) ?? null,
     shop_order: Number(row["shop_order"] ?? 0),

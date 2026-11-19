@@ -81,7 +81,7 @@ export const shopCatalog = createServerFn({ method: "POST" }).handler(async (): 
 });
 
 export type ProductDetail = {
-  product: ShopCatalog["products"][number] & { installation_instructions: string | null; tutorial_url: string | null };
+  product: ShopCatalog["products"][number] & { installation_instructions: string | null; tutorial_url: string | null; warranty_label?: string | null };
   related: ShopCatalog["products"];
   methods: string[];
   reviewMinutes: number;
@@ -105,7 +105,7 @@ export const shopProductDetail = createServerFn({ method: "GET" })
     const cat = categoryOf(full.name);
     const related = rows.filter((p) => p.id !== full.id && p.purchasable && categoryOf(p.name) === cat).slice(0, 4).map(toCatalogProduct);
     return {
-      product: { ...toCatalogProduct(full), installation_instructions: full.installation_instructions, tutorial_url: full.tutorial_url },
+      product: { ...toCatalogProduct(full), installation_instructions: full.installation_instructions, tutorial_url: full.tutorial_url, warranty_label: full.warranty_label ?? null },
       related,
       methods: (methods as Array<Record<string, unknown>>).map((m) => String(m["name"])),
       reviewMinutes: minutes,
