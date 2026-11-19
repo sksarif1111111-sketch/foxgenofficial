@@ -3,17 +3,18 @@ import { Link } from "@tanstack/react-router";
 import { showcaseRows, type AnimationProduct } from "@/lib/animation-catalogue";
 import { AnimationLogo } from "./animation-logo";
 import { cleanProductText } from "@/lib/product-content";
-import { heroGroupOf } from "@/lib/hero-scene";
 
-const TILES = { ai: "bg-accent", dev: "bg-tint-violet", productivity: "bg-tint-green", ott: "bg-tint-rose", software: "bg-tint-amber" } as const;
+/** Every row is its own colour series (gold, violet, cyan, emerald) on the dark stage. */
+const SERIES = ["gold", "violet", "cyan", "emerald"] as const;
 
-function ShowcaseTile({ product }: { product: AnimationProduct }) {
+function ShowcaseTile({ product, tone }: { product: AnimationProduct; tone: (typeof SERIES)[number] }) {
   const content = <>
-    <span className="showcase-logo"><AnimationLogo product={product} className="size-10 sm:size-12" /></span>
-    <span className="showcase-name">{cleanProductText(product.name)}</span>
+    <span className="showcase-chip-logo"><AnimationLogo product={product} className="size-6 sm:size-7" /></span>
+    <span className="showcase-chip-name">{cleanProductText(product.name)}</span>
   </>;
-  const className = `showcase-compact ${TILES[heroGroupOf(product.name)]}`;
-  return product.liveProductId ? <Link to="/product/$productId" params={{ productId: product.liveProductId }} aria-label={`${product.name} details`} className={className}>{content}</Link> : <div className={className}>{content}</div>;
+  return product.liveProductId
+    ? <Link to="/product/$productId" params={{ productId: product.liveProductId }} aria-label={`${product.name} details`} className="showcase-chip" data-tone={tone}>{content}</Link>
+    : <div className="showcase-chip" data-tone={tone}>{content}</div>;
 }
 
 /** Native scrolling owns swipe/touch input; automatic scroll yields to pointer, focus and wheel. */
@@ -52,14 +53,16 @@ function Row({ items, reverse = false, speed = 20, row }: { items: AnimationProd
   }, [items.length, reverse, speed]);
   return <div ref={ref} className="showcase-scroll no-scrollbar" data-direction={reverse ? "reverse" : "forward"} aria-label={`Sliding product showcase row ${row}`}>
     <div className="showcase-track">
-      <div className="showcase-segment">{items.map(p => <ShowcaseTile key={p.id} product={p} />)}</div>
-      <div aria-hidden="true" inert className="showcase-segment showcase-copy">{items.map(p => <ShowcaseTile key={p.id} product={p} />)}</div>
+      <div className="showcase-segment">{items.map(p => <ShowcaseTile key={p.id} product={p} tone={SERIES[(row - 1) % SERIES.length]!} />)}</div>
+      <div aria-hidden="true" inert className="showcase-segment showcase-copy">{items.map(p => <ShowcaseTile key={p.id} product={p} tone={SERIES[(row - 1) % SERIES.length]!} />)}</div>
     </div>
   </div>;
 }
 
 export function ShowcaseMarquee({ products, loading }: { products: AnimationProduct[]; loading: boolean }) {
-  if (loading) return <div className="space-y-3" aria-hidden="true">{Array.from({ length: 4 }, (_, row) => <div key={row} className="showcase-scroll flex gap-2">{Array.from({ length: 6 }, (_, i) => <div key={i} className="showcase-compact animate-pulse bg-muted" />)}</div>)}</div>;
+  if (loading) return <div className="showcase-stage" aria-hidden="true"><div className="showcase-rows">{Array.from({ length: 4 }, (_, row) => <div key={row} className="showcase-scroll flex gap-2.5">{Array.from({ length: 8 }, (_, i) => <div key={i} className="showcase-chip showcase-chip-skeleton animate-pulse" />)}</div>)}</div></div>;
   if (!products.length) return null;
-  return <div className="space-y-3 sm:space-y-4" aria-label="Products in the store">{showcaseRows(products).map((config, row) => <Row key={row} row={row + 1} {...config} />)}</div>;
+  return <div className="showcase-stage" aria-label="Products in the store">
+    <div className="showcase-rows">{showcaseRows(products).map((config, row) => <Row key={row} row={row + 1} {...config} />)}</div>
+  </div>;
 }

@@ -782,17 +782,66 @@
   .showcase-scroll { overflow-x: auto; overflow-y: hidden; width: 100%; overscroll-behavior-x: contain; touch-action: pan-x pan-y; }
   .showcase-track { display: flex; width: max-content; padding-block: 8px; }
   .showcase-segment { display: flex; gap: 8px; padding-right: 8px; }
-  .showcase-compact { flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between; width: 140px; height: 144px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-soft); transition: transform 250ms, box-shadow 250ms, border-color 250ms; }
-  @media (hover: hover) and (pointer: fine) { .showcase-compact:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: var(--shadow-lift); } }
-  .showcase-compact:active { transform: scale(0.98); }
-  .showcase-compact:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; }
-  .showcase-logo { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow-soft); }
-  .showcase-name { font-size: 11px; line-height: 16px; font-weight: 600; margin-top: 8px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  /* Premium dark stage: gold side light, violet top glow, faded edges, colour-coded product chips. */
+  .showcase-stage {
+    --stage-gold: oklch(0.8 0.13 82);
+    position: relative; isolation: isolate; overflow: hidden; padding-block: 18px;
+    background:
+      radial-gradient(38% 90% at 0% 50%, oklch(0.8 0.13 82 / 30%), transparent 70%),
+      radial-gradient(38% 90% at 100% 50%, oklch(0.8 0.13 82 / 30%), transparent 70%),
+      radial-gradient(70% 120% at 50% -20%, oklch(0.42 0.16 292 / 45%), transparent 70%),
+      linear-gradient(180deg, oklch(0.17 0.02 285), oklch(0.12 0.015 285));
+    border-block: 1px solid oklch(0.8 0.13 82 / 40%);
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 6%), 0 30px 60px -40px oklch(0.42 0.16 292 / 60%);
+  }
+  .showcase-stage::before, .showcase-stage::after {
+    content: ""; position: absolute; inset-block: 0; width: 9%; z-index: 2; pointer-events: none;
+  }
+  .showcase-stage::before { left: 0; background: linear-gradient(90deg, oklch(0.14 0.02 285), transparent); }
+  .showcase-stage::after { right: 0; background: linear-gradient(270deg, oklch(0.14 0.02 285), transparent); }
+  .showcase-rows { position: relative; z-index: 1; display: grid; gap: 4px; }
+  .showcase-chip {
+    --tone: var(--stage-gold);
+    position: relative; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+    width: 172px; height: 56px; padding: 0 12px 0 8px; border-radius: 12px;
+    color: oklch(0.96 0.01 90);
+    border: 1px solid color-mix(in oklch, var(--tone) 38%, transparent);
+    background: linear-gradient(135deg, color-mix(in oklch, var(--tone) 20%, oklch(0.2 0.02 285)), oklch(0.16 0.015 285) 72%);
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 7%), 0 10px 22px -16px var(--tone);
+    transition: transform 250ms, box-shadow 250ms, border-color 250ms;
+  }
+  .showcase-chip[data-tone="gold"] { --tone: oklch(0.82 0.14 80); }
+  .showcase-chip[data-tone="violet"] { --tone: oklch(0.7 0.2 300); }
+  .showcase-chip[data-tone="cyan"] { --tone: oklch(0.78 0.14 215); }
+  .showcase-chip[data-tone="emerald"] { --tone: oklch(0.76 0.16 158); }
+  /* Light sweep across the chip on hover. */
+  .showcase-chip::after {
+    content: ""; position: absolute; inset: 0; transform: translateX(-120%);
+    background: linear-gradient(105deg, transparent 35%, oklch(1 0 0 / 16%) 50%, transparent 65%);
+    transition: transform 700ms;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .showcase-chip:hover { transform: translateY(-2px); border-color: var(--tone); box-shadow: 0 0 0 1px var(--tone), 0 12px 30px -12px var(--tone); }
+    .showcase-chip:hover::after { transform: translateX(120%); }
+  }
+  .showcase-chip:active { transform: scale(0.98); }
+  .showcase-chip:focus-visible { outline: 2px solid var(--tone); outline-offset: 2px; }
+  .showcase-chip-logo {
+    display: grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px;
+    background: oklch(0.99 0 0); box-shadow: 0 0 0 1px color-mix(in oklch, var(--tone) 45%, transparent), 0 4px 12px -6px var(--tone);
+  }
+  .showcase-chip-name {
+    font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.01em; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .showcase-chip-skeleton { background: oklch(1 0 0 / 6%); border-color: oklch(1 0 0 / 8%); }
   @media (width >= 640px) {
+    .showcase-stage { padding-block: 24px; }
+    .showcase-rows { gap: 6px; }
     .showcase-segment { gap: 12px; padding-right: 12px; }
-    .showcase-compact { width: 180px; height: 168px; padding: 16px; }
-    .showcase-logo { width: 64px; height: 64px; }
-    .showcase-name { font-size: 13px; line-height: 18px; }
+    .showcase-chip { width: 208px; height: 64px; gap: 12px; padding-inline: 10px 14px; }
+    .showcase-chip-logo { width: 44px; height: 44px; }
+    .showcase-chip-name { font-size: 13px; line-height: 18px; }
   }
   @media (prefers-reduced-motion: reduce) { .showcase-copy { display: none; } }
 
@@ -843,8 +892,8 @@
     .catalog-card-amount { font-size: 20px; line-height: 28px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .catalog-card, .catalog-card-image > *, .showcase-compact { transition: none; }
-    .catalog-card:hover, .catalog-card:active, .catalog-card:hover .catalog-card-image > *, .showcase-compact:hover, .showcase-compact:active { transform: none; }
+    .catalog-card, .catalog-card-image > *, .showcase-chip, .showcase-chip::after { transition: none; }
+    .catalog-card:hover, .catalog-card:active, .catalog-card:hover .catalog-card-image > *, .showcase-chip:hover, .showcase-chip:active { transform: none; }
     .hm-featured-cycle, .hm-group-cycle { animation: none; }
   }
   .hm-root[data-lite] .hm-featured-cycle, .hm-root[data-lite] .hm-group-cycle { animation: none; }
