@@ -38,7 +38,7 @@ export function showcaseName(name: string): string {
 }
 
 export function showcaseRows<T>(products: T[]) {
-  return [20, 24, 18, 22].map((speed, row) => ({ speed, reverse: row % 2 === 1, items: products.filter((_, i) => i % 4 === row) }));
+  return [48, 56, 44, 52].map((speed, row) => ({ speed, reverse: row % 2 === 1, items: products.filter((_, i) => i % 4 === row) }));
 }
 
 /** Only the catalogue's tracked-stock label verifies a positive quantity; manual availability is not a count. */
