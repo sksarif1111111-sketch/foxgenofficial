@@ -32,7 +32,7 @@ import { TaglineReveal } from "@/components/home/tagline-reveal";
 import { ShowcaseMarquee } from "@/components/home/showcase-marquee";
 import { TrustStatsBand } from "@/components/home/trust-stats-band";
 import { HeroMotionScene } from "@/components/home/hero-motion/hero-motion-scene";
-import { pickShowcaseProducts } from "@/lib/hero-scene";
+import { fullAnimationCatalogue } from "@/lib/animation-catalogue";
 import { Faq, type FaqItem } from "@/components/home/faq";
 import { FestiveOfferSection, HeroOfferVisual, OfferAnnouncementBar, PrimaryCta, findOfferProduct, useFestiveOffer } from "@/components/home/festive-offer";
 import { categoryOf, type StoreCategoryId } from "@/lib/store-categories";
@@ -119,7 +119,7 @@ function Home() {
   const featuredFirst = useMemo(() => [...live].sort((a, b) => Number(b.featured) - Number(a.featured)), [live]);
   const shown = (group === "all" ? featuredFirst : featuredFirst.filter((p) => groupOf(p).id === group)).slice(0, 8);
   // Sliding rows follow the live catalogue: add, rename, restock or remove a product and the rows update.
-  const showcase = useMemo(() => pickShowcaseProducts(products, 16), [products]);
+  const showcase = useMemo(() => fullAnimationCatalogue(products), [products]);
   const promos = offers.data?.offers ?? [];
   const festive = useFestiveOffer();
   const festiveProduct = useMemo(() => (festive.live ? findOfferProduct(products, festive.offer.productName) : null), [festive.live, festive.offer.productName, products]);

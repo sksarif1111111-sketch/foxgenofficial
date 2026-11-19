@@ -751,51 +751,45 @@
     .hm-swap { animation-duration: 500ms; }
   }
 
-  /* Container-sized logo universe: every logo fits at every animation phase. */
-  .hm-universe {
-    container-type: inline-size;
-    height: 240px;
-    min-width: 0;
-    --universe-size: clamp(30px, 8cqi, 40px);
-    --universe-drift: 3px;
-  }
-  .hm-universe-art { pointer-events: none; }
-  .hm-universe-slot {
-    position: absolute;
-    left: var(--tile-x);
-    top: var(--tile-y);
-    transform: translate(-50%, -50%);
-  }
-  .hm-universe-drift { animation: hm-universe-float var(--dur) ease-in-out var(--delay) infinite; }
-  .hm-universe-tile {
-    width: var(--universe-size);
-    height: var(--universe-size);
-    display: grid;
-    place-items: center;
-    border: 1px solid var(--studio-silver);
-    border-radius: 8px;
-    background: var(--card);
-    box-shadow: var(--shadow-soft);
-    transform: rotate(var(--tile-turn));
-  }
-  .hm-universe-logo { width: 60%; height: 60%; }
-  .hm-universe-name { display: none; }
-  .hm-universe .hm-plane { top: 84%; width: 64%; }
-  .hm-universe .hm-platform-layer { position: absolute; inset: 0; pointer-events: none; }
-  .hm-universe-offer { padding-block: 32px; }
-  .hm-universe:has(.hm-universe-offer) { height: auto; min-height: 300px; }
-  .hm-universe:has(.hm-universe-offer) .hm-universe-art { opacity: 0.35; }
-  .hm-universe-placeholder { display: inline-block; width: 32px; height: 32px; margin: 16px; border-radius: 8px; }
+  /* Restored original CSS 3D orbit: responsive radii are based on scene width. */
+  .hm-restored { container-type: inline-size; height: 300px; --orbit-r: 30cqi; --orbit-y: 68%; --orbit-tilt: -22deg; overflow: visible; }
+  .hm-restored .hm-world { transform: rotateX(3deg) rotateY(-3deg); }
+  .hm-restored .hm-plane { width: 60%; top: 77%; }
+  .hm-restored .hm-orbit-inner { --orbit-r: 19cqi; --orbit-y: 64%; --orbit-tilt: -28deg; }
+  .hm-orbit-tile { width: 32px; height: 32px; border-radius: 8px; }
+  .hm-orbit-logo { width: 20px; height: 20px; }
+  .hm-featured { width: min(230px, 70cqi); padding: 12px; border-radius: 8px; }
+  .hm-featured-name { font-size: 13px; line-height: 18px; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 36px; overflow-wrap: anywhere; }
+  .hm-with-offer { height: auto; min-height: 360px; padding: 24px 0; }
+  .hm-with-offer .hm-world { opacity: 0.4; }
   @media (width >= 640px) {
-    .hm-universe { height: 390px; --universe-size: clamp(40px, 8cqi, 52px); --universe-drift: 5px; }
+    .hm-restored { height: 420px; --orbit-r: 32cqi; }
+    .hm-orbit-tile { width: 48px; height: 48px; border-radius: 12px; }
+    .hm-orbit-logo { width: 28px; height: 28px; }
+    .hm-featured { width: 270px; padding: 16px; }
+    .hm-featured-name { font-size: 15px; line-height: 22px; min-height: 44px; }
   }
   @media (width >= 1024px) {
-    .hm-universe { height: 480px; --universe-size: clamp(40px, 9cqi, 60px); --universe-drift: 7px; }
-    .hm-universe-name { display: block; position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); width: 88px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: var(--studio-muted); }
-    .hm-universe .is-inner .hm-universe-name { display: none; }
-    .hm-universe .is-inner { opacity: 0.85; }
+    .hm-restored { height: 560px; --orbit-r: 32cqi; }
+    .hm-restored .hm-world { transform: rotateX(calc(4deg + var(--hm-py) * -3deg)) rotateY(calc(-6deg + var(--hm-px) * 4deg)); }
+    .hm-orbit-tile { width: 60px; height: 60px; }
+    .hm-orbit-logo { width: 36px; height: 36px; }
   }
-  .hm-universe[data-lite] .hm-universe-drift { animation: none; }
+  .showcase-scroll { overflow-x: auto; overflow-y: hidden; width: 100%; overscroll-behavior-x: contain; touch-action: pan-x pan-y; }
+  .showcase-track { display: flex; width: max-content; padding-block: 4px; }
+  .showcase-segment { display: flex; gap: 8px; padding-right: 8px; }
+  .showcase-compact { flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between; width: 132px; min-height: 116px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-soft); transition: box-shadow 250ms; }
+  .showcase-compact:hover { box-shadow: var(--shadow-lift); }
+  .showcase-compact:focus-visible { outline: 2px solid var(--ring); outline-offset: -3px; }
+  .showcase-logo { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; background: var(--card); }
+  .showcase-name { font-size: 11px; line-height: 16px; font-weight: 600; margin-top: 12px; overflow-wrap: anywhere; }
+  @media (width >= 640px) {
+    .showcase-segment { gap: 12px; padding-right: 12px; }
+    .showcase-compact { width: 180px; min-height: 144px; padding: 16px; }
+    .showcase-logo { width: 48px; height: 48px; }
+    .showcase-name { font-size: 13px; line-height: 18px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .showcase-copy { display: none; } }
 
   .catalog-card {
     display: flex;
@@ -837,7 +831,6 @@
     .catalog-card-amount { font-size: 20px; line-height: 28px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .hm-universe-drift { animation: none; }
     .catalog-card { transition: none; }
     .catalog-card:hover { transform: none; }
   }

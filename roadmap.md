@@ -1,5 +1,12 @@
 # Roadmap
 
+## Original orbit restoration and separate compact slider (Nov 19 2026)
+- [x] Restored original orbit/platform/featured card from Git 1f13bb3, with two speeds and independent featured/icon rotation; removed the incorrect floating-logo layout.
+- [x] Compact horizontal slider with automatic native scrolling and touch/pointer/focus pause, official logos/category fallbacks and exact variant names; remains separate from the orbit.
+- [x] Verified 360/390/430/768/1280/1920px, all orbit phases in bounds, no page overflow/runtime errors, swipe pauses automatic movement, featured rotation and real product navigation, reduced motion disables orbit, zero failed loaded animation images. 10 focused catalogue/logo tests passed; build OK.
+- [x] All 142 exact supplied names included alongside 20 unmatched real catalogue entries; supplied stock snapshots excluded, only exact live matches get stock/purchase links. No store data, payment or backend changes.
+- [ ] Match the three visual reference images — images not attached; original Git implementation is the restoration source.
+
 ## Professional product details (Nov 19 2026)
 - [x] Clean displayed product names/content without modifying stored data; minimal two-column listing cards keep official logos and omit emoji fallback.
 - [x] Dedicated image-first header, desktop tabs/mobile accordions and fixed mobile purchase bar; conditional overview/usage/activation/delivery/warranty/terms sections preserve all source prose. Existing warranty label exposed read-only; no schema, pricing or purchase changes.
