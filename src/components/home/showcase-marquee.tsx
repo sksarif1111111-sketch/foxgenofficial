@@ -1,13 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
-import { showcaseRows, type AnimationProduct } from "@/lib/animation-catalogue";
+import { showcaseName, showcaseRows, type AnimationProduct } from "@/lib/animation-catalogue";
 import { AnimationLogo } from "./animation-logo";
-import { cleanProductText } from "@/lib/product-content";
-
-/** Display-only short name: drops plan, duration and variant details after a dash or bracket. */
-export function showcaseName(name: string) {
-  return cleanProductText(name).split(/\s+[—–-]\s+|\s*\(/)[0]!.trim();
-}
 
 /** Keeps the first product per short name so a row never repeats the same label. */
 function uniqueByName(items: AnimationProduct[]) {

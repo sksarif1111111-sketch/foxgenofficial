@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { animationCatalogue, fullAnimationCatalogue, catalogueWindow, liveFeaturedProducts, showcaseRows } from "./animation-catalogue";
+import { animationCatalogue, fullAnimationCatalogue, catalogueWindow, liveFeaturedProducts, showcaseName, showcaseRows } from "./animation-catalogue";
 import { SUPPLIED_ANIMATION_NAMES } from "../config/animation-products";
 const product = (id, name, purchasable = true) => ({ id, name, purchasable, emoji: null, logo_url: null, featured: false });
 describe("shared animation catalogue", () => {
@@ -45,5 +45,23 @@ describe("shared animation catalogue", () => {
     const items = animationCatalogue([product("a", "Gemini"), product("a", "Gemini"), product("b", "Netflix", false)]);
     expect(items.map(p => p.id)).toEqual(["a"]);
     expect(catalogueWindow(items, 20, 12)).toHaveLength(1);
+  });
+  it("shows only the product's own name: no plan, duration or variant wording", () => {
+    expect(showcaseName("Gemini AI Pro — 18 Months")).toBe("Gemini AI");
+    expect(showcaseName("Gemini 18 Months Redeem Link 12HW")).toBe("Gemini");
+    expect(showcaseName("Google AI Pro — 12 Months")).toBe("Google AI");
+    expect(showcaseName("Outlook Mail")).toBe("Outlook");
+    expect(showcaseName("Lovable Pro Lite — 12 Months")).toBe("Lovable");
+    expect(showcaseName("Windows 10/11 Pro — 1 PC Retail Key (Lifetime)")).toBe("Windows 10/11");
+    expect(showcaseName("KEY HMA AND/PC — 20–30 Days")).toBe("HMA");
+    expect(showcaseName("Eleven Reader Ultra Plan — 12 Months")).toBe("Eleven Reader");
+  });
+  it("keeps every supplied showcase label free of plan and duration words", () => {
+    const noise = /\b(pro|lite|plus|premium|business|team|edu|starter|standard|max|ultra|creator|basic|hobby|scale|build|core|advanced|essential|personal|enterprise|org|panel|redeem|link|coupon|account|slot|seat|credit|warranty|month|months|year|years|day|days|plan|offer|key|pack)\b/i;
+    for (const name of SUPPLIED_ANIMATION_NAMES) {
+      const label = showcaseName(name);
+      expect(label.length).toBeGreaterThan(0);
+      expect(noise.test(label)).toBe(false);
+    }
   });
 });

@@ -1,7 +1,41 @@
 import { heroGroupOf, type HeroSceneProduct } from "./hero-scene";
+import { cleanProductText } from "./product-content";
 import { SUPPLIED_ANIMATION_NAMES } from "@/config/animation-products";
 
 export type AnimationProduct = HeroSceneProduct & { liveProductId?: string; stockReliable?: boolean; animationCategory?: string };
+
+/**
+ * Display-only brand label for the moving showcase and the orbit's featured card: logo + product
+ * name only. Plan, duration, seat, credit, warranty and redemption wording is never shown, and the
+ * original catalogue name is never rewritten.
+ */
+const SHOWCASE_NOISE = new Set([
+  "pro", "lite", "plus", "business", "team", "edu", "standard", "starter", "max", "ultra", "creator", "premium",
+  "basic", "hobby", "scale", "build", "core", "advanced", "essential", "essentials", "personal", "enterprise",
+  "org", "e3", "invite", "invites", "panel", "redeem", "link", "links", "code", "coupon", "coupons", "account",
+  "accounts", "slot", "slots", "seat", "seats", "user", "users", "credit", "credits", "token", "tokens",
+  "warranty", "full", "nw", "fw", "on", "mail", "ready", "private", "new", "old", "advance", "admin", "plan",
+  "plans", "offer", "offers", "all", "key", "keys", "pack", "lifetime", "available", "month", "months", "year",
+  "years", "day", "days", "week", "weeks", "pc", "retail", "autopay", "discount", "renewal", "workspace",
+  "career", "transactional", "and",
+]);
+
+export function showcaseName(name: string): string {
+  let text = cleanProductText(name);
+  // Keep only the leading identity: drop everything after a dash separator, bracket, slash (unless
+  // it joins digits like "10/11") or a "+".
+  for (const cut of [/\s+[—–]\s+/, /\s*\(/, /\/(?!\d)/, /\s+\+\s+/]) text = text.split(cut)[0] ?? "";
+  text = text
+    .replace(/\$\d[\d,]*/g, " ")
+    .replace(/\b\d+[–—-][\d,]+\b/g, " ")
+    .replace(/\b\d+\s*[–—-]?\s*(?:days?|months?|years?|weeks?)\b/gi, " ")
+    .replace(/\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirty)\s+(?:year|month|day|week)s?\b/gi, " ")
+    .replace(/\b\d+[kmwy]\b/gi, " ")
+    .replace(/\b\d+[A-Z]{2,}\b/g, " ")
+    .replace(/\b\d{1,3}(?:,\d{3})+\b/g, " ");
+  const words = text.split(/\s+/).filter((w) => w && /[A-Za-z0-9]/.test(w) && !SHOWCASE_NOISE.has(w.toLowerCase()) && !/^all[-\s]?in[-\s]?one$/i.test(w));
+  return words.join(" ").trim() || cleanProductText(name).split(/\s+/)[0]!;
+}
 
 export function showcaseRows<T>(products: T[]) {
   return [20, 24, 18, 22].map((speed, row) => ({ speed, reverse: row % 2 === 1, items: products.filter((_, i) => i % 4 === row) }));

@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { HERO_GROUPS, heroGroupOf, type HeroSceneProduct } from "@/lib/hero-scene";
 import { GlassPlatform } from "./glass-platform";
 import { FloatingProductTile, LogoMark, ORBIT_SECONDS } from "./floating-product-tile";
-import { fullAnimationCatalogue, catalogueWindow, liveFeaturedProducts } from "@/lib/animation-catalogue";
-import { cleanProductText } from "@/lib/product-content";
+import { fullAnimationCatalogue, catalogueWindow, liveFeaturedProducts, showcaseName } from "@/lib/animation-catalogue";
 
 const CYCLE_MS = 6500;
 const clamp = (v: number) => Math.max(-1, Math.min(1, v));
@@ -119,7 +118,7 @@ export function HeroMotionScene<T extends HeroSceneProduct>({ products, loading,
                           </span>
                           <span className="min-w-0">
                             <span className="caption-5 block text-studio-muted">{groupLabel(current)}</span>
-                            <span className="hm-featured-name block text-studio-ink">{cleanProductText(current.name)}</span>
+                            <span className="hm-featured-name block text-studio-ink">{showcaseName(current.name)}</span>
                             <span className="caption-5 mt-1 block text-success sm:caption-4">{current.stock_label}</span>
                           </span>
                         </div>
