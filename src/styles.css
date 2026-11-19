@@ -1468,7 +1468,23 @@
 /* Surface names describe elevation, never force a theme inside a themed page. */
 .surface-light { background-color: var(--card); color: var(--card-foreground); }
 .dark .surface-ink, .dark .surface-violet { background-image: none; }
-.dark body { background-color: var(--background); background-image: radial-gradient(45% 35% at 8% 0%, color-mix(in oklch, var(--ambient-blue) 55%, transparent), transparent 70%), radial-gradient(45% 35% at 95% 4%, color-mix(in oklch, var(--ambient-violet) 55%, transparent), transparent 70%); }
+/* Page wrappers previously covered the body's light. Repeat the same viewport-sized
+   lighting on those canvases so it remains visible while browsing every section. */
+body, .min-h-screen.bg-background {
+  background-image: radial-gradient(ellipse at 8% 22%, var(--ambient-blue), transparent 62%), radial-gradient(ellipse at 94% 68%, var(--ambient-violet), transparent 62%);
+  background-size: 100% 100vh;
+  background-attachment: fixed;
+}
+.dark body, .dark .min-h-screen.bg-background {
+  background-color: var(--background);
+  background-image: radial-gradient(ellipse at 8% 22%, var(--ambient-blue), transparent 62%), radial-gradient(ellipse at 94% 68%, var(--ambient-violet), transparent 62%);
+}
+.dark main > section.bg-card, .dark footer {
+  background-image: radial-gradient(ellipse at 4% 35%, var(--ambient-blue), transparent 65%), radial-gradient(ellipse at 96% 70%, var(--ambient-violet), transparent 65%);
+}
+@media (width < 768px) {
+  body, .min-h-screen.bg-background { background-attachment: scroll; background-size: 100% 850px; background-repeat: repeat-y; }
+}
 
 /* Snapshot layers are opaque and isolated: no cross-fade exposes the previous canvas. */
 ::view-transition-group(root) { animation-duration: 600ms; }
@@ -1532,12 +1548,12 @@
 .dark .hm-glass, .dark .hm-featured { border-color: var(--border); background: color-mix(in oklch, var(--card) 94%, transparent); box-shadow: var(--shadow-lift); }
 /* Small neutral logo backplates preserve authentic dark brand artwork contrast. */
 .dark .hm-featured-logo, .dark .showcase-chip-logo, .dark .catalog-card-image > span, .dark .product-detail-image > span { background: var(--logo-surface); }
-.dark .showcase-stage { background: radial-gradient(70% 120% at 50% -20%, var(--ambient-violet), transparent 70%), var(--background); border-block-color: var(--border); box-shadow: var(--shadow-soft); }
+.dark .showcase-stage { background: radial-gradient(45% 100% at 0% 50%, var(--ambient-blue), transparent 75%), radial-gradient(45% 100% at 100% 50%, var(--ambient-blue), transparent 75%), radial-gradient(70% 120% at 50% -20%, var(--ambient-violet), transparent 70%), var(--background); border-block-color: color-mix(in oklch, var(--primary) 30%, var(--border)); box-shadow: var(--shadow-soft), 0 20px 55px -30px var(--glow); }
 .dark .showcase-stage::before { background: linear-gradient(90deg, var(--background), transparent); }
 .dark .showcase-stage::after { background: linear-gradient(270deg, var(--background), transparent); }
-.dark .showcase-chip { color: var(--foreground); border-color: color-mix(in oklch, var(--tone) 22%, var(--border)); background: linear-gradient(135deg, color-mix(in oklch, var(--tone) 6%, var(--card)), var(--card) 75%); box-shadow: var(--shadow-soft); }
+.dark .showcase-chip { color: var(--foreground); border-color: color-mix(in oklch, var(--tone) 50%, var(--border)); background: linear-gradient(135deg, color-mix(in oklch, var(--tone) 18%, var(--card)), var(--card) 75%); box-shadow: var(--shadow-soft), 0 8px 22px -12px color-mix(in oklch, var(--tone) 55%, transparent); }
 .dark .showcase-chip::after { background: linear-gradient(105deg, transparent 35%, var(--surface-edge) 50%, transparent 65%); }
-.dark .showcase-chip-logo { box-shadow: 0 0 0 1px var(--border); }
+.dark .showcase-chip-logo { box-shadow: 0 0 0 1px color-mix(in oklch, var(--tone) 50%, var(--border)), 0 4px 14px -7px var(--tone); }
 .dark .showcase-chip-skeleton { background: var(--muted); border-color: var(--border); }
 .dark .catalog-card, .dark .trust-card { background: linear-gradient(160deg, color-mix(in oklch, var(--card) 96%, var(--foreground)), var(--card)); border-color: var(--border); box-shadow: var(--shadow-soft); }
 .dark .catalog-card-image, .dark .product-detail-image { background: radial-gradient(70% 80% at 50% 30%, var(--ambient-blue), transparent), var(--card); }
