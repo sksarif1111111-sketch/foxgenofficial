@@ -175,3 +175,6 @@
 - [x] Sliding product rows show only logo/emoji and the clean product name (no price, plan length or badges), follow the live catalogue and refresh every minute.
 - [x] Hero product tiles circle the platform on a slow 3D orbit (always facing the viewer, dimmer behind); category cards moved above the orbit.
 - [x] Full width member counter + 30 minute delivery guarantee band under the Home hero.
+
+## Day/night theme switch upgrade
+- [x] Sky-track switch: sun knob rolls into a moon, clouds drift out, stars twinkle; spring motion, hover/press feedback; first visit still follows the device setting (user choice). Checked at 390px in both themes, reload persistence, no overflow.

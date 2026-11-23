@@ -49,6 +49,13 @@ describe("existing theme preference rules", () => {
     const env = environment(undefined, true);
     runInNewContext(THEME_BOOT_SCRIPT, env.context);
     expect(env.classes.has("dark")).toBe(true);
+    expect(env.meta.content).toBe("#0b0d1a");
+  });
+  it("uses device light on first visit", () => {
+    const env = environment(undefined, false);
+    runInNewContext(THEME_BOOT_SCRIPT, env.context);
+    expect(env.classes.has("dark")).toBe(false);
+    expect(env.meta.content).toBe("#ffffff");
   });
   it("retains device fallback when storage is blocked", () => {
     const env = environment(undefined, true, true);

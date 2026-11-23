@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { currentTheme, switchTheme, THEME_EVENT } from "@/lib/theme";
 
 /**
- * Pill switch: sun on the left, moon on the right, glowing knob slides between them. The sun sets
- * and the moon rises with tiny stars. Reads the real theme after mount (no hydration mismatch).
+ * Day/night pill: a glowing sun knob rolls across a sky track and turns into a moon; clouds drift
+ * away and stars twinkle in. Reads the real theme after mount (no hydration mismatch).
  */
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const [dark, setDark] = useState(false);
@@ -27,12 +27,14 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       aria-pressed={dark}
       title={dark ? "Switch to light mode" : "Switch to dark mode"}
       data-on={dark ? "" : undefined}
-      className={`theme-switch h-[26px] w-11 rounded-full p-0 ${className}`}
+      className={`theme-switch h-[26px] w-[46px] rounded-full p-0 ${className}`}
     >
-      <span aria-hidden="true" className="theme-switch-sun"><Sun size={12} weight="fill" /></span>
-      <span aria-hidden="true" className="theme-switch-moon"><Moon size={12} weight="fill" /></span>
-      <span aria-hidden="true" className="theme-switch-stars"><i /><i /><i /></span>
-      <span aria-hidden="true" className="theme-switch-knob" />
+      <span aria-hidden="true" className="theme-switch-clouds"><i /><i /></span>
+      <span aria-hidden="true" className="theme-switch-stars"><i /><i /><i /><i /></span>
+      <span aria-hidden="true" className="theme-switch-knob">
+        <span className="theme-switch-sun"><Sun size={11} weight="fill" /></span>
+        <span className="theme-switch-moon"><Moon size={11} weight="fill" /></span>
+      </span>
     </Button>
   );
 }
