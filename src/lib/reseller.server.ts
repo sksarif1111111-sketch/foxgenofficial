@@ -274,6 +274,7 @@ export async function syncSuppliers(trigger: "manual" | "auto") {
     await db.from("products").update({ availability: "out_of_stock", updated_at: now }).eq("id", storeId);
   }
 
+  try { const { autoFillProductImages } = await import("./product-image.server"); await autoFillProductImages(4); } catch { /* pictures are best effort */ }
   for (const { id } of enabled) {
     const err = bySupplier[id].error;
     await recordRun(id, trigger, err ? "failed" : "success", counts[id], err, started);

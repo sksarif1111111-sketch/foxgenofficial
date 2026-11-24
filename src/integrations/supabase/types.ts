@@ -1360,6 +1360,7 @@ export type Database = {
           giveaway_enabled: boolean
           icon_url: string | null
           id: string
+          image_auto_attempted_at: string | null
           image_url: string | null
           installation_guide_url: string | null
           installation_instructions: string | null
@@ -1413,6 +1414,7 @@ export type Database = {
           giveaway_enabled?: boolean
           icon_url?: string | null
           id?: string
+          image_auto_attempted_at?: string | null
           image_url?: string | null
           installation_guide_url?: string | null
           installation_instructions?: string | null
@@ -1466,6 +1468,7 @@ export type Database = {
           giveaway_enabled?: boolean
           icon_url?: string | null
           id?: string
+          image_auto_attempted_at?: string | null
           image_url?: string | null
           installation_guide_url?: string | null
           installation_instructions?: string | null

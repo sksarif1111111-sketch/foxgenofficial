@@ -1,6 +1,6 @@
 import { walletUsd } from "@/lib/wallet-rate";
 import { InventoryManager } from "@/components/admin/inventory-manager";
-import { marketplaceAssignInventory, marketplaceGenerateImage } from "@/lib/marketplace-admin.functions";
+import { marketplaceAssignInventory, marketplaceGenerateImage, marketplaceFillMissingImages } from "@/lib/marketplace-admin.functions";
 import { catalogCategories } from "@/lib/hubcatalog.functions";
 import { Button } from "@/components/ui/button";
 import { DeliveryCountdown } from "@/components/admin/delivery-countdown";
@@ -537,6 +537,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
   const fCategories = useServerFn(catalogCategories);
   const fGenerateImage = useServerFn(marketplaceGenerateImage);
   const [generating,setGenerating] = useState(false);
+  const fFillImages = useServerFn(marketplaceFillMissingImages);
   const [categories,setCategories] = useState<Array<{id:string;name:string}>>([]);
   const fSave = useServerFn(shopSaveProduct);
   const fDuplicate = useServerFn(shopDuplicateProduct);
@@ -670,7 +671,8 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
 
   return (
     <section className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <button type="button" className={ghostBtn} disabled={generating} onClick={() => { setGenerating(true); void act(async () => { const r = await fFillImages(); notify(`${r.made} picture(s) created.`); }, "Missing pictures checked.").finally(() => setGenerating(false)); }}>{generating ? "Creating pictures…" : "Create missing pictures"}</button>
         <button type="button" className={primaryBtn} onClick={() => { setDraft({ ...emptyProduct }); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>
           + Add Product
         </button>
@@ -781,7 +783,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
               <ImageUpload folder="products" label="Product image (cards & product page)" value={draft.image_url} onChange={(url) => setDraft({ ...draft, image_url: url })} />
               <ImageUpload folder="products" label="Brand logo (square)" value={draft.logo_url} onChange={(url) => setDraft({ ...draft, logo_url: url })} />
             </div>
-            <Button variant="outline" disabled={generating||!draft.name.trim()} onClick={async()=>{if(!window.confirm("Generate a product thumbnail using paid AI credits?"))return;setGenerating(true);try{const r=await fGenerateImage({data:{name:draft.name,description:draft.description}});setDraft({...draft,image_url:r.url});notify("Image saved. Save the product to use it.");}catch(e){notify(e instanceof Error?e.message:"Image generation unavailable. Upload an image instead.");}finally{setGenerating(false);}}}>{generating?"Generating…":"Generate image · AI credits"}</Button>
+            <Button variant="outline" disabled={generating||!draft.name.trim()} onClick={async()=>{if(!window.confirm("Create a product picture with Cloudflare AI?"))return;setGenerating(true);try{const r=await fGenerateImage({data:{name:draft.name,description:draft.description}});setDraft({...draft,image_url:r.url});notify("Image saved. Save the product to use it.");}catch(e){notify(e instanceof Error?e.message:"Image generation unavailable. Upload an image instead.");}finally{setGenerating(false);}}}>{generating?"Generating…":"Generate picture · Cloudflare AI"}</Button>
             {draft.reseller_product_id && (
               <p className="sm:col-span-2 rounded-lg bg-accent px-3 py-2 text-xs text-accent-foreground">
                 Connected to supplier product <span className="font-mono">{draft.reseller_product_id}</span>. Name and stock are refreshed on each sync; selling prices stay unchanged; everything else you edit here is kept.

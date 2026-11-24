@@ -274,6 +274,7 @@ export const shopSaveProduct = createServerFn({ method: "POST" }).middleware([re
         .from("products")
         .insert({ ...row, product_type: "digital", price: rest.price_usdt ?? 0, currency: "USDT", is_free: false });
       if (error) throw new Error("Could not create this product. The short name must be unique.");
+      if (!row.image_url) { const { autoFillProductImages } = await import("@/lib/product-image.server"); await autoFillProductImages(1); }
     }
     await logActivity("shop", id ? "Shop product updated" : "Shop product added", "success", row.name);
     return { ok: true };

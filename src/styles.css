@@ -907,6 +907,10 @@
     .catalog-card-name { font-size: 15px; line-height: 24px; min-height: 48px; }
     .catalog-card-amount { font-size: 20px; line-height: 28px; }
   }
+  .catalog-card-image { container-type: inline-size; }
+  .catalog-card-image > span { width: 54cqw !important; height: 54cqw !important; max-height: 84%; max-width: 84%; border-radius: 22% !important; aspect-ratio: 1; }
+  .catalog-card-image > span img { width: 70% !important; height: 70% !important; }
+  @media (width >= 640px) { .catalog-card-image > span { width: 46cqw !important; height: 46cqw !important; } }
   @media (prefers-reduced-motion: reduce) {
     .catalog-card, .catalog-card-image > *, .showcase-chip, .showcase-chip::after { transition: none; }
     .catalog-card:hover, .catalog-card:active, .catalog-card:hover .catalog-card-image > *, .showcase-chip:hover, .showcase-chip:active { transform: none; }

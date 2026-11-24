@@ -225,6 +225,13 @@
       "when": 1794438045510,
       "tag": "0031_restore_payment_method_channel_column",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795561324175,
+      "tag": "0032_product_image_auto_attempt",
+      "breakpoints": true
     }
   ]
 }

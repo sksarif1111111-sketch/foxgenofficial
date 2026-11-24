@@ -69,6 +69,7 @@ export const catalogSaveProduct = createServerFn({ method: "POST" }).middleware(
     } else {
       const { error } = await db.from("products").insert(row);
       if (error) throw new Error("Could not create this product.");
+      { const { autoFillProductImages } = await import("@/lib/product-image.server"); await autoFillProductImages(1); }
       await logActivity("products", "Product added", "success", row.name);
     }
     return { ok: true };
