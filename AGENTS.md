@@ -44,4 +44,4 @@
 - Payment methods are channel-specific; Telegram proof photos retain file IDs and are served only behind the Admin session, including wallet top-up evidence, so neither credentials nor screenshots become public.
 - Private non-extension inventory is assigned under order locks; licence products keep their existing separate manager, and marketplace jobs use the existing cron-secret boundary for delayed delivery notices.
 - Theme: `.dark` on <html> via `src/lib/theme.ts`; colours only in `src/styles.css`.
-- AI product pictures: Cloudflare Workers AI in `product-image.server.ts`; fills only imageless, never-attempted products so uploads/logos are never overwritten.
+- AI product pictures: Cloudflare Workers AI (`product-image.server.ts`) fills only imageless, never-attempted products.
