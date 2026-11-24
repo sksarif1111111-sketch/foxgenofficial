@@ -6,7 +6,7 @@ import { avoidSpans, canChat, canFall, canPoint, clampX, pickTarget, pointDirect
 const AssistantChatPopup = lazy(() => import("@/components/site/assistant-chat-popup"));
 
 const HOVER_LINE = "Hi! Need help? 💙";
-const HELLO = "Hi! I'm Foxy 🦊";
+const HELLO = "Hi, I'm Foxy! What can I help you with?";
 const LINES = [HELLO, "Need help choosing? 💙", "Ask me anything!", "Instant delivery after approval ⚡"];
 const POINT_LINE = "This one is popular! 👀";
 const PRODUCT_LINE = "Want to know more about this? Ask me!";
@@ -769,8 +769,8 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
             <g className="fx-leg-l"><ellipse cx="49" cy="128" rx="8.5" ry="6" fill="url(#fx-shell)" /></g>
             <g className="fx-leg-r"><ellipse cx="71" cy="128" rx="8.5" ry="6" fill="url(#fx-shell)" /></g>
             <g className="fx-body">
-              <ellipse cx="60" cy="111" rx="25" ry="20" fill="url(#fx-shell)" />
-              <ellipse cx="60" cy="115" rx="13" ry="10" className="fx-belly" />
+              <ellipse cx="60" cy="114" rx="23" ry="17" fill="url(#fx-shell)" />
+              <ellipse cx="60" cy="117" rx="12" ry="8.5" className="fx-belly" />
               <path className="fx-core" d="M60 118 C56 115 54 112.5 56 110.8 C57.4 109.7 59.2 110.4 60 111.6 C60.8 110.4 62.6 109.7 64 110.8 C66 112.5 64 115 60 118 Z" />
             </g>
             <g className="fx-arm-l"><ellipse cx="37" cy="110" rx="6.5" ry="8.5" transform="rotate(22 37 110)" fill="url(#fx-shell)" /></g>
@@ -788,54 +788,54 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
               </g>
               <line x1="60" y1="25" x2="60" y2="13" className="fx-antenna-stem" />
               <path className="fx-antenna" d="M60 13 C56 9.5 54 6.5 56.6 4.8 C58.2 3.8 59.6 4.8 60 6 C60.4 4.8 61.8 3.8 63.4 4.8 C66 6.5 64 9.5 60 13 Z" />
-              <ellipse cx="60" cy="58" rx="38" ry="34" fill="url(#fx-shell)" />
+              <ellipse cx="60" cy="60" rx="41" ry="37" fill="url(#fx-shell)" />
               <ellipse cx="46" cy="33" rx="14" ry="5" className="fx-highlight" transform="rotate(-16 46 33)" />
-              <ellipse cx="60" cy="62" rx="29" ry="21.5" fill="url(#fx-visor)" className="fx-visor" />
-              <path d="M40 52 Q46 44 58 43" className="fx-visor-gloss" />
+              <ellipse cx="60" cy="67" rx="32" ry="23" fill="url(#fx-visor)" className="fx-visor" />
+              <path d="M38 57 Q45 48 58 47" className="fx-visor-gloss" />
 
-              <ellipse className="fx-blush" cx="38" cy="75" rx="5.5" ry="3" />
-              <ellipse className="fx-blush" cx="82" cy="75" rx="5.5" ry="3" />
+              <ellipse className="fx-blush" cx="35" cy="81" rx="7" ry="4" />
+              <ellipse className="fx-blush" cx="85" cy="81" rx="7" ry="4" />
 
               <g className="fx-eyes">
                 <g className="fx-eyes-open">
                   <g className="fx-eye-l">
-                    <ellipse cx="48" cy="62" rx="6.8" ry="8.4" className="fx-eye" />
+                    <ellipse cx="47" cy="68" rx="8.2" ry="9.8" className="fx-eye" />
                     <g className="fx-pupil">
-                      <ellipse cx="48" cy="63" rx="4.2" ry="5.6" className="fx-pupil-dot" />
-                      <circle cx="46.3" cy="60" r="1.9" className="fx-shine" />
-                      <circle cx="49.8" cy="65.8" r="0.9" className="fx-shine" />
+                      <ellipse cx="47" cy="69" rx="5.6" ry="7" className="fx-pupil-dot" />
+                      <circle cx="44.8" cy="65.4" r="2.8" className="fx-shine" />
+                      <circle cx="49.4" cy="72.4" r="1.3" className="fx-shine" />
                     </g>
                   </g>
                   <g className="fx-eye-r">
-                    <ellipse cx="72" cy="62" rx="6.8" ry="8.4" className="fx-eye" />
+                    <ellipse cx="73" cy="68" rx="8.2" ry="9.8" className="fx-eye" />
                     <g className="fx-pupil">
-                      <ellipse cx="72" cy="63" rx="4.2" ry="5.6" className="fx-pupil-dot" />
-                      <circle cx="70.3" cy="60" r="1.9" className="fx-shine" />
-                      <circle cx="73.8" cy="65.8" r="0.9" className="fx-shine" />
+                      <ellipse cx="73" cy="69" rx="5.6" ry="7" className="fx-pupil-dot" />
+                      <circle cx="70.8" cy="65.4" r="2.8" className="fx-shine" />
+                      <circle cx="75.4" cy="72.4" r="1.3" className="fx-shine" />
                     </g>
                   </g>
                 </g>
                 <g className="fx-eyes-happy fx-stroke">
-                  <path d="M42 65 Q48 55 54 65" />
-                  <path d="M66 65 Q72 55 78 65" />
+                  <path d="M40 71 Q47 60 54 71" />
+                  <path d="M66 71 Q73 60 80 71" />
                 </g>
                 <g className="fx-eyes-surprised">
-                  <circle cx="48" cy="62" r="6.4" className="fx-ring" />
-                  <circle cx="72" cy="62" r="6.4" className="fx-ring" />
-                  <circle cx="48" cy="62" r="2" className="fx-eye" />
-                  <circle cx="72" cy="62" r="2" className="fx-eye" />
+                  <circle cx="47" cy="68" r="7.2" className="fx-ring" />
+                  <circle cx="73" cy="68" r="7.2" className="fx-ring" />
+                  <circle cx="47" cy="68" r="2.4" className="fx-eye" />
+                  <circle cx="73" cy="68" r="2.4" className="fx-eye" />
                 </g>
                 <g className="fx-eyes-dizzy fx-stroke">
-                  <path d="M48 62 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
-                  <path d="M72 62 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
+                  <path d="M47 68 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
+                  <path d="M73 68 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
                 </g>
                 <g className="fx-eyes-sleepy fx-stroke">
-                  <path d="M42 63 Q48 67.5 54 63" />
-                  <path d="M66 63 Q72 67.5 78 63" />
+                  <path d="M40 69 Q47 74 54 69" />
+                  <path d="M66 69 Q73 74 80 69" />
                 </g>
               </g>
-              <path className="fx-mouth fx-mouth-w" d="M55 74 Q57.5 77.5 60 74 Q62.5 77.5 65 74" />
-              <ellipse className="fx-mouth-o" cx="60" cy="76" rx="2.6" ry="3.1" />
+              <path className="fx-mouth fx-mouth-w" d="M56.5 80 Q58.25 82.6 60 80 Q61.75 82.6 63.5 80" />
+              <ellipse className="fx-mouth-o" cx="60" cy="81.5" rx="2.2" ry="2.6" />
 
               <g className="fx-stars">
                 <g className="fx-stars-spin">

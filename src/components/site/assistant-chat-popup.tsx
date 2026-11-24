@@ -41,7 +41,7 @@ export default function AssistantChatPopup({ onClose, side = "right" }: { onClos
   return (
     <div
       role="dialog"
-      aria-label="Foxgen AI chat"
+      aria-label="Foxy, FOXGEN assistant chat"
       data-side={side}
       className={`assistant-pop fixed bottom-[86px] z-40 ${side === "left" ? "left-4" : "right-4"} flex h-[min(400px,calc(100dvh-112px))] w-[min(320px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-border bg-card text-foreground shadow-lift sm:bottom-[124px] sm:h-[min(520px,calc(100dvh-150px))] sm:w-[370px]`}
     >
@@ -51,7 +51,7 @@ export default function AssistantChatPopup({ onClose, side = "right" }: { onClos
           <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-card bg-success" />
         </span>
         <span className="min-w-0 flex-1 leading-tight">
-          <span className="title-4 block font-bold">Foxgen AI</span>
+          <span className="title-4 block font-bold">Foxy</span>
           <span className="caption-4 block text-muted-foreground">Usually replies in seconds</span>
         </span>
         <Button type="button" variant="ghost" size="icon" onClick={reset} aria-label="Start a new chat" title="New chat" className="size-9 shrink-0 text-muted-foreground">
@@ -113,7 +113,7 @@ function ChatBody({ threadId, initialMessages }: { threadId: string; initialMess
   return (
     <>
       <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-live="polite">
-        <Bubble from="assistant">Hi! 👋 How can I help you? Ask me about products, prices or stock.</Bubble>
+        <Bubble from="assistant">Hi, I'm Foxy! What can I help you with?</Bubble>
         {messages.length === 0 && (
           <div className="flex flex-wrap gap-2 pt-1">
             {SUGGESTIONS.map((s) => (

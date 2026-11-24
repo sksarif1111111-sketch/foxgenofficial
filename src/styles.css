@@ -1395,7 +1395,7 @@ body, .min-h-screen.bg-background {
 .fx-highlight { fill: var(--foxy-shell-light); opacity: 0.85; }
 .fx-visor { stroke: var(--foxy-cyan); stroke-opacity: 0.35; stroke-width: 1; }
 .fx-visor-gloss { fill: none; stroke: var(--foxy-shell-light); stroke-opacity: 0.28; stroke-width: 2.4; stroke-linecap: round; }
-.fx-blush { fill: var(--foxy-blush); opacity: 0.55; transition: opacity 200ms ease; }
+.fx-blush { fill: var(--foxy-blush); opacity: 0.7; transition: opacity 200ms ease; }
 .fx-eye { fill: var(--foxy-eye); }
 .fx-pupil-dot { fill: var(--foxy-pupil); }
 .fx-shine { fill: var(--foxy-shell-light); }
@@ -1406,8 +1406,8 @@ body, .min-h-screen.bg-background {
 .fx-mouth-o { fill: var(--foxy-cyan); opacity: 0; }
 .fx-eyes-open, .fx-eyes-happy, .fx-eyes-surprised, .fx-eyes-dizzy, .fx-eyes-sleepy, .fx-mouth-w, .fx-mouth-o { transition: opacity 200ms ease, transform 200ms ease; }
 .fx-eyes-happy, .fx-eyes-surprised, .fx-eyes-dizzy, .fx-eyes-sleepy { opacity: 0; }
-.fx-eyes-open { transform-origin: 60px 62px; }
-.fx-eye-r { transform-origin: 72px 62px; transition: transform 200ms ease; }
+.fx-eyes-open { transform-origin: 60px 68px; }
+.fx-eye-r { transform-origin: 73px 68px; transition: transform 200ms ease; }
 .robot-root[data-blink] .fx-eyes-open { transform: scaleY(0.08); transition-duration: 70ms; }
 
 /* Expressions */
@@ -1426,8 +1426,8 @@ body, .min-h-screen.bg-background {
 .robot-root[data-face="surprised"] .fx-mouth-o,
 .robot-root[data-face="dizzy"] .fx-mouth-o { opacity: 1; }
 .robot-root[data-face="dizzy"] .fx-eyes-dizzy { opacity: 1; }
-.robot-root[data-face="dizzy"] .fx-eyes-dizzy path { transform-origin: 48px 62px; animation: fx-spin 0.8s linear infinite; }
-.robot-root[data-face="dizzy"] .fx-eyes-dizzy path + path { transform-origin: 72px 62px; }
+.robot-root[data-face="dizzy"] .fx-eyes-dizzy path { transform-origin: 47px 68px; animation: fx-spin 0.8s linear infinite; }
+.robot-root[data-face="dizzy"] .fx-eyes-dizzy path + path { transform-origin: 73px 68px; }
 .robot-root[data-face="sleepy"] .fx-eyes-sleepy { opacity: 1; }
 .robot-root[data-face="sleepy"] .fx-head { transform: rotate(-6deg) translateY(2px); }
 
