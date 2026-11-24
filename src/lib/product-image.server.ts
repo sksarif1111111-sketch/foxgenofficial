@@ -1,6 +1,32 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const MODEL = "@cf/black-forest-labs/flux-1-schnell";
+const USAGE_KEY = "cf_image_usage";
+import { estimateDailyPictures, utcDay } from "@/lib/image-quota";
+
+type Usage = { day: string; count: number; limited: boolean };
+
+async function readUsage(): Promise<Usage> {
+  const { data } = await supabaseAdmin.from("app_settings").select("value").eq("key", USAGE_KEY).maybeSingle();
+  const today = utcDay(new Date());
+  try {
+    const u = JSON.parse(data?.value ?? "") as Usage;
+    if (u.day === today) return u;
+  } catch { /* fresh day */ }
+  return { day: today, count: 0, limited: false };
+}
+
+async function saveUsage(change: (u: Usage) => Usage) {
+  const next = change(await readUsage());
+  await supabaseAdmin.from("app_settings").upsert({ key: USAGE_KEY, value: JSON.stringify(next), updated_at: new Date().toISOString() });
+}
+
+/** Today's Cloudflare picture usage for Admin. */
+export async function pictureQuota() {
+  const u = await readUsage();
+  const cap = estimateDailyPictures();
+  return { used: u.count, estimatedCap: cap, left: u.limited ? 0 : Math.max(0, cap - u.count), limited: u.limited };
+}
 
 /** Generates a product picture with Cloudflare Workers AI and stores it in the private media bucket. */
 export async function generateProductImage(name: string, description?: string | null): Promise<string> {
@@ -13,15 +39,20 @@ export async function generateProductImage(name: string, description?: string | 
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, steps: 4 }),
   });
-  if (res.status === 429) throw new Error("Today's free Cloudflare picture limit is used up. Try again tomorrow.");
+  if (res.status === 429) {
+    await saveUsage((u) => ({ ...u, limited: true }));
+    throw new Error("Today's free Cloudflare picture limit is used up. Try again tomorrow.");
+  }
   const json = (await res.json().catch(() => null)) as { success?: boolean; result?: { image?: string }; errors?: Array<{ message?: string }> } | null;
   const encoded = json?.result?.image;
   if (!res.ok || !encoded) {
     const msg = json?.errors?.[0]?.message ?? `status ${res.status}`;
     console.error("Cloudflare image failed:", msg);
+    if (/limit|quota|neuron/i.test(msg)) await saveUsage((u) => ({ ...u, limited: true }));
     if (/limit|quota|neuron/i.test(msg)) throw new Error("Today's free Cloudflare picture limit is used up. Try again tomorrow.");
     throw new Error("Picture service is unavailable right now. Upload an image instead.");
   }
+  await saveUsage((u) => ({ ...u, count: u.count + 1 }));
   const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
   const key = `products/${crypto.randomUUID()}.jpg`;
   const up = await supabaseAdmin.storage.from("store-media").upload(key, bytes, { contentType: "image/jpeg" });

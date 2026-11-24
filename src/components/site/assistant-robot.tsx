@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ASSISTANT_OPEN_EVENT } from "@/lib/assistant-events";
 import { canFall, canPoint, clampX, hasRoomToFall, pickTarget, pointDirection, robotWidth, walkDuration } from "@/lib/robot-motion";
 
@@ -9,8 +9,10 @@ const PRIMARY = "How can I help you?";
 const EXTRA = ["Hey there!", "Need a little help?", "I'm here for you!", "Let's find something!", "Look at my AI tools!"];
 const POINT_LINES = ["Look at this!", "Check this one out!", "Have a look!"];
 
-type Act = "idle" | "walk" | "look" | "wave" | "point" | "stumble" | "fall" | "fallen" | "getup" | "shake" | "greet";
-const BUSY_ACTS: Act[] = ["stumble", "fall", "fallen", "getup", "shake", "greet"];
+type Act = "idle" | "walk" | "look" | "wave" | "point" | "stumble" | "fall" | "fallen" | "getup" | "shake" | "greet" | "held" | "land" | "dizzy";
+const BUSY_ACTS: Act[] = ["stumble", "fall", "fallen", "getup", "shake", "greet", "held", "land", "dizzy"];
+/** Dropped from higher than this (px) it lands dizzy with stars circling its head. */
+const DIZZY_DROP = 110;
 type Token = { cancelled: boolean };
 
 /**
@@ -24,6 +26,9 @@ export function AssistantRobot() {
   const layerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const xRef = useRef(0);
+  const yRef = useRef(0);
+  const dragRef = useRef<{ px: number; py: number; x: number; y: number; moved: boolean } | null>(null);
+  const suppressClickRef = useRef(false);
   const lastFallRef = useRef<number | null>(null);
   const startedRef = useRef(0);
   const extraRef = useRef(0);
@@ -42,15 +47,17 @@ export function AssistantRobot() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatSide, setChatSide] = useState<"left" | "right">("right");
   const [pointNonce, setPointNonce] = useState(0);
+  const [dragging, setDragging] = useState(false);
   actRef.current = act;
 
   /** Move the layer; duration 0 jumps. */
-  const moveTo = useCallback((x: number, ms: number) => {
+  const moveTo = useCallback((x: number, ms: number, y = 0) => {
     const el = layerRef.current;
     if (!el) return;
     xRef.current = x;
+    yRef.current = y;
     el.style.transition = ms > 0 ? `transform ${ms}ms linear` : "none";
-    el.style.transform = `translate3d(${x}px,0,0)`;
+    el.style.transform = `translate3d(${x}px,${y}px,0)`;
     const vw = window.innerWidth;
     const centre = x + robotWidth(vw) / 2;
     setAlign(centre < vw * 0.3 ? "left" : centre > vw * 0.7 ? "right" : "center");
@@ -61,7 +68,7 @@ export function AssistantRobot() {
     const el = layerRef.current;
     if (!el) return;
     const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
-    moveTo(Number.isFinite(m.m41) ? m.m41 : xRef.current, 0);
+    moveTo(Number.isFinite(m.m41) ? m.m41 : xRef.current, 0, Number.isFinite(m.m42) ? m.m42 : yRef.current);
   }, [moveTo]);
 
   // Place it in the bottom-right corner after mount and keep it on screen when the window resizes.
@@ -82,7 +89,7 @@ export function AssistantRobot() {
     };
   }, [moveTo]);
 
-  const paused = !mounted || hidden || hover || chatOpen;
+  const paused = !mounted || hidden || hover || chatOpen || dragging;
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
 
@@ -258,7 +265,93 @@ export function AssistantRobot() {
     return () => window.removeEventListener("keydown", onKey);
   }, [chatOpen, closeChat]);
 
+  /** Let go: fall with gravity, squash on landing, and get dizzy after a big drop. */
+  const drop = useCallback(() => {
+    const height = -yRef.current;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const later = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+    const fall = () =>
+      new Promise<void>((resolve) => {
+        if (reduced || height <= 0) {
+          moveTo(xRef.current, 0, 0);
+          return resolve();
+        }
+        let v = 0;
+        let last = performance.now();
+        const step = (t: number) => {
+          const dt = Math.min((t - last) / 1000, 0.05);
+          last = t;
+          v += 2600 * dt;
+          const y = Math.min(0, yRef.current + v * dt);
+          moveTo(xRef.current, 0, y);
+          if (y >= 0) resolve();
+          else requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      });
+    void (async () => {
+      setBubble(null);
+      await fall();
+      if (height > DIZZY_DROP && !reduced) {
+        setAct("land");
+        await later(320);
+        setAct("dizzy");
+        setBubble("Whoa… so dizzy!");
+        await later(2800);
+        setAct("shake");
+        setBubble(null);
+        await later(700);
+        setAct("greet");
+        setBubble(PRIMARY);
+        await later(2600);
+      } else {
+        setAct("land");
+        await later(380);
+      }
+      setBubble(null);
+      setAct("idle");
+      setDragging(false);
+    })();
+  }, [moveTo]);
+
+  const onPointerDown = (e: PointerEvent<HTMLButtonElement>) => {
+    if (e.button !== 0) return;
+    dragRef.current = { px: e.clientX, py: e.clientY, x: xRef.current, y: yRef.current, moved: false };
+  };
+  const onPointerMove = (e: PointerEvent<HTMLButtonElement>) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const dx = e.clientX - d.px;
+    const dy = e.clientY - d.py;
+    if (!d.moved) {
+      if (Math.hypot(dx, dy) < 7) return;
+      d.moved = true;
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      setDragging(true);
+      setHover(false);
+      window.setTimeout(() => setAct("held"), 0);
+      setBubble(null);
+    }
+    const vw = window.innerWidth;
+    const w = robotWidth(vw);
+    const x = Math.min(vw - w - 4, Math.max(4, d.x + dx));
+    const y = Math.min(0, Math.max(-(window.innerHeight - w * 1.6), d.y + dy));
+    setDir(dx >= 0 ? 1 : -1);
+    moveTo(x, 0, y);
+  };
+  const onPointerUp = () => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    if (!d?.moved) return;
+    suppressClickRef.current = true;
+    drop();
+  };
+
   const toggleChat = () => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
     if (!chatOpen) {
       const vw = window.innerWidth;
       setChatSide(xRef.current + robotWidth(vw) / 2 < vw / 2 ? "left" : "right");
@@ -298,13 +391,28 @@ export function AssistantRobot() {
           onClick={toggleChat}
           onPointerEnter={(e) => e.pointerType === "mouse" && setHover(true)}
           onPointerLeave={() => setHover(false)}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
           aria-label={chatOpen ? "Close Foxgen AI chat" : "Ask Foxgen AI: open the chat"}
           aria-expanded={chatOpen}
           title="Ask Foxgen AI"
-          className="robot-hit pointer-events-auto block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="robot-hit pointer-events-auto block touch-none select-none rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="robot-facing block" style={{ transform: `scaleX(${dir})` }}>
-            <RobotSvg />
+          <span className="robot-stage block">
+            <span className="robot-facing block" style={{ transform: `rotateY(${dir === 1 ? 0 : 180}deg)` }}>
+              <span className="robot-sway block">
+                {/* Fur slices give the body real thickness when it turns. */}
+                {[-4, -2, 0, 2, 4].map((z) => (
+                  <svg key={z} viewBox="0 0 120 150" className="robot-slice" style={{ transform: `translateZ(${z}px)` }} aria-hidden="true">
+                    <path d="M60 14 C83 14 92 31 92 52 C92 64 97 76 97 96 C97 121 83 134 60 134 C37 134 23 121 23 96 C23 76 28 64 28 52 C28 31 37 14 60 14 Z" />
+                  </svg>
+                ))}
+                <span className="robot-face-front block"><RobotSvg /></span>
+                <span className="robot-face-back block"><RobotSvg /></span>
+              </span>
+            </span>
           </span>
         </button>
       </div>
@@ -427,6 +535,14 @@ function RobotSvg() {
             <ellipse cx="80" cy="101" rx="10" ry="12" fill="url(#rb-fur-g)" filter="url(#rb-fur)" transform="rotate(-30 80 101)" />
             <ellipse className="rb-finger" cx="88" cy="114" rx="3" ry="5.5" fill="url(#rb-fur-g)" transform="rotate(-24 88 114)" />
           </g>
+        </g>
+      </g>
+
+      <g className="rb-halo">
+        <g className="rb-halo-spin">
+          <path d="M60 -6 l1.6 3.6 3.9 .5 -2.8 2.6 .7 3.8 -3.4 -1.9 -3.4 1.9 .7 -3.8 -2.8 -2.6 3.9 -.5 z" />
+          <path d="M84 6 l1.3 2.9 3.1 .4 -2.3 2.1 .6 3.1 -2.7 -1.5 -2.7 1.5 .6 -3.1 -2.3 -2.1 3.1 -.4 z" />
+          <path d="M34 6 l1.3 2.9 3.1 .4 -2.3 2.1 .6 3.1 -2.7 -1.5 -2.7 1.5 .6 -3.1 -2.3 -2.1 3.1 -.4 z" />
         </g>
       </g>
 

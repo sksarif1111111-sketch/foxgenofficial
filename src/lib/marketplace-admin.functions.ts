@@ -15,3 +15,6 @@ export const marketplaceGenerateImage=createServerFn({method:'POST'}).middleware
 export const marketplaceFillMissingImages=createServerFn({method:'POST'}).middleware([requireAdminPassword]).handler(async()=>{
   const {autoFillProductImages}=await import('./product-image.server');return autoFillProductImages(4);
 });
+export const marketplacePictureQuota=createServerFn({method:'POST'}).middleware([requireAdminPassword]).handler(async()=>{
+  const {pictureQuota}=await import('./product-image.server');return pictureQuota();
+});

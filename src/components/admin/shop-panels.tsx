@@ -1,6 +1,7 @@
 import { walletUsd } from "@/lib/wallet-rate";
 import { InventoryManager } from "@/components/admin/inventory-manager";
-import { marketplaceAssignInventory, marketplaceGenerateImage, marketplaceFillMissingImages } from "@/lib/marketplace-admin.functions";
+import { marketplaceAssignInventory, marketplaceGenerateImage, marketplaceFillMissingImages, marketplacePictureQuota } from "@/lib/marketplace-admin.functions";
+import { formatReset, msUntilReset } from "@/lib/image-quota";
 import { catalogCategories } from "@/lib/hubcatalog.functions";
 import { Button } from "@/components/ui/button";
 import { DeliveryCountdown } from "@/components/admin/delivery-countdown";
@@ -538,6 +539,11 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
   const fGenerateImage = useServerFn(marketplaceGenerateImage);
   const [generating,setGenerating] = useState(false);
   const fFillImages = useServerFn(marketplaceFillMissingImages);
+  const fQuota = useServerFn(marketplacePictureQuota);
+  const [quota, setQuota] = useState<{ used: number; estimatedCap: number; left: number; limited: boolean } | null>(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  const refreshQuota = useCallback(() => { void fQuota().then(setQuota).catch(() => undefined); }, [fQuota]);
+  useEffect(() => { refreshQuota(); const t = window.setInterval(() => setNowTick(Date.now()), 60000); return () => window.clearInterval(t); }, [refreshQuota]);
   const [categories,setCategories] = useState<Array<{id:string;name:string}>>([]);
   const fSave = useServerFn(shopSaveProduct);
   const fDuplicate = useServerFn(shopDuplicateProduct);
@@ -671,8 +677,14 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
 
   return (
     <section className="space-y-4">
-      <div className="flex justify-end gap-2">
-        <button type="button" className={ghostBtn} disabled={generating} onClick={() => { setGenerating(true); void act(async () => { const r = await fFillImages(); notify(`${r.made} picture(s) created.`); }, "Missing pictures checked.").finally(() => setGenerating(false)); }}>{generating ? "Creating pictures…" : "Create missing pictures"}</button>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {quota && (
+          <p className="mr-auto rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+            Cloudflare pictures today: <b className="text-foreground">{quota.used}</b> used ·{" "}
+            <b className={quota.left === 0 ? "text-destructive" : "text-foreground"}>{quota.limited ? "limit reached" : `about ${quota.left} left`}</b> of ~{quota.estimatedCap} free · resets in {formatReset(msUntilReset(new Date(nowTick)))}
+          </p>
+        )}
+        <button type="button" className={ghostBtn} disabled={generating} onClick={() => { setGenerating(true); void act(async () => { const r = await fFillImages(); notify(`${r.made} picture(s) created.`); }, "Missing pictures checked.").finally(() => { setGenerating(false); refreshQuota(); }); }}>{generating ? "Creating pictures…" : "Create missing pictures"}</button>
         <button type="button" className={primaryBtn} onClick={() => { setDraft({ ...emptyProduct }); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>
           + Add Product
         </button>
