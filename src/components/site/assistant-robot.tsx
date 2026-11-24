@@ -6,7 +6,7 @@ import { canFall, canPoint, clampX, hasRoomToFall, pickTarget, pointDirection, r
 const AssistantChatPopup = lazy(() => import("@/components/site/assistant-chat-popup"));
 
 const PRIMARY = "How can I help you?";
-const EXTRA = ["Hey there!", "Need a little help?", "I'm here for you!", "Let's find something!"];
+const EXTRA = ["Hey there!", "Need a little help?", "I'm here for you!", "Let's find something!", "Look at my AI tools!"];
 const POINT_LINES = ["Look at this!", "Check this one out!", "Have a look!"];
 
 type Act = "idle" | "walk" | "look" | "wave" | "point" | "stumble" | "fall" | "fallen" | "getup" | "shake" | "greet";
@@ -314,99 +314,122 @@ export function AssistantRobot() {
 
 function RobotSvg() {
   return (
-    <svg viewBox="0 0 120 150" className="robot-svg block h-auto w-[58px] sm:w-[84px]" aria-hidden="true">
+    <svg viewBox="0 0 120 150" className="robot-svg block h-auto w-[62px] sm:w-[90px]" aria-hidden="true">
       <defs>
-        <radialGradient id="rb-white" cx="0.35" cy="0.28" r="0.85">
-          <stop offset="0" style={{ stopColor: "var(--robot-white)" }} />
-          <stop offset="0.7" style={{ stopColor: "var(--robot-white)" }} />
-          <stop offset="1" style={{ stopColor: "var(--robot-white-shade)" }} />
+        <radialGradient id="rb-fur-g" cx="0.4" cy="0.3" r="0.85">
+          <stop offset="0" style={{ stopColor: "var(--yeti-fur-light)" }} />
+          <stop offset="0.65" style={{ stopColor: "var(--yeti-fur)" }} />
+          <stop offset="1" style={{ stopColor: "var(--yeti-fur-shade)" }} />
         </radialGradient>
-        <radialGradient id="rb-blue" cx="0.35" cy="0.3" r="0.8">
+        <radialGradient id="rb-face-g" cx="0.45" cy="0.35" r="0.8">
+          <stop offset="0" style={{ stopColor: "var(--yeti-face-light)" }} />
+          <stop offset="1" style={{ stopColor: "var(--yeti-face)" }} />
+        </radialGradient>
+        <linearGradient id="rb-blue" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" style={{ stopColor: "var(--robot-blue-light)" }} />
           <stop offset="1" style={{ stopColor: "var(--robot-blue)" }} />
-        </radialGradient>
-        <linearGradient id="rb-visor" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" style={{ stopColor: "var(--robot-visor-top)" }} />
-          <stop offset="1" style={{ stopColor: "var(--robot-visor)" }} />
         </linearGradient>
+        <filter id="rb-fur" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" />
+          <feDisplacementMap in="SourceGraphic" scale="3.2" />
+        </filter>
       </defs>
 
-      <ellipse className="rb-shadow" cx="60" cy="146" rx="22" ry="3.6" />
+      <ellipse className="rb-shadow" cx="60" cy="146" rx="24" ry="3.6" />
 
-      {/* Little dust puffs when it lands */}
       <g className="rb-dust">
         <circle cx="96" cy="142" r="4" />
         <circle cx="118" cy="140" r="3" />
         <circle cx="140" cy="143" r="3.6" />
       </g>
 
+      {/* Floating music notes from the headphones */}
+      <g className="rb-notes">
+        <g className="rb-note rb-note-1"><ellipse cx="14" cy="34" rx="3" ry="2.3" transform="rotate(-20 14 34)" /><rect x="16" y="22" width="1.3" height="12" rx="0.6" /></g>
+        <g className="rb-note rb-note-2"><ellipse cx="104" cy="22" rx="3" ry="2.3" transform="rotate(-20 104 22)" /><rect x="106" y="10" width="1.3" height="12" rx="0.6" /><path d="M106.6 10 q4 1 4 5" fill="none" strokeWidth="1.3" className="rb-note-flag" /></g>
+      </g>
+
       <g className="rb-figure">
         <g className="rb-bob">
-          {/* Feet */}
+          {/* Stubby fluffy feet */}
           <g className="rb-leg-l">
-            <rect x="46" y="126" width="9" height="11" rx="4.5" fill="url(#rb-white)" className="rb-line" />
-            <ellipse cx="50" cy="139" rx="8.5" ry="5" fill="url(#rb-blue)" />
+            <ellipse cx="47" cy="137" rx="10" ry="8" fill="url(#rb-fur-g)" filter="url(#rb-fur)" />
           </g>
           <g className="rb-leg-r">
-            <rect x="65" y="126" width="9" height="11" rx="4.5" fill="url(#rb-white)" className="rb-line" />
-            <ellipse cx="70" cy="139" rx="8.5" ry="5" fill="url(#rb-blue)" />
+            <ellipse cx="73" cy="137" rx="10" ry="8" fill="url(#rb-fur-g)" filter="url(#rb-fur)" />
           </g>
 
-          {/* Round body with a glowing heart */}
-          <ellipse cx="60" cy="113" rx="21" ry="18" fill="url(#rb-white)" className="rb-line" />
-          <ellipse cx="60" cy="117" rx="11.5" ry="9" fill="url(#rb-blue)" />
-          <path className="rb-heart" d="M60 122 C54 117.5 54.5 112.5 57.6 112.5 C59 112.5 60 113.6 60 114.6 C60 113.6 61 112.5 62.4 112.5 C65.5 112.5 66 117.5 60 122 Z" />
-          <ellipse cx="51" cy="104" rx="6" ry="2.4" className="rb-gloss" />
+          {/* One round fluffy body */}
+          <path
+            d="M60 12 C84 12 94 30 94 52 C94 64 99 76 99 96 C99 122 84 136 60 136 C36 136 21 122 21 96 C21 76 26 64 26 52 C26 30 36 12 60 12 Z"
+            fill="url(#rb-fur-g)"
+            filter="url(#rb-fur)"
+          />
 
-          {/* Big round head */}
           <g className="rb-head">
-            <path d="M23 46 L27 12 L50 30 Z" fill="url(#rb-blue)" strokeLinejoin="round" className="rb-ear" />
-            <path d="M97 46 L93 12 L70 30 Z" fill="url(#rb-blue)" strokeLinejoin="round" className="rb-ear" />
-            <path d="M29 37 L30 21 L42 30 Z" className="rb-ear-inner" />
-            <path d="M91 37 L90 21 L78 30 Z" className="rb-ear-inner" />
-
-            <rect x="58.8" y="14" width="2.4" height="11" rx="1.2" fill="url(#rb-blue)" />
-            <circle cx="60" cy="12" r="4.6" className="rb-antenna" />
-
-            <rect x="16" y="22" width="88" height="74" rx="37" fill="url(#rb-white)" className="rb-line" />
-            <rect x="26" y="36" width="68" height="48" rx="24" fill="url(#rb-visor)" />
+            {/* Face window */}
+            <ellipse cx="60" cy="52" rx="24" ry="21" fill="url(#rb-face-g)" />
+            <ellipse cx="51" cy="40" rx="8" ry="3" className="rb-gloss" transform="rotate(-12 51 40)" />
 
             <g className="rb-eyes">
               <g className="rb-eyes-open">
-                <ellipse className="rb-eye" cx="46" cy="59" rx="8.5" ry="10.5" />
-                <ellipse className="rb-eye" cx="74" cy="59" rx="8.5" ry="10.5" />
-                <circle cx="49" cy="54.5" r="3.2" className="rb-eye-shine" />
-                <circle cx="77" cy="54.5" r="3.2" className="rb-eye-shine" />
-                <circle cx="43.5" cy="63" r="1.5" className="rb-eye-shine" />
-                <circle cx="71.5" cy="63" r="1.5" className="rb-eye-shine" />
+                <ellipse className="rb-eye" cx="50" cy="52" rx="3.3" ry="3.8" />
+                <ellipse className="rb-eye" cx="70" cy="52" rx="3.3" ry="3.8" />
+                <circle cx="51.2" cy="50.6" r="1.1" className="rb-eye-shine" />
+                <circle cx="71.2" cy="50.6" r="1.1" className="rb-eye-shine" />
               </g>
-              <g className="rb-eyes-squint" fill="none" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M40 53 L50 59 L40 65" />
-                <path d="M80 53 L70 59 L80 65" />
+              <g className="rb-eyes-squint" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M47 49 L52 52 L47 55" />
+                <path d="M73 49 L68 52 L73 55" />
               </g>
             </g>
+            <path className="rb-mouth rb-mouth-smile" d="M56 60 Q60 63.5 64 60" fill="none" strokeWidth="1.8" strokeLinecap="round" />
+            <path className="rb-mouth-open" d="M55.5 59 Q60 66 64.5 59 Z" />
+            <ellipse className="rb-mouth-o" cx="60" cy="61" rx="2.2" ry="2.6" />
+            <ellipse cx="43" cy="59" rx="4.6" ry="2.8" className="rb-cheek" />
+            <ellipse cx="77" cy="59" rx="4.6" ry="2.8" className="rb-cheek" />
 
-            <path className="rb-mouth rb-mouth-smile" d="M55 72 Q60 76.5 65 72" fill="none" strokeWidth="2.6" strokeLinecap="round" />
-            <path className="rb-mouth-open" d="M53.5 70.5 Q60 80 66.5 70.5 Z" />
-            <ellipse className="rb-mouth-o" cx="60" cy="74" rx="3" ry="3.6" />
-            <ellipse cx="34" cy="72" rx="4.5" ry="2.6" className="rb-cheek" />
-            <ellipse cx="86" cy="72" rx="4.5" ry="2.6" className="rb-cheek" />
-            <ellipse cx="38" cy="30" rx="11" ry="4" className="rb-gloss" transform="rotate(-18 38 30)" />
+            {/* Headphones */}
+            <path d="M28 50 C28 18 92 18 92 50" fill="none" stroke="url(#rb-blue)" strokeWidth="5" strokeLinecap="round" />
+            <path d="M33 34 C42 22 78 22 87 34" fill="none" className="rb-band-shine" strokeWidth="1.4" strokeLinecap="round" />
+            <rect x="20" y="42" width="13" height="22" rx="6.5" fill="url(#rb-blue)" />
+            <rect x="87" y="42" width="13" height="22" rx="6.5" fill="url(#rb-blue)" />
+            <rect x="23" y="46" width="3" height="13" rx="1.5" className="rb-cup-shine" />
+            <rect x="90" y="46" width="3" height="13" rx="1.5" className="rb-cup-shine" />
           </g>
 
-          {/* Tiny hands, drawn last so a wave shows in front of the head */}
+          {/* The AI tool it shows off; icons take turns */}
+          <g className="rb-tool">
+            <circle cx="60" cy="100" r="17" fill="url(#rb-blue)" />
+            <circle cx="60" cy="100" r="17" className="rb-tool-ring" fill="none" strokeWidth="1.2" />
+            <g className="rb-tool-icon rb-tool-1" fill="none" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M50 94 h20 a3 3 0 0 1 3 3 v8 a3 3 0 0 1 -3 3 h-12 l-5 4 v-4 h-3 a3 3 0 0 1 -3 -3 v-8 a3 3 0 0 1 3 -3 z" />
+              <circle cx="55" cy="101" r="0.6" /><circle cx="60" cy="101" r="0.6" /><circle cx="65" cy="101" r="0.6" />
+            </g>
+            <g className="rb-tool-icon rb-tool-2">
+              <path d="M60 88 C61.5 96 64 98.5 72 100 C64 101.5 61.5 104 60 112 C58.5 104 56 101.5 48 100 C56 98.5 58.5 96 60 88 Z" />
+              <path d="M70 89 c.5 2.5 1.2 3.2 3.6 3.6 c-2.4 .4 -3.1 1.1 -3.6 3.6 c-.5 -2.5 -1.2 -3.2 -3.6 -3.6 c2.4 -.4 3.1 -1.1 3.6 -3.6 z" />
+            </g>
+            <g className="rb-tool-icon rb-tool-3" fill="none" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M54 93 L47 100 L54 107" /><path d="M66 93 L73 100 L66 107" /><path d="M62.5 91 L57.5 109" />
+            </g>
+            <g className="rb-tool-icon rb-tool-4" fill="none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="48" y="91" width="24" height="18" rx="3.5" />
+              <path d="M49 106 L56 99 L61 104 L64 101 L71 108" /><circle cx="66" cy="96" r="2" />
+            </g>
+          </g>
+
+          {/* Fluffy arms hugging the tool */}
           <g className="rb-arm-l">
-            <ellipse cx="37" cy="113" rx="6" ry="9.5" fill="url(#rb-blue)" transform="rotate(24 37 113)" />
+            <ellipse cx="40" cy="101" rx="10" ry="12" fill="url(#rb-fur-g)" filter="url(#rb-fur)" transform="rotate(30 40 101)" />
           </g>
           <g className="rb-arm-r">
-            <ellipse cx="83" cy="113" rx="6" ry="9.5" fill="url(#rb-blue)" transform="rotate(-24 83 113)" />
-            <ellipse className="rb-finger" cx="89" cy="126.5" rx="2.6" ry="5.6" fill="url(#rb-blue)" transform="rotate(-24 89 126.5)" />
+            <ellipse cx="80" cy="101" rx="10" ry="12" fill="url(#rb-fur-g)" filter="url(#rb-fur)" transform="rotate(-30 80 101)" />
+            <ellipse className="rb-finger" cx="88" cy="114" rx="3" ry="5.5" fill="url(#rb-fur-g)" transform="rotate(-24 88 114)" />
           </g>
-
         </g>
       </g>
 
-      {/* Cartoon stars circling its head while it lies on the floor */}
       <g className="rb-stars">
         <g transform="translate(0 -52)">
         <path d="M150 92 l2 4.5 4.8 .6 -3.5 3.3 .9 4.8 -4.2 -2.3 -4.2 2.3 .9 -4.8 -3.5 -3.3 4.8 -.6 z" />
