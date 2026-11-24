@@ -9,8 +9,10 @@ const PRIMARY = "How can I help you?";
 const EXTRA = ["Hey there!", "Need a little help?", "I'm here for you!", "Let's find something!", "Look at my AI tools!"];
 const POINT_LINES = ["Look at this!", "Check this one out!", "Have a look!"];
 
-type Act = "idle" | "walk" | "look" | "wave" | "point" | "stumble" | "fall" | "fallen" | "getup" | "shake" | "greet" | "held" | "land" | "dizzy";
-const BUSY_ACTS: Act[] = ["stumble", "fall", "fallen", "getup", "shake", "greet", "held", "land", "dizzy"];
+type Act = "idle" | "walk" | "look" | "wave" | "point" | "stumble" | "fall" | "fallen" | "getup" | "shake" | "greet" | "held" | "land" | "dizzy" | "melt" | "puddle" | "reform";
+const BUSY_ACTS: Act[] = ["stumble", "fall", "fallen", "getup", "shake", "greet", "held", "land", "dizzy", "melt", "puddle", "reform"];
+/** Dropped from higher than this (px) it melts into a puddle and pops back up. */
+const MELT_DROP = 240;
 /** Dropped from higher than this (px) it lands dizzy with stars circling its head. */
 const DIZZY_DROP = 110;
 type Token = { cancelled: boolean };
@@ -292,7 +294,17 @@ export function AssistantRobot() {
     void (async () => {
       setBubble(null);
       await fall();
-      if (height > DIZZY_DROP && !reduced) {
+      if (height > MELT_DROP && !reduced) {
+        setAct("melt");
+        await later(700);
+        setAct("puddle");
+        await later(900);
+        setAct("reform");
+        await later(900);
+        setAct("greet");
+        setBubble("Phew, back in shape!");
+        await later(2400);
+      } else if (height > DIZZY_DROP && !reduced) {
         setAct("land");
         await later(320);
         setAct("dizzy");
@@ -401,16 +413,15 @@ export function AssistantRobot() {
           className="robot-hit pointer-events-auto block touch-none select-none rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span className="robot-stage block">
-            <span className="robot-facing block" style={{ transform: `rotateY(${dir === 1 ? 0 : 180}deg)` }}>
+            <span className="robot-facing block" style={{ transform: `rotateY(${dir === 1 ? 22 : -22}deg)` }}>
               <span className="robot-sway block">
                 {/* Fur slices give the body real thickness when it turns. */}
                 {[-4, -2, 0, 2, 4].map((z) => (
                   <svg key={z} viewBox="0 0 120 150" className="robot-slice" style={{ transform: `translateZ(${z}px)` }} aria-hidden="true">
-                    <path d="M60 14 C83 14 92 31 92 52 C92 64 97 76 97 96 C97 121 83 134 60 134 C37 134 23 121 23 96 C23 76 28 64 28 52 C28 31 37 14 60 14 Z" />
+                    <ellipse cx="60" cy="88" rx="44" ry="45" />
                   </svg>
                 ))}
                 <span className="robot-face-front block"><RobotSvg /></span>
-                <span className="robot-face-back block"><RobotSvg /></span>
               </span>
             </span>
           </span>
@@ -422,7 +433,7 @@ export function AssistantRobot() {
 
 function RobotSvg() {
   return (
-    <svg viewBox="0 0 120 150" className="robot-svg block h-auto w-[62px] sm:w-[90px]" aria-hidden="true">
+    <svg viewBox="0 0 120 150" className="robot-svg block h-auto w-[54px] sm:w-[76px]" aria-hidden="true">
       <defs>
         <radialGradient id="rb-fur-g" cx="0.4" cy="0.3" r="0.85">
           <stop offset="0" style={{ stopColor: "var(--yeti-fur-light)" }} />
@@ -443,6 +454,7 @@ function RobotSvg() {
         </filter>
       </defs>
 
+      <ellipse className="rb-puddle" cx="60" cy="140" rx="40" ry="7" />
       <ellipse className="rb-shadow" cx="60" cy="146" rx="24" ry="3.6" />
 
       <g className="rb-dust">
@@ -461,18 +473,14 @@ function RobotSvg() {
         <g className="rb-bob">
           {/* Stubby fluffy feet */}
           <g className="rb-leg-l">
-            <ellipse cx="47" cy="137" rx="10" ry="8" fill="url(#rb-fur-g)" filter="url(#rb-fur)" />
+            <ellipse cx="48" cy="137" rx="9" ry="5" fill="url(#rb-fur-g)" filter="url(#rb-fur)" />
           </g>
           <g className="rb-leg-r">
-            <ellipse cx="73" cy="137" rx="10" ry="8" fill="url(#rb-fur-g)" filter="url(#rb-fur)" />
+            <ellipse cx="72" cy="137" rx="9" ry="5" fill="url(#rb-fur-g)" filter="url(#rb-fur)" />
           </g>
 
           {/* One round fluffy body */}
-          <path
-            d="M60 12 C84 12 94 30 94 52 C94 64 99 76 99 96 C99 122 84 136 60 136 C36 136 21 122 21 96 C21 76 26 64 26 52 C26 30 36 12 60 12 Z"
-            fill="url(#rb-fur-g)"
-            filter="url(#rb-fur)"
-          />
+          <ellipse cx="60" cy="88" rx="46" ry="47" fill="url(#rb-fur-g)" filter="url(#rb-fur)" />
 
           <g className="rb-head">
             {/* Face window */}
@@ -529,10 +537,10 @@ function RobotSvg() {
 
           {/* Fluffy arms hugging the tool */}
           <g className="rb-arm-l">
-            <ellipse cx="40" cy="101" rx="10" ry="12" fill="url(#rb-fur-g)" filter="url(#rb-fur)" transform="rotate(30 40 101)" />
+            <ellipse cx="36" cy="102" rx="7.5" ry="8.5" fill="url(#rb-fur-g)" filter="url(#rb-fur)" transform="rotate(30 40 101)" />
           </g>
           <g className="rb-arm-r">
-            <ellipse cx="80" cy="101" rx="10" ry="12" fill="url(#rb-fur-g)" filter="url(#rb-fur)" transform="rotate(-30 80 101)" />
+            <ellipse cx="84" cy="102" rx="7.5" ry="8.5" fill="url(#rb-fur-g)" filter="url(#rb-fur)" transform="rotate(-30 80 101)" />
             <ellipse className="rb-finger" cx="88" cy="114" rx="3" ry="5.5" fill="url(#rb-fur-g)" transform="rotate(-24 88 114)" />
           </g>
         </g>

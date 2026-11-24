@@ -3,8 +3,8 @@
  * Pure helpers so the rules (stay on screen, shorter walks on phones, fall only now and then) are testable.
  */
 export const ROBOT_MOTION = {
-  desktopWidth: 84,
-  mobileWidth: 58,
+  desktopWidth: 76,
+  mobileWidth: 54,
   edge: 12,
   mobileBreakpoint: 640,
   /** Phones only walk in the right part of the screen. */
