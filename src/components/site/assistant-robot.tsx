@@ -1,56 +1,107 @@
 import { lazy, Suspense, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
-import { ASSISTANT_OPEN_EVENT } from "@/lib/assistant-events";
-import { canFall, canPoint, clampX, hasRoomToFall, pickTarget, pointDirection, robotWidth, walkDuration } from "@/lib/robot-motion";
+import { ASSISTANT_OPEN_EVENT, ASSISTANT_SIGNAL_EVENT, type AssistantSignal } from "@/lib/assistant-events";
+import { avoidSpans, canChat, canFall, canPoint, clampX, pickTarget, pointDirection, ROBOT_MOTION, robotWidth, walkDuration } from "@/lib/robot-motion";
 
 /** Loaded only when the visitor first opens the chat, so pages stay light. */
 const AssistantChatPopup = lazy(() => import("@/components/site/assistant-chat-popup"));
 
-const PRIMARY = "How can I help you?";
-const EXTRA = ["Hey there!", "Need a little help?", "I'm here for you!", "Let's find something!", "Look at my AI tools!"];
-const POINT_LINES = ["Look at this!", "Check this one out!", "Have a look!"];
+const HOVER_LINE = "Hi! Need help? 💙";
+const HELLO = "Hi! I'm Foxy 🦊";
+const LINES = [HELLO, "Need help choosing? 💙", "Ask me anything!", "Instant delivery after approval ⚡"];
+const POINT_LINE = "This one is popular! 👀";
+const PRODUCT_LINE = "Want to know more about this? Ask me!";
+const CHECKOUT_LINE = "After payment, upload your screenshot + transaction ID. I'll keep it safe! 📸";
+const SPLASH_LINE = "Oops! I'm okay 😄 How can I help you?";
+const DIZZY_LINE = "Whoa… so dizzy!";
+const MINI_KEY = "foxy-minimized";
+const FALL_KEY = "foxy-last-drop";
+const START_KEY = "foxy-started";
 
-type Act = "idle" | "walk" | "look" | "wave" | "point" | "stumble" | "fall" | "fallen" | "getup" | "shake" | "greet" | "held" | "land" | "dizzy" | "melt" | "puddle" | "reform";
-const BUSY_ACTS: Act[] = ["stumble", "fall", "fallen", "getup", "shake", "greet", "held", "land", "dizzy", "melt", "puddle", "reform"];
-/** Dropped from higher than this (px) it melts into a puddle and pops back up. */
-const MELT_DROP = 240;
-/** Dropped from higher than this (px) it lands dizzy with stars circling its head. */
-const DIZZY_DROP = 110;
+type Act =
+  | "idle" | "walk" | "turn" | "wave" | "point" | "sit" | "held" | "land" | "drop" | "splash" | "puddle" | "reform" | "dizzy" | "tail" | "juggle" | "peek";
+type Face = "normal" | "happy" | "curious" | "surprised" | "dizzy" | "sleepy";
+const BUSY_ACTS: Act[] = ["turn", "held", "land", "drop", "splash", "puddle", "reform", "dizzy", "tail", "juggle", "peek"];
+/** Dropped by hand from higher than this (px) it splashes into water and reforms. */
+const SPLASH_DROP = 200;
+/** Dropped by hand from higher than this (px) it lands dizzy. */
+const DIZZY_DROP = 90;
 type Token = { cancelled: boolean };
 
+const AVOID_SELECTOR = "[data-robot-avoid], button[type=submit]";
+
+function readNum(storage: Storage, key: string) {
+  const v = Number(storage.getItem(key));
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
+/** Horizontal spans of buttons near the bottom of the screen that Foxy must never cover. */
+function blockedSpans(): Array<[number, number]> {
+  const vh = window.innerHeight;
+  const out: Array<[number, number]> = [];
+  document.querySelectorAll(AVOID_SELECTOR).forEach((el) => {
+    if (el.closest(".robot-root, .assistant-pop")) return;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.bottom < vh - ROBOT_MOTION.avoidBand || r.top > vh) return;
+    out.push([r.left, r.right]);
+  });
+  return out;
+}
+
 /**
- * Foxgen's little walking robot. It strolls along the bottom of the screen, looks around, waves,
- * and now and then trips, plops down, wiggles back up and asks "How can I help you?".
- * When a product card comes into view it stops and points at it with its little finger.
- * Clicking it opens the chat pop-up; walking pauses while the chat is open, the tab is hidden
- * or the pointer rests on it. Reduced motion keeps a still robot in the corner.
+ * Foxy, FOXGEN's baby fox-robot. It waddles along the bottom of the screen, blinks, follows the cursor
+ * with its eyes, points at products, sometimes drops in from the top and splashes into jelly-water before
+ * popping back. Clicking it opens the chat pop-up; motion pauses while the chat is open, the tab is hidden,
+ * the pointer rests on it or it is asleep. Reduced motion (and low-end devices for the drop) keep it calm.
  */
 export function AssistantRobot() {
+  const rootRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const xRef = useRef(0);
   const yRef = useRef(0);
+  const dirRef = useRef<1 | -1>(-1);
   const dragRef = useRef<{ px: number; py: number; x: number; y: number; moved: boolean } | null>(null);
   const suppressClickRef = useRef(false);
   const lastFallRef = useRef<number | null>(null);
   const startedRef = useRef(0);
-  const extraRef = useRef(0);
+  const lineRef = useRef(0);
+  const lastBubbleRef = useRef<number | null>(null);
   const actRef = useRef<Act>("idle");
   const lastPointRef = useRef<number | null>(null);
   const pendingPointRef = useRef<1 | -1 | null>(null);
-  const pointLineRef = useRef(0);
+  const pendingWaveRef = useRef<string | null>(HELLO);
+  const lastInteractRef = useRef(Date.now());
 
   const [mounted, setMounted] = useState(false);
+  const [mini, setMini] = useState(false);
   const [act, setAct] = useState<Act>("idle");
-  const [dir, setDir] = useState<1 | -1>(-1);
+  const [dir, setDirState] = useState<1 | -1>(-1);
   const [bubble, setBubble] = useState<string | null>(null);
   const [align, setAlign] = useState<"left" | "center" | "right">("right");
   const [hidden, setHidden] = useState(false);
   const [hover, setHover] = useState(false);
+  const [sleeping, setSleeping] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatSide, setChatSide] = useState<"left" | "right">("right");
-  const [pointNonce, setPointNonce] = useState(0);
+  const [nonce, setNonce] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [blink, setBlink] = useState(false);
+  const [press, setPress] = useState(false);
+  const [nod, setNod] = useState(false);
+  const [faceOverride, setFaceOverride] = useState<Face | null>(null);
+  const [burst, setBurst] = useState<{ kind: "hearts" | "sparkles"; id: number } | null>(null);
   actRef.current = act;
+
+  const setDir = useCallback((d: 1 | -1) => {
+    dirRef.current = d;
+    setDirState(d);
+  }, []);
+
+  const pop = useCallback((kind: "hearts" | "sparkles") => {
+    const id = Date.now();
+    setBurst({ kind, id });
+    window.setTimeout(() => setBurst((b) => (b?.id === id ? null : b)), 1300);
+  }, []);
 
   /** Move the layer; duration 0 jumps. */
   const moveTo = useCallback((x: number, ms: number, y = 0) => {
@@ -65,7 +116,7 @@ export function AssistantRobot() {
     setAlign(centre < vw * 0.3 ? "left" : centre > vw * 0.7 ? "right" : "center");
   }, []);
 
-  /** Stop wherever the robot is right now (mid-walk included). */
+  /** Stop wherever Foxy is right now (mid-walk included). */
   const freeze = useCallback(() => {
     const el = layerRef.current;
     if (!el) return;
@@ -73,14 +124,25 @@ export function AssistantRobot() {
     moveTo(Number.isFinite(m.m41) ? m.m41 : xRef.current, 0, Number.isFinite(m.m42) ? m.m42 : yRef.current);
   }, [moveTo]);
 
-  // Place it in the bottom-right corner after mount and keep it on screen when the window resizes.
+  // Mount: corner spot, remembered minimise choice, tab/resize/open listeners.
   useEffect(() => {
-    startedRef.current = Date.now();
-    moveTo(clampX(window.innerWidth, window.innerWidth), 0);
+    const now = Date.now();
+    startedRef.current = readNum(sessionStorage, START_KEY) ?? now;
+    sessionStorage.setItem(START_KEY, String(startedRef.current));
+    lastFallRef.current = readNum(sessionStorage, FALL_KEY);
+    if (startedRef.current !== now) pendingWaveRef.current = null;
+    setMini(localStorage.getItem(MINI_KEY) === "1");
+    moveTo(avoidSpans(window.innerWidth, window.innerWidth, blockedSpans()), 0);
     setMounted(true);
     const onResize = () => moveTo(clampX(xRef.current, window.innerWidth), 0);
-    const onVis = () => setHidden(document.hidden);
-    const onOpen = () => setChatOpen(true);
+    const onVis = () => {
+      setHidden(document.hidden);
+      if (!document.hidden) pendingWaveRef.current = "Welcome back! 💙";
+    };
+    const onOpen = () => {
+      setMini(false);
+      setChatOpen(true);
+    };
     window.addEventListener("resize", onResize);
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener(ASSISTANT_OPEN_EVENT, onOpen);
@@ -91,17 +153,109 @@ export function AssistantRobot() {
     };
   }, [moveTo]);
 
-  const paused = !mounted || hidden || hover || chatOpen || dragging;
+  // Eyes follow the mouse (a few px, clamped); moving near wakes a sleeping Foxy.
+  useEffect(() => {
+    if (!mounted) return;
+    let raf = 0;
+    let last: { x: number; y: number } | null = null;
+    const apply = () => {
+      raf = 0;
+      const root = rootRef.current;
+      const btn = buttonRef.current;
+      if (!root || !btn || !last) return;
+      const r = btn.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height * 0.42;
+      const dx = last.x - cx;
+      const dy = last.y - cy;
+      const dist = Math.hypot(dx, dy) || 1;
+      const k = Math.min(1, dist / 220);
+      root.style.setProperty("--ex", `${((dx / dist) * 2.4 * k * dirRef.current).toFixed(2)}px`);
+      root.style.setProperty("--ey", `${((dy / dist) * 2 * k).toFixed(2)}px`);
+      if (dist < 240) {
+        lastInteractRef.current = Date.now();
+        setSleeping((s) => {
+          if (s) {
+            pendingWaveRef.current = HOVER_LINE;
+            setNonce((n) => n + 1);
+          }
+          return false;
+        });
+      }
+    };
+    const onMove = (e: globalThis.PointerEvent) => {
+      if (e.pointerType !== "mouse") {
+        lastInteractRef.current = Date.now();
+        setSleeping(false);
+        return;
+      }
+      last = { x: e.clientX, y: e.clientY };
+      if (!raf) raf = requestAnimationFrame(apply);
+    };
+    const onKey = () => {
+      lastInteractRef.current = Date.now();
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerdown", onMove, { passive: true });
+    window.addEventListener("keydown", onKey);
+    const sleepTimer = window.setInterval(() => {
+      if (Date.now() - lastInteractRef.current >= ROBOT_MOTION.sleepAfterMs && !BUSY_ACTS.includes(actRef.current)) setSleeping(true);
+    }, 5000);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerdown", onMove);
+      window.removeEventListener("keydown", onKey);
+      window.clearInterval(sleepTimer);
+    };
+  }, [mounted]);
+
+  // Natural blinking every 3–6 s, sometimes a double blink.
+  useEffect(() => {
+    if (!mounted || hidden) return;
+    let t = 0;
+    const schedule = () => {
+      t = window.setTimeout(() => {
+        setBlink(true);
+        window.setTimeout(() => setBlink(false), 140);
+        if (Math.random() < 0.25) {
+          window.setTimeout(() => setBlink(true), 280);
+          window.setTimeout(() => setBlink(false), 420);
+        }
+        schedule();
+      }, 3000 + Math.random() * 3000);
+    };
+    schedule();
+    return () => window.clearTimeout(t);
+  }, [mounted, hidden]);
+
+  // Chat cues: hearts when a message is sent, nodding while the AI types, happy when it answers.
+  useEffect(() => {
+    const onSignal = (e: Event) => {
+      const s = (e as CustomEvent<AssistantSignal>).detail;
+      if (s === "love") pop("hearts");
+      if (s === "typing") setNod(true);
+      if (s === "answered") {
+        setNod(false);
+        setFaceOverride("happy");
+        window.setTimeout(() => setFaceOverride(null), 2000);
+      }
+    };
+    window.addEventListener(ASSISTANT_SIGNAL_EVENT, onSignal);
+    return () => window.removeEventListener(ASSISTANT_SIGNAL_EVENT, onSignal);
+  }, [pop]);
+
+  const paused = !mounted || mini || hidden || hover || chatOpen || dragging || sleeping;
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
 
-  // Watch product cards; when one comes into view, ask the robot to point at it.
+  // Watch product cards (point at them), checkout buttons (step aside) and finished orders (hearts).
   useEffect(() => {
     if (!mounted) return;
     const seen = new WeakSet<Element>();
     const pointed = new WeakSet<Element>();
-    /** A product that appeared while the robot was busy; it gets its point once the robot is free. */
     let waiting: Element | null = null;
+    let doneSeen = false;
 
     const tryPoint = (el: Element) => {
       const r = el.getBoundingClientRect();
@@ -113,7 +267,7 @@ export function AssistantRobot() {
       pointed.add(el);
       pendingPointRef.current = pointDirection(xRef.current + robotWidth(vw) / 2, r.left + r.width / 2);
       lastPointRef.current = now;
-      setPointNonce((n) => n + 1);
+      setNonce((n) => n + 1);
       return "done";
     };
 
@@ -133,14 +287,23 @@ export function AssistantRobot() {
         io.observe(el);
       });
       if (waiting && tryPoint(waiting) !== "wait") waiting = null;
+      // Step aside when a "Place order" / "Pay" button ends up under Foxy.
+      const vw = window.innerWidth;
+      const free = avoidSpans(xRef.current, vw, blockedSpans());
+      if (Math.abs(free - xRef.current) > 2 && actRef.current !== "held" && !dragRef.current) {
+        moveTo(free, 500, yRef.current);
+      }
+      const done = !!document.querySelector("[data-foxy-done]");
+      if (done && !doneSeen) pop("hearts");
+      doneSeen = done;
     };
     scan();
-    const t = window.setInterval(scan, 1500);
+    const t = window.setInterval(scan, 1200);
     return () => {
       window.clearInterval(t);
       io.disconnect();
     };
-  }, [mounted]);
+  }, [mounted, moveTo, pop]);
 
   // The little life script.
   useEffect(() => {
@@ -148,101 +311,156 @@ export function AssistantRobot() {
     const token: Token = { cancelled: false };
     const wait = (ms: number) =>
       new Promise<void>((resolve, reject) => {
-        const t = window.setTimeout(() => (token.cancelled ? reject(new Error("stop")) : resolve()), ms);
-        if (token.cancelled) {
-          window.clearTimeout(t);
-          reject(new Error("stop"));
-        }
+        if (token.cancelled) return reject(new Error("stop"));
+        window.setTimeout(() => (token.cancelled ? reject(new Error("stop")) : resolve()), ms);
       });
-    const nextExtra = () => {
-      // Every other greeting is the main one.
-      extraRef.current += 1;
-      return extraRef.current % 2 === 1 ? PRIMARY : EXTRA[(extraRef.current >> 1) % EXTRA.length]!;
+    const say = async (text: string, ms: number) => {
+      lastBubbleRef.current = Date.now();
+      setBubble(text);
+      await wait(ms);
+      setBubble(null);
     };
+    const nextLine = () => {
+      if (document.querySelector('[data-robot-avoid="pay"]')) return CHECKOUT_LINE;
+      if (window.location.pathname.startsWith("/product/") && lineRef.current % 2 === 0) {
+        lineRef.current += 1;
+        return PRODUCT_LINE;
+      }
+      lineRef.current += 1;
+      return LINES[lineRef.current % LINES.length]!;
+    };
+    /** Soft hop turn: squash, hop, mirror while small at the top, land. Never a thin spin. */
+    const turnTo = async (d: 1 | -1) => {
+      if (d === dirRef.current) return;
+      setAct("turn");
+      await wait(150);
+      setDir(d);
+      await wait(160);
+    };
+    const gravity = (fromY: number) =>
+      new Promise<void>((resolve) => {
+        let v = 0;
+        let y = fromY;
+        let last = performance.now();
+        const step = (t: number) => {
+          if (token.cancelled) return resolve();
+          const dt = Math.min((t - last) / 1000, 0.05);
+          last = t;
+          v += 2600 * dt;
+          y = Math.min(0, y + v * dt);
+          moveTo(xRef.current, 0, y);
+          if (y >= 0) resolve();
+          else requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      });
 
-    const fallSequence = async () => {
+    /** Signature move: drop from the top, splash into jelly-water, reform with a springy bounce. */
+    const dropIn = async () => {
       lastFallRef.current = Date.now();
+      sessionStorage.setItem(FALL_KEY, String(lastFallRef.current));
       setBubble(null);
-      setAct("stumble");
+      const vw = window.innerWidth;
+      const x = avoidSpans(pickTarget(xRef.current, vw), vw, blockedSpans());
+      setAct("drop");
+      moveTo(x, 0, -(window.innerHeight + 40));
+      await wait(30);
+      await gravity(yRef.current);
+      setAct("splash");
       await wait(560);
-      setAct("fall");
-      await wait(620);
-      setAct("fallen");
-      await wait(1500);
-      setAct("getup");
-      await wait(780);
-      setAct("shake");
-      await wait(700);
-      setAct("greet");
-      setBubble(PRIMARY);
-      await wait(3800);
-      setBubble(null);
+      setAct("puddle");
+      await wait(420);
+      setAct("reform");
+      await wait(640);
+      setAct("dizzy");
+      await wait(1000);
+      setAct("wave");
+      setFaceOverride("happy");
+      await say(SPLASH_LINE, 3600);
+      setFaceOverride(null);
       setAct("idle");
-      await wait(900);
+      await wait(700);
     };
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const lowEnd = (nav.hardwareConcurrency ?? 8) <= 2 || (nav.deviceMemory ?? 8) <= 2;
 
     const run = async () => {
       if (reduced) {
-        moveTo(clampX(window.innerWidth, window.innerWidth), 0);
+        moveTo(avoidSpans(window.innerWidth, window.innerWidth, blockedSpans()), 0);
         await wait(2500);
         for (;;) {
-          setBubble(nextExtra());
-          await wait(4500);
-          setBubble(null);
-          await wait(8000);
+          await say(nextLine(), 4500);
+          await wait(ROBOT_MOTION.bubbleGapMs);
         }
       }
-      if (pendingPointRef.current !== null) {
+      if (pendingWaveRef.current) {
+        const line = pendingWaveRef.current;
+        pendingWaveRef.current = null;
+        setAct("wave");
+        setFaceOverride("happy");
+        await say(line, 2800);
+        setFaceOverride(null);
+      } else if (pendingPointRef.current !== null) {
         const d = pendingPointRef.current;
         pendingPointRef.current = null;
-        setDir(d);
+        await turnTo(d);
         setAct("point");
-        pointLineRef.current = (pointLineRef.current + 1) % POINT_LINES.length;
-        setBubble(POINT_LINES[pointLineRef.current]!);
-        await wait(2800);
-        setBubble(null);
-        setAct("idle");
-        await wait(600);
-      } else {
-        setAct("idle");
-        await wait(1200);
+        if (canChat(Date.now(), lastBubbleRef.current)) await say(window.location.pathname.startsWith("/product/") ? PRODUCT_LINE : POINT_LINE, 2800);
+        else await wait(2400);
       }
+      setAct("idle");
+      await wait(1000);
       for (;;) {
         const vw = window.innerWidth;
-        const from = xRef.current;
-        const to = pickTarget(from, vw);
-        const d: 1 | -1 = to >= from ? 1 : -1;
-        const ms = walkDuration(from, to, vw);
-        setDir(d);
-        setBubble(null);
-        setAct("walk");
-        moveTo(to, ms);
-
-        // Maybe trip halfway through this walk.
-        const tripAt = 0.5 + Math.random() * 0.15;
-        const midX = from + (to - from) * tripAt;
-        if (canFall(Date.now(), startedRef.current, lastFallRef.current) && hasRoomToFall(midX, d, vw)) {
-          await wait(ms * tripAt);
-          freeze();
-          await fallSequence();
+        if (!lowEnd && canFall(Date.now(), startedRef.current, lastFallRef.current)) {
+          await dropIn();
           continue;
         }
-        await wait(ms);
-
+        const from = xRef.current;
+        const to = avoidSpans(pickTarget(from, vw), vw, blockedSpans());
+        if (Math.abs(to - from) > 4) {
+          const d: 1 | -1 = to >= from ? 1 : -1;
+          await turnTo(d);
+          const ms = walkDuration(from, to, vw);
+          setAct("walk");
+          moveTo(to, ms);
+          // Walk in small slices so the drop-in can happen on time (about 8 s after arriving).
+          let dropNow = false;
+          for (let t = 0; t < ms; t += 250) {
+            await wait(Math.min(250, ms - t));
+            if (!lowEnd && canFall(Date.now(), startedRef.current, lastFallRef.current)) {
+              dropNow = true;
+              break;
+            }
+          }
+          if (dropNow) {
+            freeze();
+            await dropIn();
+            continue;
+          }
+        }
         const roll = Math.random();
-        if (roll < 0.3) {
-          setAct("look");
+        if (roll < 0.06) {
+          // Chase its own tail: a few quick hop turns.
+          setAct("tail");
+          for (let i = 0; i < 4; i++) {
+            setDir(dirRef.current === 1 ? -1 : 1);
+            await wait(260);
+          }
+        } else if (roll < 0.12) {
+          setAct("juggle");
           await wait(2400);
-        } else if (roll < 0.6) {
+        } else if (roll < 0.16) {
+          setAct("peek");
+          await wait(2200);
+        } else if (roll < 0.45 && canChat(Date.now(), lastBubbleRef.current)) {
           setAct("wave");
-          setBubble(nextExtra());
-          await wait(3200);
-          setBubble(null);
+          await say(nextLine(), 3200);
         } else {
           setAct("idle");
-          await wait(1400 + Math.random() * 1200);
+          await wait(2200 + Math.random() * 2000);
         }
       }
     };
@@ -250,10 +468,18 @@ export function AssistantRobot() {
     return () => {
       token.cancelled = true;
       freeze();
+      if (yRef.current !== 0) moveTo(xRef.current, 0, 0);
       setAct("idle");
       setBubble(null);
+      setFaceOverride(null);
     };
-  }, [paused, pointNonce, moveTo, freeze]);
+  }, [paused, nonce, moveTo, freeze, setDir]);
+
+  // While the chat is open Foxy sits beside it.
+  useEffect(() => {
+    if (chatOpen) setAct("sit");
+    else setNod(false);
+  }, [chatOpen]);
 
   const closeChat = useCallback(() => {
     setChatOpen(false);
@@ -267,7 +493,7 @@ export function AssistantRobot() {
     return () => window.removeEventListener("keydown", onKey);
   }, [chatOpen, closeChat]);
 
-  /** Let go: fall with gravity, squash on landing, and get dizzy after a big drop. */
+  /** Let go: fall with gravity; small drops squash, medium ones get dizzy, big ones splash into water. */
   const drop = useCallback(() => {
     const height = -yRef.current;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -293,35 +519,33 @@ export function AssistantRobot() {
       });
     void (async () => {
       setBubble(null);
+      if (height > DIZZY_DROP && !reduced) setAct("drop");
       await fall();
-      if (height > MELT_DROP && !reduced) {
-        setAct("melt");
-        await later(700);
+      if (height > SPLASH_DROP && !reduced) {
+        setAct("splash");
+        await later(560);
         setAct("puddle");
-        await later(900);
+        await later(420);
         setAct("reform");
-        await later(900);
-        setAct("greet");
-        setBubble("Phew, back in shape!");
-        await later(2400);
+        await later(640);
+        setAct("dizzy");
+        await later(1000);
+        setAct("wave");
+        setBubble(SPLASH_LINE);
+        await later(3000);
       } else if (height > DIZZY_DROP && !reduced) {
         setAct("land");
         await later(320);
         setAct("dizzy");
-        setBubble("Whoa… so dizzy!");
-        await later(2800);
-        setAct("shake");
-        setBubble(null);
-        await later(700);
-        setAct("greet");
-        setBubble(PRIMARY);
-        await later(2600);
+        setBubble(DIZZY_LINE);
+        await later(1800);
       } else {
         setAct("land");
-        await later(380);
+        await later(360);
       }
       setBubble(null);
       setAct("idle");
+      moveTo(avoidSpans(xRef.current, window.innerWidth, blockedSpans()), 400);
       setDragging(false);
     })();
   }, [moveTo]);
@@ -347,8 +571,7 @@ export function AssistantRobot() {
     const vw = window.innerWidth;
     const w = robotWidth(vw);
     const x = Math.min(vw - w - 4, Math.max(4, d.x + dx));
-    const y = Math.min(0, Math.max(-(window.innerHeight - w * 1.6), d.y + dy));
-    setDir(dx >= 0 ? 1 : -1);
+    const y = Math.min(0, Math.max(-(window.innerHeight - w * 1.5), d.y + dy));
     moveTo(x, 0, y);
   };
   const onPointerUp = () => {
@@ -364,17 +587,60 @@ export function AssistantRobot() {
       suppressClickRef.current = false;
       return;
     }
-    if (!chatOpen) {
-      const vw = window.innerWidth;
-      setChatSide(xRef.current + robotWidth(vw) / 2 < vw / 2 ? "left" : "right");
+    lastInteractRef.current = Date.now();
+    setSleeping(false);
+    if (chatOpen) {
+      setChatOpen(false);
+      return;
     }
-    setChatOpen((v) => !v);
+    const vw = window.innerWidth;
+    setChatSide(xRef.current + robotWidth(vw) / 2 < vw / 2 ? "left" : "right");
+    setPress(true);
+    pop("sparkles");
+    window.setTimeout(() => {
+      setPress(false);
+      setChatOpen(true);
+    }, 260);
   };
 
-  const showBubble = !chatOpen && (bubble !== null || hover);
-  const bubbleText = bubble ?? PRIMARY;
+  const minimise = (value: boolean) => {
+    setMini(value);
+    setChatOpen(false);
+    localStorage.setItem(MINI_KEY, value ? "1" : "0");
+  };
+
+  const face: Face =
+    faceOverride ??
+    (sleeping
+      ? "sleepy"
+      : act === "dizzy" || act === "reform"
+        ? "dizzy"
+        : act === "drop" || act === "held"
+          ? "surprised"
+          : hover || (chatOpen && !nod)
+            ? "happy"
+            : act === "point"
+              ? "curious"
+              : "normal");
+
+  const showBubble = !chatOpen && !mini && (bubble !== null || hover);
+  const bubbleText = bubble ?? HOVER_LINE;
   const bubblePos =
-    align === "left" ? "left-[30%] rounded-bl-md origin-bottom-left" : align === "right" ? "right-[30%] rounded-br-md origin-bottom-right" : "left-1/2 -translate-x-1/2 origin-bottom";
+    align === "left" ? "left-[22%] foxy-bubble-left" : align === "right" ? "right-[22%] foxy-bubble-right" : "left-1/2 -translate-x-1/2 foxy-bubble-center";
+
+  if (mini && mounted) {
+    return (
+      <button
+        type="button"
+        onClick={() => minimise(false)}
+        aria-label="Show Foxy, the FOXGEN assistant"
+        title="Show Foxy"
+        className="foxy-mini pointer-events-auto fixed bottom-3 right-3 z-30 flex size-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <MiniFace />
+      </button>
+    );
+  }
 
   return (
     <>
@@ -383,184 +649,234 @@ export function AssistantRobot() {
           <AssistantChatPopup onClose={closeChat} side={chatSide} />
         </Suspense>
       )}
-      <div
-        ref={layerRef}
-        data-act={act}
-        data-paused={hidden ? "true" : undefined}
-        className={`robot-root pointer-events-none fixed bottom-1 left-0 z-30 transition-opacity duration-500 sm:bottom-2 ${mounted ? "opacity-100" : "opacity-0"}`}
-      >
-        <span
-          aria-hidden="true"
-          className={`robot-bubble caption-4 sm:caption-1 pointer-events-none absolute bottom-[92%] w-max max-w-[170px] rounded-2xl border border-border bg-card px-3 py-2 text-foreground shadow-lift transition duration-300 ease-weighted sm:max-w-[200px] ${bubblePos} ${
-            showBubble ? "scale-100 opacity-100" : "scale-75 opacity-0"
-          }`}
+      <div ref={rootRef} className="contents">
+        <div
+          ref={layerRef}
+          data-act={act}
+          data-face={face}
+          data-blink={blink && face === "normal" ? "true" : undefined}
+          data-hover={hover ? "true" : undefined}
+          data-press={press ? "true" : undefined}
+          data-nod={nod && chatOpen ? "true" : undefined}
+          data-paused={hidden ? "true" : undefined}
+          className={`robot-root group pointer-events-none fixed bottom-1 left-0 z-30 transition-opacity duration-500 sm:bottom-2 ${mounted ? "opacity-100" : "opacity-0"}`}
         >
-          {bubbleText}
-        </span>
-        <button
-          ref={buttonRef}
-          type="button"
-          onClick={toggleChat}
-          onPointerEnter={(e) => e.pointerType === "mouse" && setHover(true)}
-          onPointerLeave={() => setHover(false)}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          aria-label={chatOpen ? "Close Foxgen AI chat" : "Ask Foxgen AI: open the chat"}
-          aria-expanded={chatOpen}
-          title="Ask Foxgen AI"
-          className="robot-hit pointer-events-auto block touch-none select-none rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <span className="robot-stage block">
-            <span className="robot-facing block" style={{ transform: `rotateY(${dir === 1 ? 22 : -22}deg)` }}>
-              <span className="robot-sway block">
-                {/* Fur slices give the body real thickness when it turns. */}
-                {[-4, -2, 0, 2, 4].map((z) => (
-                  <svg key={z} viewBox="0 0 120 150" className="robot-slice" style={{ transform: `translateZ(${z}px)` }} aria-hidden="true">
-                    <ellipse cx="60" cy="88" rx="44" ry="45" />
-                  </svg>
-                ))}
-                <span className="robot-face-front block"><RobotSvg /></span>
+          <span
+            aria-hidden="true"
+            className={`foxy-bubble caption-4 sm:caption-1 pointer-events-none absolute bottom-[96%] w-max max-w-[180px] px-3 py-2 text-foreground sm:max-w-[220px] ${bubblePos} ${showBubble ? "foxy-bubble-on" : ""}`}
+          >
+            {bubbleText}
+          </span>
+          <button
+            type="button"
+            onClick={() => minimise(true)}
+            aria-label="Hide Foxy"
+            title="Hide Foxy"
+            className="foxy-hide pointer-events-auto absolute -top-1 right-0 z-10 flex size-5 items-center justify-center rounded-full text-[11px] leading-none focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            ×
+          </button>
+          <button
+            ref={buttonRef}
+            type="button"
+            onClick={toggleChat}
+            onPointerEnter={(e) => e.pointerType === "mouse" && setHover(true)}
+            onPointerLeave={() => setHover(false)}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+            aria-label={chatOpen ? "Close FOXGEN assistant" : "Open FOXGEN assistant"}
+            aria-expanded={chatOpen}
+            title="Ask Foxy"
+            className="robot-hit pointer-events-auto block touch-none select-none rounded-[40%] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="foxy-press block">
+              <span className="foxy-flip block" style={{ transform: `scaleX(${dir})` }}>
+                <FoxySvg burst={burst} />
               </span>
             </span>
-          </span>
-        </button>
+          </button>
+        </div>
       </div>
     </>
   );
 }
 
-function RobotSvg() {
+const DROPS: Array<[number, number, number]> = [
+  [-34, -30, 4.2], [-22, -44, 3.4], [-8, -52, 3], [10, -48, 3.6], [24, -40, 3.2], [36, -26, 4], [-44, -12, 3], [46, -10, 3.4],
+];
+
+function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number } | null }) {
   return (
-    <svg viewBox="0 0 120 150" className="robot-svg block h-auto w-[54px] sm:w-[76px]" aria-hidden="true">
+    <svg viewBox="0 0 120 140" className="robot-svg block h-auto w-[68px] sm:w-[88px]" aria-hidden="true">
       <defs>
-        <radialGradient id="rb-fur-g" cx="0.4" cy="0.3" r="0.85">
-          <stop offset="0" style={{ stopColor: "var(--yeti-fur-light)" }} />
-          <stop offset="0.65" style={{ stopColor: "var(--yeti-fur)" }} />
-          <stop offset="1" style={{ stopColor: "var(--yeti-fur-shade)" }} />
+        <radialGradient id="fx-shell" cx="0.38" cy="0.28" r="0.85">
+          <stop offset="0" style={{ stopColor: "var(--foxy-shell-light)" }} />
+          <stop offset="0.6" style={{ stopColor: "var(--foxy-shell)" }} />
+          <stop offset="1" style={{ stopColor: "var(--foxy-shell-shade)" }} />
         </radialGradient>
-        <radialGradient id="rb-face-g" cx="0.45" cy="0.35" r="0.8">
-          <stop offset="0" style={{ stopColor: "var(--yeti-face-light)" }} />
-          <stop offset="1" style={{ stopColor: "var(--yeti-face)" }} />
+        <radialGradient id="fx-visor" cx="0.4" cy="0.25" r="0.9">
+          <stop offset="0" style={{ stopColor: "var(--foxy-visor-top)" }} />
+          <stop offset="1" style={{ stopColor: "var(--foxy-visor)" }} />
         </radialGradient>
-        <linearGradient id="rb-blue" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" style={{ stopColor: "var(--robot-blue-light)" }} />
-          <stop offset="1" style={{ stopColor: "var(--robot-blue)" }} />
+        <linearGradient id="fx-brand" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0" style={{ stopColor: "var(--foxy-cyan)" }} />
+          <stop offset="1" style={{ stopColor: "var(--foxy-violet)" }} />
         </linearGradient>
-        <filter id="rb-fur" x="-10%" y="-10%" width="120%" height="120%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" />
-          <feDisplacementMap in="SourceGraphic" scale="3.2" />
+        <linearGradient id="fx-tail" x1="0" y1="1" x2="0.4" y2="0">
+          <stop offset="0" style={{ stopColor: "var(--foxy-shell)" }} />
+          <stop offset="0.5" style={{ stopColor: "var(--foxy-shell)" }} />
+          <stop offset="0.75" style={{ stopColor: "var(--foxy-cyan)" }} />
+          <stop offset="1" style={{ stopColor: "var(--foxy-violet)" }} />
+        </linearGradient>
+        <radialGradient id="fx-jelly" cx="0.4" cy="0.3" r="0.8">
+          <stop offset="0" style={{ stopColor: "var(--foxy-cyan)", stopOpacity: 0.95 }} />
+          <stop offset="1" style={{ stopColor: "var(--foxy-violet)", stopOpacity: 0.85 }} />
+        </radialGradient>
+        <filter id="fx-goo" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2.6" result="b" />
+          <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="g" />
+          <feComposite in="SourceGraphic" in2="g" operator="atop" />
         </filter>
       </defs>
 
-      <ellipse className="rb-puddle" cx="60" cy="140" rx="40" ry="7" />
-      <ellipse className="rb-shadow" cx="60" cy="146" rx="24" ry="3.6" />
+      <ellipse className="fx-glow" cx="60" cy="134" rx="34" ry="6" />
+      <ellipse className="fx-shadow" cx="60" cy="134" rx="26" ry="4" />
+      <ellipse className="fx-ripple" cx="60" cy="132" rx="20" ry="4" />
 
-      <g className="rb-dust">
-        <circle cx="96" cy="142" r="4" />
-        <circle cx="118" cy="140" r="3" />
-        <circle cx="140" cy="143" r="3.6" />
+      {/* Splash: gooey jelly-water blob and droplets */}
+      <g className="fx-liquid" filter="url(#fx-goo)">
+        <ellipse className="fx-blob" cx="60" cy="126" rx="26" ry="10" fill="url(#fx-jelly)" />
+        {DROPS.map(([dx, dy, r], i) => (
+          <circle key={i} className="fx-drop" cx="60" cy="124" r={r} fill="url(#fx-jelly)" style={{ ["--dx" as string]: `${dx}px`, ["--dy" as string]: `${dy}px`, animationDelay: `${i * 18}ms` }} />
+        ))}
+      </g>
+      <ellipse className="fx-blob-shine" cx="52" cy="122" rx="8" ry="2.4" />
+
+      <g className="fx-dust">
+        <circle cx="44" cy="132" r="3" />
+        <circle cx="38" cy="130" r="2.2" />
       </g>
 
-      {/* Floating music notes from the headphones */}
-      <g className="rb-notes">
-        <g className="rb-note rb-note-1"><ellipse cx="14" cy="34" rx="3" ry="2.3" transform="rotate(-20 14 34)" /><rect x="16" y="22" width="1.3" height="12" rx="0.6" /></g>
-        <g className="rb-note rb-note-2"><ellipse cx="104" cy="22" rx="3" ry="2.3" transform="rotate(-20 104 22)" /><rect x="106" y="10" width="1.3" height="12" rx="0.6" /><path d="M106.6 10 q4 1 4 5" fill="none" strokeWidth="1.3" className="rb-note-flag" /></g>
-      </g>
+      <g className="fx-figure">
+        <g className="fx-hop">
+          <g className="fx-bob">
+            {/* Fluffy tail with a cyan-to-violet tip */}
+            <g className="fx-tail">
+              <path d="M78 118 C95 121 106 108 103 92 C102 85 95 84 93 91 C93 102 89 108 76 109 Z" fill="url(#fx-tail)" />
+            </g>
+            <g className="fx-leg-l"><ellipse cx="49" cy="128" rx="8.5" ry="6" fill="url(#fx-shell)" /></g>
+            <g className="fx-leg-r"><ellipse cx="71" cy="128" rx="8.5" ry="6" fill="url(#fx-shell)" /></g>
+            <g className="fx-body">
+              <ellipse cx="60" cy="111" rx="25" ry="20" fill="url(#fx-shell)" />
+              <ellipse cx="60" cy="115" rx="13" ry="10" className="fx-belly" />
+              <path className="fx-core" d="M60 118 C56 115 54 112.5 56 110.8 C57.4 109.7 59.2 110.4 60 111.6 C60.8 110.4 62.6 109.7 64 110.8 C66 112.5 64 115 60 118 Z" />
+            </g>
+            <g className="fx-arm-l"><ellipse cx="37" cy="110" rx="6.5" ry="8.5" transform="rotate(22 37 110)" fill="url(#fx-shell)" /></g>
+            <g className="fx-arm-r"><ellipse cx="83" cy="110" rx="6.5" ry="8.5" transform="rotate(-22 83 110)" fill="url(#fx-shell)" /></g>
+            <g className="fx-juggle"><path d="M84 86 l2 4.2 4.6 .5 -3.4 3.1 1 4.5 -4.2 -2.3 -4.2 2.3 1 -4.5 -3.4 -3.1 4.6 -.5 z" /></g>
 
-      <g className="rb-figure">
-        <g className="rb-bob">
-          {/* Stubby fluffy feet */}
-          <g className="rb-leg-l">
-            <ellipse cx="48" cy="137" rx="9" ry="5" fill="url(#rb-fur-g)" filter="url(#rb-fur)" />
-          </g>
-          <g className="rb-leg-r">
-            <ellipse cx="72" cy="137" rx="9" ry="5" fill="url(#rb-fur-g)" filter="url(#rb-fur)" />
-          </g>
-
-          {/* One round fluffy body */}
-          <ellipse cx="60" cy="88" rx="46" ry="47" fill="url(#rb-fur-g)" filter="url(#rb-fur)" />
-
-          <g className="rb-head">
-            {/* Face window */}
-            <ellipse cx="60" cy="52" rx="24" ry="21" fill="url(#rb-face-g)" />
-            <ellipse cx="51" cy="40" rx="8" ry="3" className="rb-gloss" transform="rotate(-12 51 40)" />
-
-            <g className="rb-eyes">
-              <g className="rb-eyes-open">
-                <ellipse className="rb-eye" cx="50" cy="52" rx="3.3" ry="3.8" />
-                <ellipse className="rb-eye" cx="70" cy="52" rx="3.3" ry="3.8" />
-                <circle cx="51.2" cy="50.6" r="1.1" className="rb-eye-shine" />
-                <circle cx="71.2" cy="50.6" r="1.1" className="rb-eye-shine" />
+            <g className="fx-head">
+              <g className="fx-ear-l">
+                <path d="M26 48 L29 15 Q31 10 36 13 L54 29 Z" fill="url(#fx-shell)" />
+                <path className="fx-ear-in" d="M31 40 L33 20 L46 30 Z" />
               </g>
-              <g className="rb-eyes-squint" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M47 49 L52 52 L47 55" />
-                <path d="M73 49 L68 52 L73 55" />
+              <g className="fx-ear-r">
+                <path d="M94 48 L91 15 Q89 10 84 13 L66 29 Z" fill="url(#fx-shell)" />
+                <path className="fx-ear-in" d="M89 40 L87 20 L74 30 Z" />
+              </g>
+              <line x1="60" y1="25" x2="60" y2="13" className="fx-antenna-stem" />
+              <path className="fx-antenna" d="M60 13 C56 9.5 54 6.5 56.6 4.8 C58.2 3.8 59.6 4.8 60 6 C60.4 4.8 61.8 3.8 63.4 4.8 C66 6.5 64 9.5 60 13 Z" />
+              <ellipse cx="60" cy="58" rx="38" ry="34" fill="url(#fx-shell)" />
+              <ellipse cx="46" cy="33" rx="14" ry="5" className="fx-highlight" transform="rotate(-16 46 33)" />
+              <ellipse cx="60" cy="62" rx="29" ry="21.5" fill="url(#fx-visor)" className="fx-visor" />
+              <path d="M40 52 Q46 44 58 43" className="fx-visor-gloss" />
+
+              <ellipse className="fx-blush" cx="38" cy="75" rx="5.5" ry="3" />
+              <ellipse className="fx-blush" cx="82" cy="75" rx="5.5" ry="3" />
+
+              <g className="fx-eyes">
+                <g className="fx-eyes-open">
+                  <g className="fx-eye-l">
+                    <ellipse cx="48" cy="62" rx="6.8" ry="8.4" className="fx-eye" />
+                    <g className="fx-pupil">
+                      <ellipse cx="48" cy="63" rx="4.2" ry="5.6" className="fx-pupil-dot" />
+                      <circle cx="46.3" cy="60" r="1.9" className="fx-shine" />
+                      <circle cx="49.8" cy="65.8" r="0.9" className="fx-shine" />
+                    </g>
+                  </g>
+                  <g className="fx-eye-r">
+                    <ellipse cx="72" cy="62" rx="6.8" ry="8.4" className="fx-eye" />
+                    <g className="fx-pupil">
+                      <ellipse cx="72" cy="63" rx="4.2" ry="5.6" className="fx-pupil-dot" />
+                      <circle cx="70.3" cy="60" r="1.9" className="fx-shine" />
+                      <circle cx="73.8" cy="65.8" r="0.9" className="fx-shine" />
+                    </g>
+                  </g>
+                </g>
+                <g className="fx-eyes-happy fx-stroke">
+                  <path d="M42 65 Q48 55 54 65" />
+                  <path d="M66 65 Q72 55 78 65" />
+                </g>
+                <g className="fx-eyes-surprised">
+                  <circle cx="48" cy="62" r="6.4" className="fx-ring" />
+                  <circle cx="72" cy="62" r="6.4" className="fx-ring" />
+                  <circle cx="48" cy="62" r="2" className="fx-eye" />
+                  <circle cx="72" cy="62" r="2" className="fx-eye" />
+                </g>
+                <g className="fx-eyes-dizzy fx-stroke">
+                  <path d="M48 62 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
+                  <path d="M72 62 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
+                </g>
+                <g className="fx-eyes-sleepy fx-stroke">
+                  <path d="M42 63 Q48 67.5 54 63" />
+                  <path d="M66 63 Q72 67.5 78 63" />
+                </g>
+              </g>
+              <path className="fx-mouth fx-mouth-w" d="M55 74 Q57.5 77.5 60 74 Q62.5 77.5 65 74" />
+              <ellipse className="fx-mouth-o" cx="60" cy="76" rx="2.6" ry="3.1" />
+
+              <g className="fx-stars">
+                <g className="fx-stars-spin">
+                  <path d="M60 12 l1.6 3.3 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.8 -3.3 1.8 .8 -3.6 -2.7 -2.4 3.6 -.4 z" transform="translate(-26 0)" />
+                  <path d="M60 12 l1.6 3.3 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.8 -3.3 1.8 .8 -3.6 -2.7 -2.4 3.6 -.4 z" transform="translate(24 -2)" />
+                  <path d="M60 12 l1.6 3.3 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.8 -3.3 1.8 .8 -3.6 -2.7 -2.4 3.6 -.4 z" transform="translate(0 -8) scale(0.8) translate(15 3)" />
+                </g>
+              </g>
+              <g className="fx-zzz">
+                <text x="90" y="26">z</text>
+                <text x="98" y="16" className="fx-z2">z</text>
               </g>
             </g>
-            <path className="rb-mouth rb-mouth-smile" d="M56 60 Q60 63.5 64 60" fill="none" strokeWidth="1.8" strokeLinecap="round" />
-            <path className="rb-mouth-open" d="M55.5 59 Q60 66 64.5 59 Z" />
-            <ellipse className="rb-mouth-o" cx="60" cy="61" rx="2.2" ry="2.6" />
-            <ellipse cx="43" cy="59" rx="4.6" ry="2.8" className="rb-cheek" />
-            <ellipse cx="77" cy="59" rx="4.6" ry="2.8" className="rb-cheek" />
-
-            {/* Headphones */}
-            <path d="M28 50 C28 18 92 18 92 50" fill="none" stroke="url(#rb-blue)" strokeWidth="5" strokeLinecap="round" />
-            <path d="M33 34 C42 22 78 22 87 34" fill="none" className="rb-band-shine" strokeWidth="1.4" strokeLinecap="round" />
-            <rect x="20" y="42" width="13" height="22" rx="6.5" fill="url(#rb-blue)" />
-            <rect x="87" y="42" width="13" height="22" rx="6.5" fill="url(#rb-blue)" />
-            <rect x="23" y="46" width="3" height="13" rx="1.5" className="rb-cup-shine" />
-            <rect x="90" y="46" width="3" height="13" rx="1.5" className="rb-cup-shine" />
-          </g>
-
-          {/* The AI tool it shows off; icons take turns */}
-          <g className="rb-tool">
-            <circle cx="60" cy="100" r="17" fill="url(#rb-blue)" />
-            <circle cx="60" cy="100" r="17" className="rb-tool-ring" fill="none" strokeWidth="1.2" />
-            <g className="rb-tool-icon rb-tool-1" fill="none" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M50 94 h20 a3 3 0 0 1 3 3 v8 a3 3 0 0 1 -3 3 h-12 l-5 4 v-4 h-3 a3 3 0 0 1 -3 -3 v-8 a3 3 0 0 1 3 -3 z" />
-              <circle cx="55" cy="101" r="0.6" /><circle cx="60" cy="101" r="0.6" /><circle cx="65" cy="101" r="0.6" />
-            </g>
-            <g className="rb-tool-icon rb-tool-2">
-              <path d="M60 88 C61.5 96 64 98.5 72 100 C64 101.5 61.5 104 60 112 C58.5 104 56 101.5 48 100 C56 98.5 58.5 96 60 88 Z" />
-              <path d="M70 89 c.5 2.5 1.2 3.2 3.6 3.6 c-2.4 .4 -3.1 1.1 -3.6 3.6 c-.5 -2.5 -1.2 -3.2 -3.6 -3.6 c2.4 -.4 3.1 -1.1 3.6 -3.6 z" />
-            </g>
-            <g className="rb-tool-icon rb-tool-3" fill="none" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M54 93 L47 100 L54 107" /><path d="M66 93 L73 100 L66 107" /><path d="M62.5 91 L57.5 109" />
-            </g>
-            <g className="rb-tool-icon rb-tool-4" fill="none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="48" y="91" width="24" height="18" rx="3.5" />
-              <path d="M49 106 L56 99 L61 104 L64 101 L71 108" /><circle cx="66" cy="96" r="2" />
-            </g>
-          </g>
-
-          {/* Fluffy arms hugging the tool */}
-          <g className="rb-arm-l">
-            <ellipse cx="36" cy="102" rx="7.5" ry="8.5" fill="url(#rb-fur-g)" filter="url(#rb-fur)" transform="rotate(30 40 101)" />
-          </g>
-          <g className="rb-arm-r">
-            <ellipse cx="84" cy="102" rx="7.5" ry="8.5" fill="url(#rb-fur-g)" filter="url(#rb-fur)" transform="rotate(-30 80 101)" />
-            <ellipse className="rb-finger" cx="88" cy="114" rx="3" ry="5.5" fill="url(#rb-fur-g)" transform="rotate(-24 88 114)" />
           </g>
         </g>
       </g>
 
-      <g className="rb-halo">
-        <g className="rb-halo-spin">
-          <path d="M60 -6 l1.6 3.6 3.9 .5 -2.8 2.6 .7 3.8 -3.4 -1.9 -3.4 1.9 .7 -3.8 -2.8 -2.6 3.9 -.5 z" />
-          <path d="M84 6 l1.3 2.9 3.1 .4 -2.3 2.1 .6 3.1 -2.7 -1.5 -2.7 1.5 .6 -3.1 -2.3 -2.1 3.1 -.4 z" />
-          <path d="M34 6 l1.3 2.9 3.1 .4 -2.3 2.1 .6 3.1 -2.7 -1.5 -2.7 1.5 .6 -3.1 -2.3 -2.1 3.1 -.4 z" />
+      {burst && (
+        <g key={burst.id} className={`fx-burst fx-burst-${burst.kind}`}>
+          {[-30, -12, 8, 26].map((dx, i) =>
+            burst.kind === "hearts" ? (
+              <path key={i} className="fx-burst-item" style={{ ["--dx" as string]: `${dx}px`, animationDelay: `${i * 90}ms` }} d="M60 40 C55 36 53 32.5 56 30.6 C57.8 29.5 59.4 30.6 60 32 C60.6 30.6 62.2 29.5 64 30.6 C67 32.5 65 36 60 40 Z" />
+            ) : (
+              <path key={i} className="fx-burst-item" style={{ ["--dx" as string]: `${dx * 1.4}px`, animationDelay: `${i * 30}ms` }} d="M60 52 l1.4 4 4 1.4 -4 1.4 -1.4 4 -1.4 -4 -4 -1.4 4 -1.4 z" />
+            ),
+          )}
         </g>
-      </g>
+      )}
+    </svg>
+  );
+}
 
-      <g className="rb-stars">
-        <g transform="translate(0 -52)">
-        <path d="M150 92 l2 4.5 4.8 .6 -3.5 3.3 .9 4.8 -4.2 -2.3 -4.2 2.3 .9 -4.8 -3.5 -3.3 4.8 -.6 z" />
-        <path d="M168 104 l1.4 3.2 3.4 .4 -2.5 2.3 .6 3.4 -2.9 -1.6 -2.9 1.6 .6 -3.4 -2.5 -2.3 3.4 -.4 z" />
-        <path d="M134 106 l1.2 2.7 2.9 .4 -2.1 2 .5 2.9 -2.5 -1.4 -2.5 1.4 .5 -2.9 -2.1 -2 2.9 -.4 z" />
-        </g>
-      </g>
+/** The tiny round face shown when Foxy is minimised. */
+function MiniFace() {
+  return (
+    <svg viewBox="0 0 44 44" className="size-11" aria-hidden="true">
+      <circle cx="22" cy="22" r="20" className="fx-mini-shell" />
+      <ellipse cx="22" cy="24" rx="14" ry="10.5" className="fx-mini-visor" />
+      <ellipse cx="16.5" cy="24" rx="3" ry="3.8" className="fx-mini-eye" />
+      <ellipse cx="27.5" cy="24" rx="3" ry="3.8" className="fx-mini-eye" />
+      <path d="M20 30 Q21 31.5 22 30 Q23 31.5 24 30" className="fx-mini-mouth" />
     </svg>
   );
 }

@@ -5,6 +5,7 @@ import { ArrowCounterClockwise, PaperPlaneRight, X } from "@phosphor-icons/react
 import { MessageResponse } from "@/components/ai-elements/message";
 import { deleteThread, getThread, newThreadId, saveThreadMessages } from "@/lib/chat-threads";
 import { Button } from "@/components/ui/button";
+import { signalAssistant } from "@/lib/assistant-events";
 
 const THREAD_KEY = "foxgen-assistant-thread";
 const SUGGESTIONS = ["What products do you have?", "Which items are in stock?", "How do I buy?"];
@@ -82,6 +83,12 @@ function ChatBody({ threadId, initialMessages }: { threadId: string; initialMess
   useEffect(() => {
     if (window.matchMedia("(min-width: 640px)").matches) inputRef.current?.focus();
   }, []);
+  const wasBusy = useRef(false);
+  useEffect(() => {
+    if (busy && !wasBusy.current) signalAssistant("typing");
+    if (!busy && wasBusy.current) signalAssistant("answered");
+    wasBusy.current = busy;
+  }, [busy]);
   useEffect(() => {
     if ((status === "ready" || status === "error") && messages.length > 0) saveThreadMessages(threadId, messages);
   }, [messages, status, threadId]);
@@ -95,6 +102,7 @@ function ChatBody({ threadId, initialMessages }: { threadId: string; initialMess
     if (!t || busy) return;
     setError(null);
     sendMessage({ text: t });
+    signalAssistant("love");
     setInput("");
   };
   const onSubmit = (e: FormEvent) => {

@@ -1,23 +1,27 @@
 /**
- * Where the walking Foxgen robot may go and when it may do its funny fall.
- * Pure helpers so the rules (stay on screen, shorter walks on phones, fall only now and then) are testable.
+ * Where Foxy (the walking mascot) may go and when it may do its tricks.
+ * Pure helpers so the rules (stay on screen, avoid checkout buttons, rare drop-ins, quiet bubbles) are testable.
  */
 export const ROBOT_MOTION = {
-  desktopWidth: 76,
-  mobileWidth: 54,
+  desktopWidth: 88,
+  mobileWidth: 68,
   edge: 12,
   mobileBreakpoint: 640,
   /** Phones only walk in the right part of the screen. */
   mobileStartRatio: 0.4,
-  /** First fall happens soon so visitors see it, then rarely. */
-  firstFallAfterMs: 9000,
-  fallGapMs: 50000,
+  /** First drop from the top about 8 s after the first visit, then at most once every 2.5 minutes. */
+  firstFallAfterMs: 8000,
+  fallGapMs: 150000,
   desktopSpeed: 70,
   mobileSpeed: 42,
   /** Pointing at a product that just came into view: at most once per gap. */
   pointGapMs: 9000,
-  /** Lying down, the robot reaches this many robot-widths past its centre. */
-  lyingReach: 1.2,
+  /** Idle chatter bubbles: at most one per gap. */
+  bubbleGapMs: 20000,
+  /** No interaction for this long and Foxy dozes off. */
+  sleepAfterMs: 60000,
+  /** Buttons whose bottom edge is within this many px of the screen bottom are kept clear. */
+  avoidBand: 150,
 } as const;
 
 export function robotWidth(vw: number) {
@@ -54,18 +58,10 @@ export function walkDuration(from: number, to: number, vw: number) {
   return Math.max(600, Math.round((Math.abs(to - from) / speed) * 1000));
 }
 
-/** Fall only after the first delay, then at most once per gap. */
+/** Drop in from the top only after the first delay, then at most once per gap. */
 export function canFall(now: number, startedAt: number, lastFallAt: number | null) {
   if (lastFallAt === null) return now - startedAt >= ROBOT_MOTION.firstFallAfterMs;
   return now - lastFallAt >= ROBOT_MOTION.fallGapMs;
-}
-
-/** True when the robot can lie down in the walking direction without leaving the screen. */
-export function hasRoomToFall(x: number, dir: 1 | -1, vw: number) {
-  const w = robotWidth(vw);
-  const centre = x + w / 2;
-  const reach = w * ROBOT_MOTION.lyingReach;
-  return dir === 1 ? centre + reach <= vw - 4 : centre - reach >= 4;
 }
 
 /** Point at a newly visible product only now and then, so it never feels pushy. */
@@ -73,7 +69,31 @@ export function canPoint(now: number, lastPointAt: number | null) {
   return lastPointAt === null || now - lastPointAt >= ROBOT_MOTION.pointGapMs;
 }
 
+/** Idle chatter: never more than one bubble per gap. */
+export function canChat(now: number, lastBubbleAt: number | null) {
+  return lastBubbleAt === null || now - lastBubbleAt >= ROBOT_MOTION.bubbleGapMs;
+}
+
 /** Which way to point: towards the product's horizontal centre. */
 export function pointDirection(robotCentre: number, targetCentre: number): 1 | -1 {
   return targetCentre >= robotCentre ? 1 : -1;
+}
+
+/**
+ * Move a wanted x so Foxy never stands over a blocked span (e.g. "Place order" / "Pay" buttons).
+ * Blocked spans are [left, right] in px. Returns the nearest free x on screen.
+ */
+export function avoidSpans(x: number, vw: number, blocked: Array<[number, number]>) {
+  const w = robotWidth(vw);
+  const { min, max } = walkRange(vw);
+  const pad = 8;
+  const hits = (p: number) => blocked.some(([l, r]) => p < r + pad && p + w > l - pad);
+  const start = clampX(x, vw);
+  if (!hits(start)) return start;
+  for (let d = 4; d <= vw; d += 4) {
+    if (start - d >= min && !hits(start - d)) return start - d;
+    if (start + d <= max && !hits(start + d)) return start + d;
+  }
+  // Nothing free in the walking range: tuck into the far corner.
+  return max;
 }

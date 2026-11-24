@@ -664,7 +664,7 @@ function ShopPage() {
                   {catalog?.methods.some((m) => m.currency === "INR") && product.price_inr === null && (
                     <p className="mt-3 text-xs text-muted-foreground">UPI is unavailable for this product until an INR price is configured.</p>
                   )}
-                  <div className="mt-8 flex flex-wrap gap-2">
+                  <div data-robot-avoid="order" className="mt-8 flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={busy || !method || !user || walletShort}
@@ -741,7 +741,7 @@ function ShopPage() {
                   <p className="mt-4 text-xs text-muted-foreground">
                     A reference or screenshot is supporting evidence only. Your order is confirmed after the owner checks the receiving account.
                   </p>
-                  <div className="mt-6 flex flex-wrap gap-2">
+                  <div data-robot-avoid="pay" className="mt-6 flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={busy}
@@ -795,7 +795,7 @@ function ShopPage() {
                         void refreshOrders();
                       })
                     }
-                    className={`${btnPrimary} mt-6`}
+                    data-robot-avoid="email" className={`${btnPrimary} mt-6`}
                   >
                     Confirm email
                   </button>
@@ -804,6 +804,7 @@ function ShopPage() {
 
               {step === "done" && draft && (
                 <Panel>
+                  <span data-foxy-done hidden />
                   <span className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
                     <CheckCircle2 className="size-6" />
                   </span>
