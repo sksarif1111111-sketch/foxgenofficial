@@ -178,5 +178,5 @@
 
 ## Day/night theme switch upgrade
 - [x] Sky-track switch: sun knob rolls into a moon, clouds drift out, stars twinkle; spring motion, hover/press feedback; first visit still follows the device setting (user choice). Checked at 390px in both themes, reload persistence, no overflow.
-- [ ] Bigger logo tiles in product cards (PC + mobile)
-- [ ] Auto product pictures via Cloudflare Workers AI flux-1-schnell (replaces Google plan) — needs CL_CLOUDFLARE_API_TOKEN + account ID
+- [x] Bigger logo tiles in product cards (PC + mobile)
+- [x] Auto product pictures via Cloudflare Workers AI flux-1-schnell (replaces Google plan) — needs CL_CLOUDFLARE_API_TOKEN + account ID
