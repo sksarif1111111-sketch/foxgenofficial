@@ -150,7 +150,6 @@
   --foxy-visor-top: oklch(0.34 0.09 268);
   --foxy-eye: oklch(0.97 0.03 210);
   --foxy-pupil: oklch(0.25 0.08 265);
-  --foxy-iris: oklch(0.52 0.12 235);
   --foxy-cyan: oklch(0.82 0.14 205);
   --foxy-violet: oklch(0.66 0.22 300);
   --foxy-blush: oklch(0.8 0.12 0);
@@ -1390,11 +1389,6 @@ body, .min-h-screen.bg-background {
 .robot-root[data-act="held"] .robot-hit { cursor: grabbing; }
 .robot-hit:hover { transform: scale(1.08); }
 .foxy-flip { transition: none; }
-.foxy-3d-stage, .foxy-scene { position: relative; display: block; width: 68px; height: 80px; }
-.foxy-scene canvas { pointer-events: none; }
-.foxy-3d-stage > .robot-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; filter: none; }
-.foxy-model-fallback { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
-@media (width >= 640px) { .foxy-3d-stage, .foxy-scene { width: 88px; height: 103px; } }
 .robot-svg { overflow: visible; filter: drop-shadow(0 6px 10px var(--foxy-shadow)); }
 .robot-svg g, .robot-svg ellipse, .robot-svg circle, .robot-svg path { transform-box: view-box; }
 

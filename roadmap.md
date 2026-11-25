@@ -1,14 +1,5 @@
 # Roadmap
 
-## Reference-matched plush Foxy
-- [x] Reshaped the existing 3D rig toward the supplied original: broad baby head, huge low glossy eyes, tiny rounded paws, plush body without hard zipper/boots, cheek fluff and fuller cyan/violet tail; retained motion and chat. Camera widened so the tail stays in frame.
-- [x] 15 motion/pose tests pass; 903/390px rendering and chat verified, mobile light/dark real product checkout/chat and reduced motion checked, actual walking joints and held → drop → splash → puddle → reform → dizzy verified. 47 meshes / 53,648 triangles; real-device smoothness remains unverified.
-
-## Full 3D Foxy
-- [x] Replaced the flat mascot with an original articulated GLB: round face, headphones, thick padded coat and dimensional tail; client-only loading and picture fallback retained.
-- [x] Connected distance-driven opposite-leg gait, counterbalanced head/arms, visible eyes, limited 3/4 yaw, existing chat, drag/drop, water splash and reform; no store or chat AI logic changes.
-- [x] 15 motion/pose tests pass. Browser checks at 903×634 and 390×844 show real moving leg joints, visible 3D rendering, chat open/close and water reform. Shop → real product → quantity/chat checked in light/dark; reduced motion remains still for 8.5s and chat opens. Model budget: 51 meshes, 54,768 triangles. No paid order or AI answer submitted; real-device frame rate, touch feel and GPU appearance remain for device testing.
-
 ## Foxy expression and natural movement repair
 - [x] Kept generated iris identity across expressions, rebuilt feathered fur backing and aligned independent paws/feet/head/tail; cursor tracking now reaches the visible rig.
 - [x] Short distance-driven planted steps, head counterbalance, tail swing, curious sniffing and gentle settling; cancellable manual falls, live reduced-motion changes, preserved chat/hide/drag and mobile purchase-bar clearance.
