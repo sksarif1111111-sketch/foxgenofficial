@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "9dbe7d33-a54f-4dbe-be54-0282a4770abf",
+  "asset_id": "3515d5fd-d042-4032-9d48-382026c1485f",
   "project_id": "06d2ae40-b1aa-4474-a6a1-c1fad4728ac6",
-  "url": "/__l5e/assets-v1/9dbe7d33-a54f-4dbe-be54-0282a4770abf/foxy-chibi.glb",
-  "r2_key": "a/v1/06d2ae40-b1aa-4474-a6a1-c1fad4728ac6/9dbe7d33-a54f-4dbe-be54-0282a4770abf/foxy-chibi.glb",
+  "url": "/__l5e/assets-v1/3515d5fd-d042-4032-9d48-382026c1485f/foxy-chibi.glb",
+  "r2_key": "a/v1/06d2ae40-b1aa-4474-a6a1-c1fad4728ac6/3515d5fd-d042-4032-9d48-382026c1485f/foxy-chibi.glb",
   "original_filename": "foxy-chibi.glb",
-  "size": 267352,
+  "size": 235020,
   "content_type": "model/gltf-binary",
-  "created_at": "2026-11-25T00:34:46Z"
+  "created_at": "2026-11-25T01:00:29Z"
 }

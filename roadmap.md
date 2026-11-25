@@ -1,5 +1,9 @@
 # Roadmap
 
+## Reference-matched plush Foxy
+- [x] Reshaped the existing 3D rig toward the supplied original: broad baby head, huge low glossy eyes, tiny rounded paws, plush body without hard zipper/boots, cheek fluff and fuller cyan/violet tail; retained motion and chat. Camera widened so the tail stays in frame.
+- [x] 15 motion/pose tests pass; 903/390px rendering and chat verified, mobile light/dark real product checkout/chat and reduced motion checked, actual walking joints and held → drop → splash → puddle → reform → dizzy verified. 47 meshes / 53,648 triangles; real-device smoothness remains unverified.
+
 ## Full 3D Foxy
 - [x] Replaced the flat mascot with an original articulated GLB: round face, headphones, thick padded coat and dimensional tail; client-only loading and picture fallback retained.
 - [x] Connected distance-driven opposite-leg gait, counterbalanced head/arms, visible eyes, limited 3/4 yaw, existing chat, drag/drop, water splash and reform; no store or chat AI logic changes.

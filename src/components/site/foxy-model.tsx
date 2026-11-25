@@ -1,7 +1,7 @@
 import { Component, Suspense, memo, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer, useGLTF } from '@react-three/drei';
-import { CanvasTexture, Color, Group, Mesh, MeshStandardMaterial, SRGBColorSpace } from 'three';
+import { CanvasTexture, Color, Group, Mesh, MeshStandardMaterial, NoColorSpace, SRGBColorSpace } from 'three';
 import model from '@/assets/models/foxy-chibi.glb.asset.json';
 import fallbackImage from '@/assets/foxy-full.webp.asset.json';
 import { eyeOpenness, FOXY_3D, volumePose, type FoxyRenderState } from '@/lib/foxy-pose';
@@ -21,7 +21,7 @@ function tokenColor(token: string) {
   return new Color().setRGB((pixels[0] ?? 255) / 255, (pixels[1] ?? 255) / 255, (pixels[2] ?? 255) / 255, SRGBColorSpace);
 }
 
-/** Fine woven grain, generated locally once; not a flat picture masquerading as a 3D mesh. */
+/** Short directional plush fibres, generated locally once for the volumetric shell. */
 function fabricTexture() {
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128;
   const ctx = canvas.getContext('2d');
@@ -30,7 +30,10 @@ function fabricTexture() {
     let seed = 91;
     for (let i = 0; i < data.data.length; i += 4) {
       seed = (seed * 1664525 + 1013904223) >>> 0;
-      const shade = 235 + seed % 21;
+      const pixel = i / 4;
+      const x = pixel % 128; const y = Math.floor(pixel / 128);
+      const fibre = Math.sin(x * 2.8 + Math.sin(y * 0.18) * 2) * 0.5 + 0.5;
+      const shade = Math.round(230 + fibre * 15 + seed % 11);
       data.data[i] = shade; data.data[i + 1] = shade; data.data[i + 2] = shade; data.data[i + 3] = 255;
     }
     ctx.putImageData(data, 0, 0);
@@ -45,6 +48,7 @@ function ModelRig({ stateRef, onReady }: { stateRef: RefObject<FoxyRenderState>;
   const rig = useMemo(() => {
     const object = scene.clone(true);
     const fabric = fabricTexture();
+    const relief = fabric.clone(); relief.colorSpace = NoColorSpace;
     const materials = new Map<string, MeshStandardMaterial>();
     object.traverse((child) => {
       if (!(child instanceof Mesh)) return;
@@ -53,13 +57,16 @@ function ModelRig({ stateRef, onReady }: { stateRef: RefObject<FoxyRenderState>;
       let material = materials.get(source.name);
       if (!material) {
         material = source.clone();
-        if (source.name === 'coat' || source.name === 'shell') { material.map = fabric; material.roughness = source.name === 'coat' ? 0.88 : 0.62; }
+        if (source.name === 'coat' || source.name === 'shell') {
+          material.map = fabric; material.bumpMap = relief; material.bumpScale = 0.025;
+          material.roughness = 0.9;
+        }
         materials.set(source.name, material);
       }
       child.material = material;
     });
     const part = (name: string) => object.getObjectByName(name);
-    return { object, materials, fabric, head: part('Head'), body: part('Body'), tail: part('Tail'), leftArm: part('ArmLeft'), rightArm: part('ArmRight'), leftLeg: part('LegLeft'), rightLeg: part('LegRight'), leftEye: part('EyeLeft'), rightEye: part('EyeRight'), leftEar: part('EarLeft'), rightEar: part('EarRight') };
+    return { object, materials, fabric, relief, head: part('Head'), body: part('Body'), tail: part('Tail'), leftArm: part('ArmLeft'), rightArm: part('ArmRight'), leftLeg: part('LegLeft'), rightLeg: part('LegRight'), leftEye: part('EyeLeft'), rightEye: part('EyeRight'), leftEar: part('EarLeft'), rightEar: part('EarRight') };
   }, [scene]);
   const volume = useRef<Group>(null);
   const phase = useRef({ act: '', elapsed: 0, time: 0, ready: false, yaw: 0 });
@@ -80,7 +87,7 @@ function ModelRig({ stateRef, onReady }: { stateRef: RefObject<FoxyRenderState>;
       pose: (act, face, dir) => { Object.assign(stateRef.current, { act, face, dir }); invalidate(); },
       snapshot: () => ({ state: stateRef.current, yaw: phase.current.yaw, calls: gl.info.render.calls, triangles: gl.info.render.triangles, joints: { left: rig.leftLeg?.position.toArray(), right: rig.rightLeg?.position.toArray() } }),
     };
-    return () => { observer.disconnect(); if (import.meta.env.DEV) delete debugWindow.__foxy3d; for (const material of rig.materials.values()) material.dispose(); rig.fabric.dispose(); };
+    return () => { observer.disconnect(); if (import.meta.env.DEV) delete debugWindow.__foxy3d; for (const material of rig.materials.values()) material.dispose(); rig.fabric.dispose(); rig.relief.dispose(); };
   }, [rig, invalidate, gl, stateRef]);
 
   useFrame((_, delta) => {
@@ -158,10 +165,10 @@ function FoxyModel({ stateRef, reduced, hidden, poseKey }: { stateRef: RefObject
   return <span ref={host} className="foxy-scene" data-renderer="three" data-pose={poseKey}>
     {(!ready || lost) && <Fallback />}
     {!lost && <ModelBoundary fallback={<Fallback />}>
-      <Canvas orthographic camera={{ position: [0, 1.36, 6], zoom: 34, near: 0.1, far: 30 }} dpr={1.25} frameloop={hidden ? 'never' : reduced ? 'demand' : 'always'} gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }} onCreated={({ gl, camera, size }) => {
-        camera.zoom = size.height / 3;
+      <Canvas orthographic camera={{ position: [0.12, 1.36, 6], zoom: 34, near: 0.1, far: 30 }} dpr={1.25} frameloop={hidden ? 'never' : reduced ? 'demand' : 'always'} gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }} onCreated={({ gl, camera, size }) => {
+        camera.zoom = size.height / 3.4;
         camera.updateProjectionMatrix();
-        camera.lookAt(0, 1.36, 0); gl.setClearAlpha(0);
+        camera.lookAt(0.12, 1.36, 0); gl.setClearAlpha(0);
         gl.domElement.addEventListener('webglcontextlost', () => setLost(true), { once: true });
       }}>
         <ambientLight intensity={0.9} color={palette.white} />
