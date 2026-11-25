@@ -2,6 +2,16 @@ import { lazy, Suspense, type PointerEvent, useCallback, useEffect, useRef, useS
 import { ASSISTANT_OPEN_EVENT, ASSISTANT_SIGNAL_EVENT, type AssistantSignal } from "@/lib/assistant-events";
 import { avoidSpans, canChat, canFall, canPoint, clampX, pickTarget, pointDirection, ROBOT_MOTION, robotWidth, walkDuration } from "@/lib/robot-motion";
 
+import foxyFull from "@/assets/foxy-full.webp.asset.json";
+import foxyHead from "@/assets/foxy-head.webp.asset.json";
+import foxyBody from "@/assets/foxy-body.webp.asset.json";
+import foxyTail from "@/assets/foxy-tail.webp.asset.json";
+import foxyPawLeft from "@/assets/foxy-paw-left.webp.asset.json";
+import foxyPawRight from "@/assets/foxy-paw-right.webp.asset.json";
+import foxyFeet from "@/assets/foxy-feet.webp.asset.json";
+import foxyEyeLeft from "@/assets/foxy-eye-left.webp.asset.json";
+import foxyEyeRight from "@/assets/foxy-eye-right.webp.asset.json";
+
 /** Loaded only when the visitor first opens the chat, so pages stay light. */
 const AssistantChatPopup = lazy(() => import("@/components/site/assistant-chat-popup"));
 
@@ -711,6 +721,8 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
   return (
     <svg viewBox="0 0 120 140" className="robot-svg block h-auto w-[68px] sm:w-[88px]" aria-hidden="true">
       <defs>
+        <clipPath id="fx-generated-foot-l"><rect x="0" y="115" width="57" height="25" /></clipPath>
+        <clipPath id="fx-generated-foot-r"><rect x="57" y="115" width="63" height="25" /></clipPath>
         <radialGradient id="fx-shell" cx="0.38" cy="0.28" r="0.85">
           <stop offset="0" style={{ stopColor: "var(--foxy-shell-light)" }} />
           <stop offset="0.6" style={{ stopColor: "var(--foxy-shell)" }} />
@@ -762,92 +774,39 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
       <g className="fx-figure">
         <g className="fx-hop">
           <g className="fx-bob">
-            {/* Fluffy tail with a cyan-to-violet tip */}
-            <g className="fx-tail">
-              <path d="M78 118 C95 121 106 108 103 92 C102 85 95 84 93 91 C93 102 89 108 76 109 Z" fill="url(#fx-tail)" />
-            </g>
-            <g className="fx-leg-l"><ellipse cx="49" cy="128" rx="8.5" ry="6" fill="url(#fx-shell)" /></g>
-            <g className="fx-leg-r"><ellipse cx="71" cy="128" rx="8.5" ry="6" fill="url(#fx-shell)" /></g>
-            <g className="fx-body">
-              <ellipse cx="60" cy="114" rx="23" ry="17" fill="url(#fx-shell)" />
-              <ellipse cx="60" cy="117" rx="12" ry="8.5" className="fx-belly" />
-              <path className="fx-core" d="M60 118 C56 115 54 112.5 56 110.8 C57.4 109.7 59.2 110.4 60 111.6 C60.8 110.4 62.6 109.7 64 110.8 C66 112.5 64 115 60 118 Z" />
-            </g>
-            <g className="fx-arm-l"><ellipse cx="37" cy="110" rx="6.5" ry="8.5" transform="rotate(22 37 110)" fill="url(#fx-shell)" /></g>
-            <g className="fx-arm-r"><ellipse cx="83" cy="110" rx="6.5" ry="8.5" transform="rotate(-22 83 110)" fill="url(#fx-shell)" /></g>
+            <g className="fx-tail"><FoxyPiece url={foxyTail.url} /></g>
+            <g className="fx-leg-l" clipPath="url(#fx-generated-foot-l)"><FoxyPiece url={foxyFeet.url} /></g>
+            <g className="fx-leg-r" clipPath="url(#fx-generated-foot-r)"><FoxyPiece url={foxyFeet.url} /></g>
+            <g className="fx-body"><FoxyPiece url={foxyBody.url} /></g>
+            <g className="fx-arm-l"><FoxyPiece url={foxyPawLeft.url} /></g>
+            <g className="fx-arm-r"><FoxyPiece url={foxyPawRight.url} /></g>
             <g className="fx-juggle"><path d="M84 86 l2 4.2 4.6 .5 -3.4 3.1 1 4.5 -4.2 -2.3 -4.2 2.3 1 -4.5 -3.4 -3.1 4.6 -.5 z" /></g>
-
-            <g className="fx-head">
-              <g className="fx-ear-l">
-                <path d="M26 48 L29 15 Q31 10 36 13 L54 29 Z" fill="url(#fx-shell)" />
-                <path className="fx-ear-in" d="M31 40 L33 20 L46 30 Z" />
-              </g>
-              <g className="fx-ear-r">
-                <path d="M94 48 L91 15 Q89 10 84 13 L66 29 Z" fill="url(#fx-shell)" />
-                <path className="fx-ear-in" d="M89 40 L87 20 L74 30 Z" />
-              </g>
-              <line x1="60" y1="25" x2="60" y2="13" className="fx-antenna-stem" />
-              <path className="fx-antenna" d="M60 13 C56 9.5 54 6.5 56.6 4.8 C58.2 3.8 59.6 4.8 60 6 C60.4 4.8 61.8 3.8 63.4 4.8 C66 6.5 64 9.5 60 13 Z" />
-              <ellipse cx="60" cy="60" rx="41" ry="37" fill="url(#fx-shell)" />
-              <ellipse cx="46" cy="33" rx="14" ry="5" className="fx-highlight" transform="rotate(-16 46 33)" />
-              <ellipse cx="60" cy="67" rx="32" ry="23" fill="url(#fx-visor)" className="fx-visor" />
-              <path d="M38 57 Q45 48 58 47" className="fx-visor-gloss" />
-
-              <ellipse className="fx-blush" cx="35" cy="81" rx="7" ry="4" />
-              <ellipse className="fx-blush" cx="85" cy="81" rx="7" ry="4" />
-
+            <g className="fx-head fx-generated-head">
+              <FoxyPiece url={foxyHead.url} />
               <g className="fx-eyes">
                 <g className="fx-eyes-open">
-                  <g className="fx-eye-l">
-                    <ellipse cx="47" cy="68" rx="8.2" ry="9.8" className="fx-eye" />
-                    <g className="fx-pupil">
-                      <ellipse cx="47" cy="69" rx="5.6" ry="7" className="fx-pupil-dot" />
-                      <circle cx="44.8" cy="65.4" r="2.8" className="fx-shine" />
-                      <circle cx="49.4" cy="72.4" r="1.3" className="fx-shine" />
-                    </g>
-                  </g>
-                  <g className="fx-eye-r">
-                    <ellipse cx="73" cy="68" rx="8.2" ry="9.8" className="fx-eye" />
-                    <g className="fx-pupil">
-                      <ellipse cx="73" cy="69" rx="5.6" ry="7" className="fx-pupil-dot" />
-                      <circle cx="70.8" cy="65.4" r="2.8" className="fx-shine" />
-                      <circle cx="75.4" cy="72.4" r="1.3" className="fx-shine" />
-                    </g>
+                  <g className="fx-pupil">
+                    <g className="fx-eye-l"><FoxyPiece url={foxyEyeLeft.url} /></g>
+                    <g className="fx-eye-r"><FoxyPiece url={foxyEyeRight.url} /></g>
                   </g>
                 </g>
                 <g className="fx-eyes-happy fx-stroke">
-                  <path d="M40 71 Q47 60 54 71" />
-                  <path d="M66 71 Q73 60 80 71" />
+                  <path d="M32 63 Q40 51 48 63" /><path d="M64 63 Q72 51 80 63" />
                 </g>
                 <g className="fx-eyes-surprised">
-                  <circle cx="47" cy="68" r="7.2" className="fx-ring" />
-                  <circle cx="73" cy="68" r="7.2" className="fx-ring" />
-                  <circle cx="47" cy="68" r="2.4" className="fx-eye" />
-                  <circle cx="73" cy="68" r="2.4" className="fx-eye" />
+                  <circle cx="40" cy="61" r="7.2" className="fx-ring" /><circle cx="72" cy="61" r="7.2" className="fx-ring" />
+                  <circle cx="40" cy="61" r="2.4" className="fx-eye" /><circle cx="72" cy="61" r="2.4" className="fx-eye" />
                 </g>
                 <g className="fx-eyes-dizzy fx-stroke">
-                  <path d="M47 68 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
-                  <path d="M73 68 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
+                  <path d="M40 61 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
+                  <path d="M72 61 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
                 </g>
-                <g className="fx-eyes-sleepy fx-stroke">
-                  <path d="M40 69 Q47 74 54 69" />
-                  <path d="M66 69 Q73 74 80 69" />
-                </g>
+                <g className="fx-eyes-sleepy fx-stroke"><path d="M32 61 Q40 66 48 61" /><path d="M64 61 Q72 66 80 61" /></g>
               </g>
-              <path className="fx-mouth fx-mouth-w" d="M56.5 80 Q58.25 82.6 60 80 Q61.75 82.6 63.5 80" />
-              <ellipse className="fx-mouth-o" cx="60" cy="81.5" rx="2.2" ry="2.6" />
-
-              <g className="fx-stars">
-                <g className="fx-stars-spin">
-                  <path d="M60 12 l1.6 3.3 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.8 -3.3 1.8 .8 -3.6 -2.7 -2.4 3.6 -.4 z" transform="translate(-26 0)" />
-                  <path d="M60 12 l1.6 3.3 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.8 -3.3 1.8 .8 -3.6 -2.7 -2.4 3.6 -.4 z" transform="translate(24 -2)" />
-                  <path d="M60 12 l1.6 3.3 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.8 -3.3 1.8 .8 -3.6 -2.7 -2.4 3.6 -.4 z" transform="translate(0 -8) scale(0.8) translate(15 3)" />
-                </g>
-              </g>
-              <g className="fx-zzz">
-                <text x="90" y="26">z</text>
-                <text x="98" y="16" className="fx-z2">z</text>
-              </g>
+              <g className="fx-stars"><g className="fx-stars-spin">
+                {[-26, 0, 26].map((x) => <path key={x} d="M60 12 l1.6 3.3 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.8 -3.3 1.8 .8 -3.6 -2.7 -2.4 3.6 -.4 z" transform={`translate(${x} -8)`} />)}
+              </g></g>
+              <g className="fx-zzz"><text x="90" y="26">z</text><text x="98" y="16" className="fx-z2">z</text></g>
             </g>
           </g>
         </g>
@@ -868,15 +827,16 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
   );
 }
 
-/** The tiny round face shown when Foxy is minimised. */
+/** Pieces of one generated picture retain the existing independent part animations. */
+function FoxyPiece({ url }: { url: string }) {
+  return <image href={url} x="10" y="4" width="100" height="128" preserveAspectRatio="none" />;
+}
+
+/** The same generated face, cropped, when Foxy is minimised. */
 function MiniFace() {
   return (
-    <svg viewBox="0 0 44 44" className="size-11" aria-hidden="true">
-      <circle cx="22" cy="22" r="20" className="fx-mini-shell" />
-      <ellipse cx="22" cy="24" rx="14" ry="10.5" className="fx-mini-visor" />
-      <ellipse cx="16.5" cy="24" rx="3" ry="3.8" className="fx-mini-eye" />
-      <ellipse cx="27.5" cy="24" rx="3" ry="3.8" className="fx-mini-eye" />
-      <path d="M20 30 Q21 31.5 22 30 Q23 31.5 24 30" className="fx-mini-mouth" />
+    <svg viewBox="12 4 94 86" className="size-11" aria-hidden="true">
+      <FoxyPiece url={foxyFull.url} />
     </svg>
   );
 }

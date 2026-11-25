@@ -180,3 +180,7 @@
 - [x] Sky-track switch: sun knob rolls into a moon, clouds drift out, stars twinkle; spring motion, hover/press feedback; first visit still follows the device setting (user choice). Checked at 390px in both themes, reload persistence, no overflow.
 - [x] Bigger logo tiles in product cards (PC + mobile)
 - [x] Auto product pictures via Cloudflare Workers AI flux-1-schnell (replaces Google plan) — needs CL_CLOUDFLARE_API_TOKEN + account ID
+
+## Generated Foxy mascot
+- [x] Generate an original chubby headphone-wearing Foxy; remove the background and animate its picture pieces without changing chat or commerce.
+- [x] Desktop light/mobile dark picture and splash/reform checked; chat opens with Foxy greeting in both. Reduced motion stays idle at the same position with chat working. Eight motion tests pass; no runtime errors.
