@@ -1,9 +1,9 @@
 # Roadmap
 
 ## Full 3D Foxy
-- [ ] Replace the flat mascot with a volumetric, articulated 3D character; retain the cute face, headphones and thick soft shell.
-- [ ] Connect the existing distance-driven gait, expressions, chat, drag/drop and quiet motion states to the 3D rig.
-- [ ] Verify visible rendering, motion and chat across mobile/desktop and themes; check reduced motion and performance budgets.
+- [x] Replaced the flat mascot with an original articulated GLB: round face, headphones, thick padded coat and dimensional tail; client-only loading and picture fallback retained.
+- [x] Connected distance-driven opposite-leg gait, counterbalanced head/arms, visible eyes, limited 3/4 yaw, existing chat, drag/drop, water splash and reform; no store or chat AI logic changes.
+- [x] 15 motion/pose tests pass. Browser checks at 903×634 and 390×844 show real moving leg joints, visible 3D rendering, chat open/close and water reform. Shop → real product → quantity/chat checked in light/dark; reduced motion remains still for 8.5s and chat opens. Model budget: 51 meshes, 54,768 triangles. No paid order or AI answer submitted; real-device frame rate, touch feel and GPU appearance remain for device testing.
 
 ## Foxy expression and natural movement repair
 - [x] Kept generated iris identity across expressions, rebuilt feathered fur backing and aligned independent paws/feet/head/tail; cursor tracking now reaches the visible rig.
