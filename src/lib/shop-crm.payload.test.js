@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { crmSyncRecords } from "./shop-crm.payload";
+import { crmSyncRecords, crmOrderRecord } from "./shop-crm.payload";
 const id = "b1111111-1111-4111-8111-111111111111";
 const now = "2026-11-11T02:00:00Z";
 const first = "2026-11-01T00:00:00Z";
@@ -25,4 +25,14 @@ test("unknown buyers stay unlinked without fake customer profiles", () => {
   expect(records).toHaveLength(1);
   expect(records[0].entity).toBe("orders");
   expect(records[0].data.customer_external_id).toBeNull();
+});
+test("order payload flags payment proof without leaking its location", () => {
+  const order = { id: "o1", order_number: "N1", status: "under_review", currency: "INR", total: 10, payment_reference: "UTR123456", has_payment_proof: true, proof_submitted_at: "2026-11-25T01:00:00Z", payment_evidence_url: "storage:orders/x/y.jpg" };
+  const rec = crmOrderRecord(order, [], false, 30);
+  expect(rec.data.has_payment_proof).toBe(true);
+  expect(rec.data.proof_submitted_at).toBe("2026-11-25T01:00:00Z");
+  expect(rec.data.payment_reference).toBe("UTR123456");
+  expect(rec.status).toBe("under_review");
+  expect(JSON.stringify(rec)).not.toContain("storage:");
+  expect(crmOrderRecord({ ...order, has_payment_proof: false }, [], false, 30).data.proof_submitted_at).toBe(null);
 });

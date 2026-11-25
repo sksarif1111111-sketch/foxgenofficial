@@ -1108,7 +1108,7 @@ export function WalletPanel({ notify }: { notify: Notify }) {
         {pending.map(r => <div key={r.id} className="border-b border-border pb-4 space-y-2">
           <p className="font-semibold">{r.amount} {r.currency} · {r.reference}</p>
           <p className="text-xs text-muted-foreground break-all">{r.profile_id} · {r.network} · {r.recipient_used}</p>
-          {r.evidence_url && <a href={r.evidence_url.startsWith('telegram-file:') ? `/api/admin/payment-proof/${r.id}` : r.evidence_url} target="_blank" rel="noreferrer" className="text-primary text-sm">Payment evidence</a>}
+          {r.evidence_url && <a href={/^(telegram-file|storage):/.test(r.evidence_url) ? `/api/admin/payment-proof/${r.id}` : r.evidence_url} target="_blank" rel="noreferrer" className="text-primary text-sm">Payment evidence</a>}
           <input aria-label={`Review note ${r.id}`} placeholder="Review note or rejection reason" className={input} value={notes[r.id] ?? ""} onChange={e => setNotes(p => ({ ...p, [r.id]: e.target.value }))} />
           <p className="text-sm text-muted-foreground">On approval: ${walletUsd(Number(r.amount), r.currency).toFixed(2)} USD / USDT · ₹100 = $1. Payment must be verified first.</p>
           <div className="flex gap-2">{[true,false].map(approve => <Button key={String(approve)} variant={approve ? "default" : "outline"} disabled={busy} onClick={async () => {

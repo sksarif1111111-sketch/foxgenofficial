@@ -232,6 +232,13 @@
       "when": 1795561324175,
       "tag": "0032_product_image_auto_attempt",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1795568993055,
+      "tag": "0033_crm_payment_proof_flags",
+      "breakpoints": true
     }
   ]
 }

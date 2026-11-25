@@ -35,7 +35,7 @@ export function crmOrderRecord(order: Row, items: Row[], hasFulfillment: boolean
       customer_external_id: order["customer_external_id"] ?? null,
       order_number: order["order_number"], channel: order["channel"] === "telegram" || order["telegram_user_id"] != null ? "telegram" : "website",
       customer_name: order["customer_name"], delivery_emails: order["delivery_emails"], telegram_user_id: order["telegram_user_id"],
-      payment_method_name: order["payment_method_name"], payment_reference: order["payment_reference"], confirmed_at: order["confirmed_at"], delivered_at: order["delivered_at"],
+      payment_method_name: order["payment_method_name"], payment_reference: order["payment_reference"], has_payment_proof: order["has_payment_proof"] === true, proof_submitted_at: order["has_payment_proof"] === true ? order["proof_submitted_at"] ?? null : null, confirmed_at: order["confirmed_at"], delivered_at: order["delivered_at"],
       shop_delivery_sla_minutes: sla, items: items.map(i => ({ product_name: i["product_name"], quantity: i["quantity"] })), has_fulfillment: hasFulfillment,
       original_currency: order["currency"], original_stars_amount: order["stars_total"],
     },

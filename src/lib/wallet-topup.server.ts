@@ -1,4 +1,5 @@
 import { db, tg } from "@/lib/hub.server";
+import { storeTelegramProof } from "./payment-proof.server";
 import { walletUsd } from "./wallet-rate";
 import { topupAmount, topupReference, topupEvidence } from "./wallet-topup.contract";
 import { styledKeyboard, type TelegramKeyboard } from './telegram-navigation';
@@ -69,7 +70,9 @@ export async function walletFundingBot(profileId: string, chatId: number, action
   if (evidence && !evidence.success) { await send("Send a valid HTTPS screenshot URL or tap Submit for review."); return true; }
   const { data: method } = await db.from("payment_methods").select("*").eq("id", session.method_id).eq("enabled", true).maybeSingle();
   if (!method?.recipient || !["USDT", "INR"].includes(method.currency)) { await send("This method is no longer available. Start Add funds again."); return true; }
-  const result = await db.from("wallet_topup_requests").insert({ profile_id: profileId, amount: session.amount, currency: method.currency, method: method.id, network: method.network, recipient_used: method.recipient, reference: session.reference, evidence_url: photoId ? `telegram-file:${photoId}` : evidence?.success ? evidence.data : null });
+  const requestId = crypto.randomUUID();
+  const evidenceValue = await storeTelegramProof("topups", requestId, photoId);
+  const result = await db.from("wallet_topup_requests").insert({ id: requestId, profile_id: profileId, amount: session.amount, currency: method.currency, method: method.id, network: method.network, recipient_used: method.recipient, reference: session.reference, evidence_url: evidenceValue });
   if (result.error) { await send(result.error.code === "23505" ? "This transaction reference has already been submitted. No funds were added." : "Could not save your request. Please retry."); return true; }
   await db.from("wallet_topup_sessions").delete().eq("profile_id", profileId);
   await send(`⏳ <b>FUNDING UNDER REVIEW</b>\n━━━━━━━━━━━━━━\n${session.amount} ${esc(method.currency)}\nReference: ${esc(session.reference)}\nAfter approval: $${walletUsd(session.amount,method.currency).toFixed(2)} wallet funds.\nWe will notify you after your payment is checked.`,[[{text:'👛 Wallet history',callback_data:'walletlog'},{text:'🛍️ Shop',callback_data:'shop'}]]);

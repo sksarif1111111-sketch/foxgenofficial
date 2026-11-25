@@ -125,7 +125,7 @@ export const shopOrderDetail = createServerFn({ method: "POST" }).middleware([re
         telegram = { username: profile.telegram_username, telegram_user_id: profile.telegram_user_id };
     }
     return {
-      order: { ...order, payment_evidence_url: order.payment_evidence_url?.startsWith("telegram-file:") ? `/api/admin/payment-proof/${order.id}` : order.payment_evidence_url, total: order.total === null ? null : Number(order.total) },
+      order: { ...order, payment_evidence_url: /^(telegram-file|storage):/.test(order.payment_evidence_url ?? "") ? `/api/admin/payment-proof/${order.id}` : order.payment_evidence_url, total: order.total === null ? null : Number(order.total) },
       items: items ?? [],
       events: events ?? [],
       fulfillments: fulfillments ?? [],
