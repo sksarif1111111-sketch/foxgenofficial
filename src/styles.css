@@ -4,6 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+#lovable-badge {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 /*
  * Foxgen AI Store design system.
  * Soft white canvas with a gentle blue light in the hero, deep navy text and one refined blue accent.
