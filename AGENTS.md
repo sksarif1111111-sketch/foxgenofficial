@@ -30,11 +30,11 @@
 - Public pages use named text-style utilities in `src/styles.css` (`heading-*`, `title-*`, `body-*`, `button-*`, `caption-*`) and Phosphor icons from `@phosphor-icons/react/dist/ssr` (SSR-safe); admin screens keep lucide. Lighting, tiles and motion are CSS utilities in `src/styles.css` (`hero-aura`, `btn-glow`, `tile-*`, `animate-marquee`, `surface-violet`) so components never hardcode colours and reduced motion is handled in one place.
 - Every primary "Buy now" on public pages uses `BuyNowLink` (Home `#offers`); product-level Buy now opens the existing checkout via `/shop?product=<id>&buy=true`, so there is one purchase flow.
 - The landing-page festive offer is config only (`src/config/offers.ts`, rules in `src/lib/festive-offer.ts`): every offer element hides while any `{{placeholder}}` remains or outside startsAt/endsAt, and the countdown renders after mount; keeps switching festivals a config edit and avoids hydration mismatch.
-- Orbit and four swipe rows stay independent; `animation-catalogue.ts` preserves decorative variants, but featured cards require positive verified live stock labels, never stock snapshots.
-- Home/Shop share image/name/price `ProductCard`; display-only `product-content.ts` groups explicit headings and strips emojis without rewriting catalogue data; details use desktop tabs/mobile accordions and the existing checkout.
+- Orbit and four rows stay independent; featured cards need verified live stock, never snapshots.
+- Home/Shop share `ProductCard`; `product-content.ts` formats text for display only, never rewriting catalogue data.
 - Product logos resolve through `resolveProductLogo` in `src/lib/brand-logos.ts` (Admin custom logo wins, else official brand logo matched from the product name); new supplier products get real logos without manual setup.
 - Foxgen AI chat lives only in the robot's pop-up (`assistant-robot.tsx` lazy-loads `assistant-chat-popup.tsx`, same `/api/chat` backend); other "Ask Foxgen AI" buttons call `openAssistant()` and `/chat` redirects Home, so there is one chat surface and pages stay light.
-- Foxy: registered image pieces keep iris identity; distance-driven gait + separate head pose/motion use `data-act`/`data-face`. Hop-mirror, never rotateY; cancel interrupted drops and keep payment paths clear.
+- Foxy: registered image pieces, distance-driven gait, `data-act`/`data-face` states; hop-mirror, never rotateY; keep payment paths clear.
 
 - Website buyers use verified Cloud Auth identities on customer_user_id with server-side ownership checks; Telegram profile tokens stay separate and cannot create customer website orders, so channels never merge by matching email. No customer profile table is needed.
 - Numbered website identities live in a server-only account directory, not Telegram profiles; member/payment CRM snapshots use a separate durable entity outbox sharing the managed retry job. Wallet approvals lock the request and compute the configured currency conversion server-side, ignoring caller-supplied credit amounts; prevents incorrect wallet balances. CRM product imports use a locked reseller-ID upsert and leave new products unpublished.
@@ -45,4 +45,4 @@
 - Private non-extension inventory is assigned under order locks; licence products keep their existing separate manager, and marketplace jobs use the existing cron-secret boundary for delayed delivery notices.
 - Theme: `.dark` on <html> via `src/lib/theme.ts`; colours only in `src/styles.css`.
 - AI product pictures: Cloudflare Workers AI (`product-image.server.ts`) fills only imageless, never-attempted products.
-- CRM write actions (`message_customer`, `approve_and_deliver`, `adjust_wallet`) live in `src/lib/shop-crm-actions.server.ts`, run once per Idempotency-Key/body hash via `shop_crm_action_requests`, and never echo credentials; the member feed (`shop_enqueue_customer`) and top-up feed (`shop_enqueue_topup`) are emitted by database triggers so every change re-syncs without app code.
+- CRM write actions run once per request key (`shop_crm_action_requests`) and never echo credentials; member/top-up feeds come from DB triggers so every change re-syncs.
