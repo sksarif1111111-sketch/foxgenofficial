@@ -58,6 +58,43 @@ export function walkDuration(from: number, to: number, vw: number) {
   return Math.max(600, Math.round((Math.abs(to - from) / speed) * 1000));
 }
 
+/** Small curious walks rather than repeated full-screen sweeps. */
+export function wanderTarget(current: number, vw: number, rand: () => number = Math.random) {
+  const step = robotWidth(vw) * (0.65 + rand() * 1.1);
+  const direction = rand() < 0.5 ? -1 : 1;
+  const target = clampX(current + step * direction, vw);
+  return Math.abs(target - current) > 8 ? target : clampX(current - step * direction, vw);
+}
+
+/** Keep the whole walking path clear, not just the landing point. */
+export function reachableTarget(from: number, to: number, vw: number, blocked: Array<[number, number]>) {
+  const w = robotWidth(vw);
+  let target = clampX(to, vw);
+  for (const [left, right] of blocked) {
+    if (to > from && from + w <= left - 8) target = Math.min(target, left - w - 8);
+    if (to < from && from >= right + 8) target = Math.max(target, right + 8);
+  }
+  return clampX(target, vw);
+}
+
+/** One planted stance followed by a lifted recovery; opposite paws are half a cycle apart. */
+export function pawPose(phase: number) {
+  const p = ((phase % 1) + 1) % 1;
+  if (p < 0.6) return { x: 5 - (p / 0.6) * 10, y: 0, angle: 6 - (p / 0.6) * 12 };
+  const swing = (p - 0.6) / 0.4;
+  return { x: -5 + swing * 10, y: -Math.sin(swing * Math.PI) * 6, angle: -6 + swing * 12 };
+}
+
+/** Phase is derived from travelled distance, so a paused walk also freezes the feet. */
+export function gaitPose(distance: number, stride: number) {
+  const phase = distance / Math.max(1, stride);
+  return {
+    left: pawPose(phase), right: pawPose(phase + 0.5),
+    bob: -Math.abs(Math.sin(phase * Math.PI * 2)) * 2.5,
+    lean: Math.cos(phase * Math.PI * 2) * 3,
+  };
+}
+
 /** Drop in from the top only after the first delay, then at most once per gap. */
 export function canFall(now: number, startedAt: number, lastFallAt: number | null) {
   if (lastFallAt === null) return now - startedAt >= ROBOT_MOTION.firstFallAfterMs;

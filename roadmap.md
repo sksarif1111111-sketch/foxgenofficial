@@ -1,5 +1,10 @@
 # Roadmap
 
+## Foxy expression and natural movement repair
+- [x] Kept generated iris identity across expressions, rebuilt feathered fur backing and aligned independent paws/feet/head/tail; cursor tracking now reaches the visible rig.
+- [x] Short distance-driven planted steps, head counterbalance, tail swing, curious sniffing and gentle settling; cancellable manual falls, live reduced-motion changes, preserved chat/hide/drag and mobile purchase-bar clearance.
+- [x] Home walking, hover/chat, drag/splash/reform and reduced motion verified at 903/390px; real Shop → product → checkout quantity verified at 1280/390px in both themes, hide/reload/restore and interrupting drops checked. 11 motion tests pass; no page errors. No AI answer or paid order submitted; character remains animated generated image layers, not a volumetric 3D model.
+
 ## Soft luxury theme refinement
 - [x] Refined existing tokens to graphite/charcoal, muted blue and restrained violet; clean white light mode and inherited surfaces preserved. No layout or commerce changes.
 - [x] Preserved central controller, storage key and early boot; refined switch and interruption-safe circular reveal, blocked-storage device fallback, reduced motion and colour fade.

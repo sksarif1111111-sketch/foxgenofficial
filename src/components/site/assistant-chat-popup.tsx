@@ -43,7 +43,7 @@ export default function AssistantChatPopup({ onClose, side = "right" }: { onClos
       role="dialog"
       aria-label="Foxy, FOXGEN assistant chat"
       data-side={side}
-      className={`assistant-pop fixed bottom-[86px] z-40 ${side === "left" ? "left-4" : "right-4"} flex h-[min(400px,calc(100dvh-112px))] w-[min(320px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-border bg-card text-foreground shadow-lift sm:bottom-[124px] sm:h-[min(520px,calc(100dvh-150px))] sm:w-[370px]`}
+      className={`assistant-pop fixed bottom-[86px] z-[60] ${side === "left" ? "left-4" : "right-4"} flex h-[min(400px,calc(100dvh-112px))] w-[min(320px,calc(100vw-2rem))] flex-col overflow-hidden rounded-lg border border-border bg-card text-foreground shadow-lift sm:bottom-[124px] sm:h-[min(520px,calc(100dvh-150px))] sm:w-[370px]`}
     >
       <div className="flex items-center gap-3 border-b border-border bg-accent/60 px-4 py-3">
         <span className="relative flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">

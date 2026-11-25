@@ -119,7 +119,7 @@ function ProductPage() {
         <ProductDocumentation sections={sections} tutorialUrl={p.tutorial_url} />
         {related.length > 0 && <section className="mt-10 border-t border-border pt-8 sm:mt-16"><div className="mb-6 flex items-center justify-between gap-4"><h2 className="heading-6">You may also like</h2><Button asChild variant="ghost" size="sm"><Link to="/shop" search={{ category }}>View all</Link></Button></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">{related.map(r => <ProductCard key={r.id} product={r} />)}</div></section>}
       </main>
-      <div className="product-mobile-purchase"><div className="container-page grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-4"><div className="min-w-0"><span className="caption-4 block truncate text-muted-foreground">{name}</span><span className="title-4 tabular-nums">{p.price_usdt === null ? "Price on request" : `${p.price_usdt.toFixed(2)} USDT`}</span></div>{purchase}</div></div>
+      <div className="product-mobile-purchase" data-robot-floor=""><div className="container-page grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-4"><div className="min-w-0"><span className="caption-4 block truncate text-muted-foreground">{name}</span><span className="title-4 tabular-nums">{p.price_usdt === null ? "Price on request" : `${p.price_usdt.toFixed(2)} USDT`}</span></div>{purchase}</div></div>
       <SiteFooter />
     </div>
   );

@@ -1,14 +1,15 @@
 import { lazy, Suspense, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ASSISTANT_OPEN_EVENT, ASSISTANT_SIGNAL_EVENT, type AssistantSignal } from "@/lib/assistant-events";
-import { avoidSpans, canChat, canFall, canPoint, clampX, pickTarget, pointDirection, ROBOT_MOTION, robotWidth, walkDuration } from "@/lib/robot-motion";
+import { avoidSpans, canChat, canFall, canPoint, clampX, gaitPose, pickTarget, pointDirection, reachableTarget, ROBOT_MOTION, robotWidth, wanderTarget } from "@/lib/robot-motion";
 
 import foxyFull from "@/assets/foxy-full.webp.asset.json";
-import foxyHead from "@/assets/foxy-head.webp.asset.json";
-import foxyBody from "@/assets/foxy-body.webp.asset.json";
-import foxyTail from "@/assets/foxy-tail.webp.asset.json";
-import foxyPawLeft from "@/assets/foxy-paw-left.webp.asset.json";
-import foxyPawRight from "@/assets/foxy-paw-right.webp.asset.json";
-import foxyFeet from "@/assets/foxy-feet.webp.asset.json";
+import foxyHead from "@/assets/foxy-rig-head.webp.asset.json";
+import foxyBody from "@/assets/foxy-rig-body.webp.asset.json";
+import foxyTail from "@/assets/foxy-rig-tail.webp.asset.json";
+import foxyPawLeft from "@/assets/foxy-rig-paw-left.webp.asset.json";
+import foxyPawRight from "@/assets/foxy-rig-paw-right.webp.asset.json";
+import foxyFootLeft from "@/assets/foxy-rig-foot-left.webp.asset.json";
+import foxyFootRight from "@/assets/foxy-rig-foot-right.webp.asset.json";
 import foxyEyeLeft from "@/assets/foxy-eye-left.webp.asset.json";
 import foxyEyeRight from "@/assets/foxy-eye-right.webp.asset.json";
 
@@ -28,7 +29,7 @@ const FALL_KEY = "foxy-last-drop";
 const START_KEY = "foxy-started";
 
 type Act =
-  | "idle" | "walk" | "turn" | "wave" | "point" | "sit" | "held" | "land" | "drop" | "splash" | "puddle" | "reform" | "dizzy" | "tail" | "juggle" | "peek";
+  | "idle" | "walk" | "sniff" | "turn" | "wave" | "point" | "sit" | "held" | "land" | "drop" | "splash" | "puddle" | "reform" | "dizzy" | "tail" | "juggle" | "peek";
 type Face = "normal" | "happy" | "curious" | "surprised" | "dizzy" | "sleepy";
 const BUSY_ACTS: Act[] = ["turn", "held", "land", "drop", "splash", "puddle", "reform", "dizzy", "tail", "juggle", "peek"];
 /** Dropped by hand from higher than this (px) it splashes into water and reforms. */
@@ -49,7 +50,7 @@ function blockedSpans(): Array<[number, number]> {
   const vh = window.innerHeight;
   const out: Array<[number, number]> = [];
   document.querySelectorAll(AVOID_SELECTOR).forEach((el) => {
-    if (el.closest(".robot-root, .assistant-pop")) return;
+    if (el.closest(".robot-root, .assistant-pop, [data-robot-floor]")) return;
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.bottom < vh - ROBOT_MOTION.avoidBand || r.top > vh) return;
     out.push([r.left, r.right]);
@@ -81,6 +82,8 @@ export function AssistantRobot() {
   const pendingPointRef = useRef<1 | -1 | null>(null);
   const pendingWaveRef = useRef<string | null>(HELLO);
   const lastInteractRef = useRef(Date.now());
+  const manualRef = useRef(0);
+  const clickTimerRef = useRef(0);
 
   const [mounted, setMounted] = useState(false);
   const [mini, setMini] = useState(false);
@@ -100,6 +103,8 @@ export function AssistantRobot() {
   const [nod, setNod] = useState(false);
   const [faceOverride, setFaceOverride] = useState<Face | null>(null);
   const [burst, setBurst] = useState<{ kind: "hearts" | "sparkles"; id: number } | null>(null);
+  const [reduced, setReduced] = useState(false);
+  const [clearance, setClearance] = useState(false);
   actRef.current = act;
 
   const setDir = useCallback((d: 1 | -1) => {
@@ -144,24 +149,51 @@ export function AssistantRobot() {
     setMini(localStorage.getItem(MINI_KEY) === "1");
     moveTo(avoidSpans(window.innerWidth, window.innerWidth, blockedSpans()), 0);
     setMounted(true);
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onMotion = () => {
+      setReduced(media.matches);
+      if (media.matches) {
+        manualRef.current += 1;
+        setDragging(false);
+        setBlink(false);
+        moveTo(xRef.current, 0);
+        setAct("idle");
+      }
+    };
+    onMotion();
+    media.addEventListener("change", onMotion);
     const onResize = () => moveTo(clampX(xRef.current, window.innerWidth), 0);
     const onVis = () => {
       setHidden(document.hidden);
+      if (document.hidden) {
+        manualRef.current += 1;
+        setDragging(false);
+        setNod(false);
+      }
       if (!document.hidden) pendingWaveRef.current = "Welcome back! 💙";
     };
     const onOpen = () => {
+      manualRef.current += 1;
+      freeze();
+      moveTo(xRef.current, 0);
+      setDragging(false);
+      setSleeping(false);
       setMini(false);
+      setChatSide(xRef.current + robotWidth(window.innerWidth) / 2 < window.innerWidth / 2 ? "left" : "right");
       setChatOpen(true);
     };
     window.addEventListener("resize", onResize);
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener(ASSISTANT_OPEN_EVENT, onOpen);
     return () => {
+      manualRef.current += 1;
+      window.clearTimeout(clickTimerRef.current);
+      media.removeEventListener("change", onMotion);
       window.removeEventListener("resize", onResize);
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener(ASSISTANT_OPEN_EVENT, onOpen);
     };
-  }, [moveTo]);
+  }, [moveTo, freeze]);
 
   // Eyes follow the mouse (a few px, clamped); moving near wakes a sleeping Foxy.
   useEffect(() => {
@@ -170,7 +202,7 @@ export function AssistantRobot() {
     let last: { x: number; y: number } | null = null;
     const apply = () => {
       raf = 0;
-      const root = rootRef.current;
+      const root = layerRef.current;
       const btn = buttonRef.current;
       if (!root || !btn || !last) return;
       const r = btn.getBoundingClientRect();
@@ -222,22 +254,23 @@ export function AssistantRobot() {
 
   // Natural blinking every 3–6 s, sometimes a double blink.
   useEffect(() => {
-    if (!mounted || hidden) return;
+    if (!mounted || hidden || reduced) return;
     let t = 0;
+    const timers: number[] = [];
     const schedule = () => {
       t = window.setTimeout(() => {
         setBlink(true);
-        window.setTimeout(() => setBlink(false), 140);
+        timers.push(window.setTimeout(() => setBlink(false), 140));
         if (Math.random() < 0.25) {
-          window.setTimeout(() => setBlink(true), 280);
-          window.setTimeout(() => setBlink(false), 420);
+          timers.push(window.setTimeout(() => setBlink(true), 280));
+          timers.push(window.setTimeout(() => setBlink(false), 420));
         }
         schedule();
       }, 3000 + Math.random() * 3000);
     };
     schedule();
-    return () => window.clearTimeout(t);
-  }, [mounted, hidden]);
+    return () => { window.clearTimeout(t); timers.forEach(window.clearTimeout); setBlink(false); };
+  }, [mounted, hidden, reduced]);
 
   // Chat cues: hearts when a message is sent, nodding while the AI types, happy when it answers.
   useEffect(() => {
@@ -291,6 +324,12 @@ export function AssistantRobot() {
       { threshold: 0.6 },
     );
     const scan = () => {
+      let floor = 0;
+      document.querySelectorAll("[data-robot-floor]").forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0 && rect.bottom >= window.innerHeight - 2) floor = Math.max(floor, window.innerHeight - rect.top);
+      });
+      document.documentElement.style.setProperty("--foxy-floor", `${floor}px`);
       document.querySelectorAll("[data-robot-point]").forEach((el) => {
         if (seen.has(el)) return;
         seen.add(el);
@@ -299,9 +338,13 @@ export function AssistantRobot() {
       if (waiting && tryPoint(waiting) !== "wait") waiting = null;
       // Step aside when a "Place order" / "Pay" button ends up under Foxy.
       const vw = window.innerWidth;
-      const free = avoidSpans(xRef.current, vw, blockedSpans());
-      if (Math.abs(free - xRef.current) > 2 && actRef.current !== "held" && !dragRef.current) {
-        moveTo(free, 500, yRef.current);
+      const blocked = blockedSpans();
+      const free = avoidSpans(xRef.current, vw, blocked);
+      setClearance(blocked.some(([l, r]) => free < r + 8 && free + robotWidth(vw) > l - 8));
+      if (Math.abs(free - xRef.current) > 2 && !BUSY_ACTS.includes(actRef.current) && !dragRef.current && !chatOpen) {
+        freeze();
+        moveTo(free, 0, yRef.current);
+        setNonce((n) => n + 1);
       }
       const done = !!document.querySelector("[data-foxy-done]");
       if (done && !doneSeen) pop("hearts");
@@ -312,8 +355,9 @@ export function AssistantRobot() {
     return () => {
       window.clearInterval(t);
       io.disconnect();
+      document.documentElement.style.removeProperty("--foxy-floor");
     };
-  }, [mounted, moveTo, pop]);
+  }, [mounted, moveTo, freeze, pop, chatOpen]);
 
   // The little life script.
   useEffect(() => {
@@ -337,7 +381,7 @@ export function AssistantRobot() {
         return PRODUCT_LINE;
       }
       lineRef.current += 1;
-      return LINES[lineRef.current % LINES.length]!;
+      return LINES[lineRef.current % LINES.length] ?? HELLO;
     };
     /** Soft hop turn: squash, hop, mirror while small at the top, land. Never a thin spin. */
     const turnTo = async (d: 1 | -1) => {
@@ -392,12 +436,12 @@ export function AssistantRobot() {
       await wait(700);
     };
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const nav = navigator as Navigator & { deviceMemory?: number };
     const lowEnd = (nav.hardwareConcurrency ?? 8) <= 2 || (nav.deviceMemory ?? 8) <= 2;
 
     const run = async () => {
       if (reduced) {
+        setAct("idle");
         moveTo(avoidSpans(window.innerWidth, window.innerWidth, blockedSpans()), 0);
         await wait(2500);
         for (;;) {
@@ -429,36 +473,46 @@ export function AssistantRobot() {
           continue;
         }
         const from = xRef.current;
-        const to = avoidSpans(pickTarget(from, vw), vw, blockedSpans());
+        const to = reachableTarget(from, wanderTarget(from, vw), vw, blockedSpans());
         if (Math.abs(to - from) > 4) {
           const d: 1 | -1 = to >= from ? 1 : -1;
           await turnTo(d);
-          const ms = walkDuration(from, to, vw);
+          const distance = Math.abs(to - from);
+          const stride = robotWidth(vw) * 0.28;
+          const ms = Math.max(680, Math.ceil(distance / stride) * 680);
           setAct("walk");
-          moveTo(to, ms);
-          // Walk in small slices so the drop-in can happen on time (about 8 s after arriving).
-          let dropNow = false;
-          for (let t = 0; t < ms; t += 250) {
-            await wait(Math.min(250, ms - t));
-            if (!lowEnd && canFall(Date.now(), startedRef.current, lastFallRef.current)) {
-              dropNow = true;
-              break;
-            }
-          }
-          if (dropNow) {
-            freeze();
-            await dropIn();
-            continue;
-          }
+          // Distance-driven paw planting: travel, feet, head and tail share one clock.
+          await new Promise<void>((resolve) => {
+            const start = performance.now();
+            const step = (now: number) => {
+              if (token.cancelled) return resolve();
+              const p = Math.min(1, (now - start) / ms);
+              const eased = p * p * (3 - 2 * p);
+              const travelled = distance * eased;
+              const pose = gaitPose(travelled, stride);
+              const el = layerRef.current;
+              if (el) {
+                for (const [name, value] of Object.entries({ "--gait-bob": pose.bob, "--gait-lean": pose.lean, "--paw-l-x": pose.left.x, "--paw-l-y": pose.left.y, "--paw-l-angle": pose.left.angle, "--paw-r-x": pose.right.x, "--paw-r-y": pose.right.y, "--paw-r-angle": pose.right.angle })) {
+                  el.style.setProperty(name, `${value}${name.endsWith("angle") || name.endsWith("lean") ? "deg" : "px"}`);
+                }
+              }
+              moveTo(from + (to - from) * eased, 0);
+              if (p < 1) requestAnimationFrame(step);
+              else resolve();
+            };
+            requestAnimationFrame(step);
+          });
+          if (token.cancelled) return;
+          setAct("land");
+          await wait(340);
         }
         const roll = Math.random();
         if (roll < 0.06) {
-          // Chase its own tail: a few quick hop turns.
-          setAct("tail");
-          for (let i = 0; i < 4; i++) {
-            setDir(dirRef.current === 1 ? -1 : 1);
-            await wait(260);
-          }
+          // A curious sniff and ear twitch, rather than repeated abrupt mirror flips.
+          setAct("sniff");
+          setFaceOverride("curious");
+          await wait(1800);
+          setFaceOverride(null);
         } else if (roll < 0.12) {
           setAct("juggle");
           await wait(2400);
@@ -478,12 +532,12 @@ export function AssistantRobot() {
     return () => {
       token.cancelled = true;
       freeze();
-      if (yRef.current !== 0) moveTo(xRef.current, 0, 0);
+      if (yRef.current !== 0 && !dragRef.current && !dragging) moveTo(xRef.current, 0, 0);
       setAct("idle");
       setBubble(null);
       setFaceOverride(null);
     };
-  }, [paused, nonce, moveTo, freeze, setDir]);
+  }, [paused, nonce, moveTo, freeze, setDir, reduced, dragging]);
 
   // While the chat is open Foxy sits beside it.
   useEffect(() => {
@@ -506,8 +560,9 @@ export function AssistantRobot() {
   /** Let go: fall with gravity; small drops squash, medium ones get dizzy, big ones splash into water. */
   const drop = useCallback(() => {
     const height = -yRef.current;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const later = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+    const id = ++manualRef.current;
+    const alive = () => manualRef.current === id;
+    const later = (ms: number) => new Promise<void>((resolve, reject) => window.setTimeout(() => alive() ? resolve() : reject(new Error("cancelled")), ms));
     const fall = () =>
       new Promise<void>((resolve) => {
         if (reduced || height <= 0) {
@@ -517,6 +572,7 @@ export function AssistantRobot() {
         let v = 0;
         let last = performance.now();
         const step = (t: number) => {
+          if (!alive()) return resolve();
           const dt = Math.min((t - last) / 1000, 0.05);
           last = t;
           v += 2600 * dt;
@@ -531,6 +587,7 @@ export function AssistantRobot() {
       setBubble(null);
       if (height > DIZZY_DROP && !reduced) setAct("drop");
       await fall();
+      if (!alive()) return;
       if (height > SPLASH_DROP && !reduced) {
         setAct("splash");
         await later(560);
@@ -557,11 +614,13 @@ export function AssistantRobot() {
       setAct("idle");
       moveTo(avoidSpans(xRef.current, window.innerWidth, blockedSpans()), 400);
       setDragging(false);
-    })();
-  }, [moveTo]);
+    })().catch(() => undefined);
+  }, [moveTo, reduced]);
 
   const onPointerDown = (e: PointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0) return;
+    manualRef.current += 1;
+    freeze();
     dragRef.current = { px: e.clientX, py: e.clientY, x: xRef.current, y: yRef.current, moved: false };
   };
   const onPointerMove = (e: PointerEvent<HTMLButtonElement>) => {
@@ -575,7 +634,7 @@ export function AssistantRobot() {
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       setDragging(true);
       setHover(false);
-      window.setTimeout(() => setAct("held"), 0);
+      window.setTimeout(() => { if (dragRef.current?.moved) setAct("held"); }, 0);
       setBubble(null);
     }
     const vw = window.innerWidth;
@@ -598,6 +657,10 @@ export function AssistantRobot() {
       return;
     }
     lastInteractRef.current = Date.now();
+    manualRef.current += 1;
+    freeze();
+    moveTo(xRef.current, 0);
+    setDragging(false);
     setSleeping(false);
     if (chatOpen) {
       setChatOpen(false);
@@ -607,13 +670,19 @@ export function AssistantRobot() {
     setChatSide(xRef.current + robotWidth(vw) / 2 < vw / 2 ? "left" : "right");
     setPress(true);
     pop("sparkles");
-    window.setTimeout(() => {
+    window.clearTimeout(clickTimerRef.current);
+    clickTimerRef.current = window.setTimeout(() => {
       setPress(false);
       setChatOpen(true);
     }, 260);
   };
 
   const minimise = (value: boolean) => {
+    manualRef.current += 1;
+    window.clearTimeout(clickTimerRef.current);
+    freeze();
+    moveTo(xRef.current, 0);
+    setDragging(false);
     setMini(value);
     setChatOpen(false);
     localStorage.setItem(MINI_KEY, value ? "1" : "0");
@@ -669,6 +738,7 @@ export function AssistantRobot() {
           data-press={press ? "true" : undefined}
           data-nod={nod && chatOpen ? "true" : undefined}
           data-paused={hidden ? "true" : undefined}
+          data-clearance={clearance ? "true" : undefined}
           className={`robot-root group pointer-events-none fixed bottom-1 left-0 z-30 transition-opacity duration-500 sm:bottom-2 ${mounted ? "opacity-100" : "opacity-0"}`}
         >
           <span
@@ -721,8 +791,6 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
   return (
     <svg viewBox="0 0 120 140" className="robot-svg block h-auto w-[68px] sm:w-[88px]" aria-hidden="true">
       <defs>
-        <clipPath id="fx-generated-foot-l"><rect x="0" y="115" width="57" height="25" /></clipPath>
-        <clipPath id="fx-generated-foot-r"><rect x="57" y="115" width="63" height="25" /></clipPath>
         <radialGradient id="fx-shell" cx="0.38" cy="0.28" r="0.85">
           <stop offset="0" style={{ stopColor: "var(--foxy-shell-light)" }} />
           <stop offset="0.6" style={{ stopColor: "var(--foxy-shell)" }} />
@@ -775,13 +843,13 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
         <g className="fx-hop">
           <g className="fx-bob">
             <g className="fx-tail"><FoxyPiece url={foxyTail.url} /></g>
-            <g className="fx-leg-l" clipPath="url(#fx-generated-foot-l)"><FoxyPiece url={foxyFeet.url} /></g>
-            <g className="fx-leg-r" clipPath="url(#fx-generated-foot-r)"><FoxyPiece url={foxyFeet.url} /></g>
+            <g className="fx-leg-l"><FoxyPiece url={foxyFootLeft.url} /></g>
+            <g className="fx-leg-r"><FoxyPiece url={foxyFootRight.url} /></g>
             <g className="fx-body"><FoxyPiece url={foxyBody.url} /></g>
             <g className="fx-arm-l"><FoxyPiece url={foxyPawLeft.url} /></g>
             <g className="fx-arm-r"><FoxyPiece url={foxyPawRight.url} /></g>
             <g className="fx-juggle"><path d="M84 86 l2 4.2 4.6 .5 -3.4 3.1 1 4.5 -4.2 -2.3 -4.2 2.3 1 -4.5 -3.4 -3.1 4.6 -.5 z" /></g>
-            <g className="fx-head fx-generated-head">
+            <g className="fx-head-motion"><g className="fx-head fx-generated-head">
               <FoxyPiece url={foxyHead.url} />
               <g className="fx-eyes">
                 <g className="fx-eyes-open">
@@ -791,11 +859,10 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
                   </g>
                 </g>
                 <g className="fx-eyes-happy fx-stroke">
-                  <path d="M32 63 Q40 51 48 63" /><path d="M64 63 Q72 51 80 63" />
+                  <path d="M32 54 Q40 49 48 54" /><path d="M64 54 Q72 49 80 54" />
                 </g>
                 <g className="fx-eyes-surprised">
-                  <circle cx="40" cy="61" r="7.2" className="fx-ring" /><circle cx="72" cy="61" r="7.2" className="fx-ring" />
-                  <circle cx="40" cy="61" r="2.4" className="fx-eye" /><circle cx="72" cy="61" r="2.4" className="fx-eye" />
+                  <path d="M34 49 Q40 45 46 49 M66 49 Q72 45 78 49" className="fx-stroke" />
                 </g>
                 <g className="fx-eyes-dizzy fx-stroke">
                   <path d="M40 61 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
@@ -807,7 +874,7 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
                 {[-26, 0, 26].map((x) => <path key={x} d="M60 12 l1.6 3.3 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.8 -3.3 1.8 .8 -3.6 -2.7 -2.4 3.6 -.4 z" transform={`translate(${x} -8)`} />)}
               </g></g>
               <g className="fx-zzz"><text x="90" y="26">z</text><text x="98" y="16" className="fx-z2">z</text></g>
-            </g>
+            </g></g>
           </g>
         </g>
       </g>
@@ -829,7 +896,7 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
 
 /** Pieces of one generated picture retain the existing independent part animations. */
 function FoxyPiece({ url }: { url: string }) {
-  return <image href={url} x="10" y="4" width="100" height="128" preserveAspectRatio="none" />;
+  return <image href={url} x="10" y="4" width="100" height="128" preserveAspectRatio="xMidYMax meet" />;
 }
 
 /** The same generated face, cropped, when Foxy is minimised. */

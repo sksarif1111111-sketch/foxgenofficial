@@ -1,7 +1,26 @@
 import { describe, expect, it } from "bun:test";
-import { avoidSpans, canChat, canFall, canPoint, clampX, pickTarget, pointDirection, walkRange } from "./robot-motion";
+import { avoidSpans, canChat, canFall, canPoint, clampX, gaitPose, pawPose, pickTarget, pointDirection, reachableTarget, wanderTarget, walkRange } from "./robot-motion";
 
 describe("Foxy mascot", () => {
+  it("uses short walking bouts rather than crossing the entire screen", () => {
+    expect(wanderTarget(600, 1280, () => 0.8)).toBeCloseTo(734.64);
+    expect(wanderTarget(600, 1280, () => 0.2)).toBeCloseTo(523.44);
+  });
+
+  it("plants each paw before lifting it into its next step", () => {
+    expect(pawPose(0)).toEqual({ x: 5, y: 0, angle: 6 });
+    expect(pawPose(0.3).x).toBeCloseTo(0);
+    expect(pawPose(0.3).angle).toBeCloseTo(0);
+    expect(pawPose(0.3).y).toBe(0);
+    expect(pawPose(0.8).y).toBeCloseTo(-6);
+    expect(gaitPose(0, 20).left).toEqual(gaitPose(20, 20).left);
+    expect(gaitPose(10, 20).left.x).not.toBe(gaitPose(0, 20).left.x);
+  });
+
+  it("never walks through a payment button between two free endpoints", () => {
+    expect(reachableTarget(200, 900, 1280, [[500, 700]])).toBe(404);
+    expect(reachableTarget(900, 200, 1280, [[500, 700]])).toBe(708);
+  });
   it("never walks off a desktop screen (88px wide)", () => {
     expect(walkRange(1280)).toEqual({ min: 12, max: 1280 - 88 - 12 });
     expect(clampX(-50, 1280)).toBe(12);

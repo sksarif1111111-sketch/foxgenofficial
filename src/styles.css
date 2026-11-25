@@ -1382,7 +1382,9 @@ body, .min-h-screen.bg-background {
 
 /* ---------- Foxy, generated mascot pieces + SVG effects; transform + opacity only ----------
    data-act (what it does) and data-face (expression) on .robot-root swap the rules below. */
-.robot-root { will-change: transform; --ex: 0px; --ey: 0px; }
+.robot-root { will-change: transform; --ex: 0px; --ey: 0px; bottom: calc(var(--foxy-floor, 0px) + 8px); }
+.assistant-pop { bottom: calc(var(--foxy-floor, 0px) + 96px); }
+@media (width >= 640px) { .assistant-pop { bottom: calc(var(--foxy-floor, 0px) + 124px); } }
 .robot-hit { cursor: grab; transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1); }
 .robot-root[data-act="held"] .robot-hit { cursor: grabbing; }
 .robot-hit:hover { transform: scale(1.08); }
@@ -1406,8 +1408,8 @@ body, .min-h-screen.bg-background {
 .fx-pupil-dot { fill: var(--foxy-pupil); }
 .fx-shine { fill: var(--foxy-shell-light); }
 .fx-pupil { transform: translate(var(--ex), var(--ey)); transition: transform 180ms ease-out; }
-.fx-ring { fill: none; stroke: var(--foxy-eye); stroke-width: 2.4; }
-.fx-stroke { fill: none; stroke: var(--foxy-eye); stroke-width: 2.8; stroke-linecap: round; }
+.fx-ring { fill: none; stroke: var(--foxy-pupil); stroke-width: 2.4; }
+.fx-stroke { fill: none; stroke: var(--foxy-pupil); stroke-width: 1.8; stroke-linecap: round; }
 .fx-mouth { fill: none; stroke: var(--foxy-cyan); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .fx-mouth-o { fill: var(--foxy-cyan); opacity: 0; }
 .fx-eyes-open, .fx-eyes-happy, .fx-eyes-surprised, .fx-eyes-dizzy, .fx-eyes-sleepy, .fx-mouth-w, .fx-mouth-o { transition: opacity 200ms ease, transform 200ms ease; }
@@ -1417,13 +1419,12 @@ body, .min-h-screen.bg-background {
 .robot-root[data-blink] .fx-eyes-open { transform: scaleY(0.08); transition-duration: 70ms; }
 
 /* Expressions */
-.robot-root[data-face="happy"] .fx-eyes-open,
-.robot-root[data-face="surprised"] .fx-eyes-open,
-.robot-root[data-face="dizzy"] .fx-eyes-open,
-.robot-root[data-face="sleepy"] .fx-eyes-open { opacity: 0; }
+.robot-root[data-face="happy"] .fx-eyes-open { transform: translateY(1px) scaleY(0.9); }
+.robot-root[data-face="surprised"] .fx-eyes-open { transform: scale(1.06); }
+.robot-root[data-face="dizzy"] .fx-eyes-open { opacity: 0.35; }
+.robot-root[data-face="sleepy"] .fx-eyes-open { transform: translateY(3px) scaleY(0.55); }
 .robot-root[data-face="happy"] .fx-eyes-happy { opacity: 1; }
 .robot-root[data-face="happy"] .fx-blush { opacity: 0.95; }
-.robot-root[data-face="happy"] .fx-bob { animation: fx-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .robot-root[data-face="curious"] .fx-eye-r { transform: scale(1.18); }
 .robot-root[data-face="curious"] .fx-head { transform: rotate(9deg); }
 .robot-root[data-face="surprised"] .fx-eyes-surprised { opacity: 1; }
@@ -1432,22 +1433,22 @@ body, .min-h-screen.bg-background {
 .robot-root[data-face="surprised"] .fx-mouth-o,
 .robot-root[data-face="dizzy"] .fx-mouth-o { opacity: 1; }
 .robot-root[data-face="dizzy"] .fx-eyes-dizzy { opacity: 1; }
-.robot-root[data-face="dizzy"] .fx-eyes-dizzy path { transform-origin: 47px 68px; animation: fx-spin 0.8s linear infinite; }
-.robot-root[data-face="dizzy"] .fx-eyes-dizzy path + path { transform-origin: 73px 68px; }
+.robot-root[data-face="dizzy"] .fx-eyes-dizzy path { transform-origin: 40px 61px; animation: fx-spin 0.8s linear infinite; }
+.robot-root[data-face="dizzy"] .fx-eyes-dizzy path + path { transform-origin: 72px 61px; }
 .robot-root[data-face="sleepy"] .fx-eyes-sleepy { opacity: 1; }
 .robot-root[data-face="sleepy"] .fx-head { transform: rotate(-6deg) translateY(2px); }
 
 /* Body parts and idle breathing */
 .fx-figure { transform-origin: 60px 134px; }
 .fx-hop, .fx-bob { transform-origin: 60px 134px; }
-.fx-head { transform-origin: 60px 92px; transition: transform 220ms ease; }
-.fx-tail { transform-origin: 80px 114px; animation: fx-tail 2.6s ease-in-out infinite; }
+.fx-head, .fx-head-motion { transform-origin: 56px 90px; transition: transform 220ms ease; }
+.fx-tail { transform-origin: 77px 116px; animation: fx-tail 2.6s ease-in-out infinite; }
 .fx-ear-l { transform-origin: 40px 40px; }
 .fx-ear-r { transform-origin: 80px 40px; }
-.fx-arm-l { transform-origin: 40px 104px; }
-.fx-arm-r { transform-origin: 80px 104px; }
-.fx-leg-l { transform-origin: 49px 124px; }
-.fx-leg-r { transform-origin: 71px 124px; }
+.fx-arm-l { transform-origin: 45px 98px; }
+.fx-arm-r { transform-origin: 64px 98px; }
+.fx-leg-l { transform-origin: 47px 124px; }
+.fx-leg-r { transform-origin: 64px 124px; }
 .robot-root .fx-bob { animation: fx-breathe 3s ease-in-out infinite; }
 .fx-juggle, .fx-stars, .fx-zzz, .fx-dust, .fx-liquid, .fx-blob-shine, .fx-ripple { opacity: 0; }
 .fx-juggle path { fill: oklch(0.86 0.16 90); }
@@ -1466,23 +1467,25 @@ body, .min-h-screen.bg-background {
 .robot-root[data-press] .foxy-press { animation: fx-press 0.26s ease-out both; }
 .foxy-press { transform-origin: 50% 100%; }
 .robot-root[data-act="sit"] .fx-figure { transform: translateY(3px) scale(1.04, 0.96); transition: transform 300ms ease; }
-.robot-root[data-act="sit"] .fx-leg-l { transform: rotate(-30deg) translate(-2px, -2px); }
-.robot-root[data-act="sit"] .fx-leg-r { transform: rotate(30deg) translate(2px, -2px); }
-.robot-root[data-nod] .fx-head { animation: fx-nod 0.7s ease-in-out infinite; }
+.robot-root[data-act="sit"] .fx-leg-l { transform: rotate(-12deg) translate(-1px, -1px); }
+.robot-root[data-act="sit"] .fx-leg-r { transform: rotate(12deg) translate(1px, -1px); }
+.robot-root[data-nod] .fx-head-motion { animation: fx-nod 0.7s ease-in-out infinite; }
 .robot-root[data-face="sleepy"] .fx-zzz { opacity: 1; }
 .robot-root[data-face="sleepy"] .fx-zzz text { animation: fx-zzz 2.4s ease-out infinite; }
 .robot-root[data-face="sleepy"] .fx-zzz .fx-z2 { animation-delay: 1.2s; }
 .robot-root[data-face="sleepy"] .fx-bob { animation-duration: 4.5s; }
 
 /* Walk: waddle, bouncing head, swinging tail, footstep dust */
-.robot-root[data-act="walk"] .fx-bob { animation: fx-waddle 0.46s ease-in-out infinite; }
-.robot-root[data-act="walk"] .fx-head { animation: fx-head-bob 0.46s ease-in-out infinite; }
-.robot-root[data-act="walk"] .fx-tail { animation: fx-tail 0.46s ease-in-out infinite; }
-.robot-root[data-act="walk"] .fx-leg-l { animation: fx-step 0.46s ease-in-out infinite; }
-.robot-root[data-act="walk"] .fx-leg-r { animation: fx-step 0.46s ease-in-out -0.23s infinite; }
-.robot-root[data-act="walk"] .fx-arm-l { animation: fx-arm-swing 0.46s ease-in-out -0.23s infinite; }
-.robot-root[data-act="walk"] .fx-arm-r { animation: fx-arm-swing 0.46s ease-in-out infinite; }
-.robot-root[data-act="walk"] .fx-dust { animation: fx-dust 0.46s ease-out infinite; }
+.robot-root[data-act="walk"] .fx-bob { animation: none; transform: translateY(var(--gait-bob, 0px)) rotate(var(--gait-lean, 0deg)); }
+.robot-root[data-act="walk"] .fx-head-motion { transform: rotate(calc(var(--gait-lean, 0deg) * -0.6)); }
+.robot-root[data-act="walk"] .fx-tail { animation: none; transform: rotate(calc(var(--gait-lean, 0deg) * -2)); }
+.robot-root[data-act="walk"] .fx-leg-l { transform: translate(var(--paw-l-x, 0px), var(--paw-l-y, 0px)) rotate(var(--paw-l-angle, 0deg)); }
+.robot-root[data-act="walk"] .fx-leg-r { transform: translate(var(--paw-r-x, 0px), var(--paw-r-y, 0px)) rotate(var(--paw-r-angle, 0deg)); }
+.robot-root[data-act="walk"] .fx-arm-l { transform: rotate(calc(var(--paw-r-angle, 0deg) * 1.4)); }
+.robot-root[data-act="walk"] .fx-arm-r { transform: rotate(calc(var(--paw-l-angle, 0deg) * 1.4)); }
+.robot-root[data-act="walk"] .fx-shadow { transform: scaleX(0.95); }
+.robot-root[data-act="sniff"] .fx-head-motion { animation: fx-sniff 0.6s ease-in-out 3; }
+.robot-root[data-act="sniff"] .fx-tail { animation-duration: 0.8s; }
 
 /* Hop turn (~300ms): squash, hop and mirror at the top, land with a squash */
 .robot-root[data-act="turn"] .fx-hop,
@@ -1491,8 +1494,8 @@ body, .min-h-screen.bg-background {
 .robot-root[data-act="tail"] .fx-tail { animation: fx-tail 0.18s ease-in-out infinite; }
 
 /* Wave, point, juggle, peek */
-.robot-root[data-act="wave"] .fx-arm-r { animation: fx-wave 0.55s ease-in-out infinite; }
-.robot-root[data-act="point"] .fx-arm-r { transform: rotate(-80deg); transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.robot-root[data-act="wave"] .fx-arm-r { animation: fx-wave 0.65s ease-in-out infinite; }
+.robot-root[data-act="point"] .fx-arm-r { transform: rotate(-38deg); transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1); }
 .robot-root[data-act="juggle"] .fx-juggle { opacity: 1; animation: fx-juggle 0.8s ease-in-out infinite; transform-origin: 84px 92px; }
 .robot-root[data-act="juggle"] .fx-arm-r { animation: fx-wave 0.8s ease-in-out infinite; }
 .robot-root[data-act="peek"] .fx-figure { animation: fx-peek 2.2s ease-in-out both; }
@@ -1556,7 +1559,7 @@ body, .min-h-screen.bg-background {
 .foxy-hide { background: var(--card); color: var(--muted-foreground); border: 1px solid var(--border); opacity: 0; transition: opacity 180ms ease; box-shadow: var(--shadow-lift); }
 .robot-root:hover .foxy-hide, .robot-root:focus-within .foxy-hide { opacity: 1; }
 @media (hover: none) { .foxy-hide { opacity: 0.75; } }
-.foxy-mini { background: var(--card); border: 1.5px solid color-mix(in oklab, var(--foxy-cyan) 50%, transparent); box-shadow: var(--shadow-lift); transition: transform 200ms ease; }
+.foxy-mini { bottom: calc(var(--foxy-floor, 0px) + 12px); background: var(--card); border: 1.5px solid color-mix(in oklab, var(--foxy-cyan) 50%, transparent); box-shadow: var(--shadow-lift); transition: transform 200ms ease; }
 .foxy-mini:hover { transform: scale(1.08); }
 .dark .foxy-mini { box-shadow: 0 0 14px color-mix(in oklab, var(--foxy-cyan) 40%, transparent); }
 .fx-mini-shell { fill: var(--foxy-shell); }
@@ -1565,6 +1568,7 @@ body, .min-h-screen.bg-background {
 .fx-mini-mouth { fill: none; stroke: var(--foxy-cyan); stroke-width: 1.2; stroke-linecap: round; }
 
 .robot-root[data-paused] * { animation-play-state: paused !important; }
+.robot-root[data-clearance] .robot-hit, .robot-root[data-clearance] .foxy-hide { opacity: 0; pointer-events: none; }
 
 @keyframes fx-breathe { 0%, 100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-2px) scale(1.015, 0.985); } }
 @keyframes fx-pulse { 0%, 100% { opacity: 0.75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
@@ -1582,7 +1586,8 @@ body, .min-h-screen.bg-background {
 @keyframes fx-arm-swing { 0%, 100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
 @keyframes fx-dust { 0% { opacity: 0.6; transform: translate(0, 0) scale(0.6); } 100% { opacity: 0; transform: translate(-8px, -4px) scale(1.4); } }
 @keyframes fx-hop { 0% { transform: scale(1, 1); } 25% { transform: scale(1.12, 0.84); } 50% { transform: translateY(-10px) scale(0.86, 0.9); } 80% { transform: translateY(0) scale(1.12, 0.86); } 100% { transform: scale(1, 1); } }
-@keyframes fx-wave { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-60deg); } }
+@keyframes fx-wave { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(-36deg) translateY(-1px); } }
+@keyframes fx-sniff { 0%, 100% { transform: rotate(0) translateY(0); } 40% { transform: rotate(5deg) translateY(2px); } 65% { transform: rotate(3deg) translateY(1px); } }
 @keyframes fx-juggle { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-16px) rotate(180deg); } }
 @keyframes fx-peek { 0% { transform: translateY(0); } 25%, 55% { transform: translateY(60px); } 70% { transform: translateY(26px) rotate(-6deg); } 85% { transform: translateY(26px) rotate(6deg); } 100% { transform: translateY(0); } }
 @keyframes fx-dangle { 0%, 100% { transform: rotate(-16deg); } 50% { transform: rotate(16deg); } }
@@ -1601,6 +1606,7 @@ body, .min-h-screen.bg-background {
 
 @media (prefers-reduced-motion: reduce) {
   .robot-root *, .robot-root[data-act] * { animation: none !important; }
+  .robot-root * { transition: none !important; }
   .robot-hit:hover, .robot-root .fx-figure { transform: none !important; }
   .robot-root .fx-liquid, .robot-root .fx-ripple { opacity: 0 !important; }
   .foxy-bubble { transition-property: opacity !important; transition-duration: 300ms !important; }
@@ -1609,7 +1615,8 @@ body, .min-h-screen.bg-background {
 /* Generated picture eye positions and fur pieces share the original motion controller. */
 .robot-svg image { transform-box: view-box; pointer-events: none; }
 .fx-generated-head .fx-eyes-open { transform-origin: 56px 61px; }
-.fx-generated-head .fx-eye-r { transform-origin: 72px 61px; }
+.fx-generated-head .fx-eye-r { transform-origin: 72px 69px; }
+.fx-generated-head .fx-eyes-open { transform-origin: 56px 69px; }
 .robot-root[data-face="dizzy"] .fx-generated-head .fx-eyes-dizzy path { transform-origin: 40px 61px; }
 .robot-root[data-face="dizzy"] .fx-generated-head .fx-eyes-dizzy path + path { transform-origin: 72px 61px; }
 .robot-root[data-hover] .fx-generated-head { transform: rotate(-5deg) translateY(-1px); }
