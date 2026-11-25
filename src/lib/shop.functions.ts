@@ -186,6 +186,7 @@ export type MyOrder = {
   id: string;
   order_number: string;
   status: string;
+  submitted_at?: string | null;
   currency: string;
   total: number | null;
   stars_total: number | null;

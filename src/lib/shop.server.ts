@@ -284,14 +284,15 @@ export async function submitPayment(orderId: string, reference: string, evidence
   if (!["awaiting_payment", "payment_submitted"].includes(order.status)) {
     throw new Error("This order is no longer waiting for a payment reference.");
   }
+  const submittedAt = new Date().toISOString();
   const { error } = await db
     .from("shop_orders")
     .update({
       payment_reference: trimmed,
       payment_evidence_url: evidenceUrl,
       status: order.delivery_emails || !await orderRequiresEmail(order) ? "under_review" : "awaiting_email",
-      submitted_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      submitted_at: submittedAt,
+      updated_at: submittedAt,
     })
     .eq("id", orderId)
     .in("status", ["awaiting_payment", "payment_submitted"]);
@@ -299,7 +300,7 @@ export async function submitPayment(orderId: string, reference: string, evidence
     throw new Error("This transaction reference has already been submitted for another order.");
   }
   await orderEvent(orderId, "payment_submitted", "customer", trimmed);
-  return { ok: true };
+  return { ok: true, submittedAt };
 }
 
 export async function setOrderEmails(orderId: string, rawEmails: string) {

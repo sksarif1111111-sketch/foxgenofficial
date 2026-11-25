@@ -67,3 +67,26 @@ export async function loadProof(evidence: string | null | undefined): Promise<Pr
 }
 
 export const proofHeaders = (type: string) => ({ "Content-Type": type, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff", "Content-Disposition": "inline" });
+
+const UPLOAD_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+/** Store a customer-uploaded screenshot privately; type comes from magic bytes, never the browser. */
+export async function storeUploadedProof(orderId: string, base64: string): Promise<string> {
+  let bytes: Uint8Array;
+  try {
+    const bin = atob(base64);
+    bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  } catch { throw new Error("The screenshot could not be read. Please choose it again."); }
+  if (bytes.byteLength === 0 || bytes.byteLength > PROOF_MAX_BYTES) throw new Error("The screenshot must be smaller than 5 MB.");
+  const type = sniffProofType(bytes);
+  if (!type || !UPLOAD_TYPES.has(type)) throw new Error("Upload a JPEG, PNG or WebP screenshot.");
+  const path = `orders/${orderId}/${crypto.randomUUID()}.${TYPES[type]}`;
+  const { error } = await db.storage.from(PROOF_BUCKET).upload(path, bytes, { contentType: type, upsert: false });
+  if (error) { console.error("payment proof upload failed", error.message); throw new Error("Could not upload the screenshot. Please try again."); }
+  return `storage:${path}`;
+}
+
+export async function removeStoredProof(evidence: string) {
+  if (evidence.startsWith("storage:")) await db.storage.from(PROOF_BUCKET).remove([evidence.slice(8)]).catch(() => undefined);
+}

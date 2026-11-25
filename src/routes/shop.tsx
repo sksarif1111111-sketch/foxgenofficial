@@ -32,6 +32,8 @@ import { ProductLogo } from "@/components/site/product-logo";
 import { PriceTag, ProductCard, StockPill } from "@/components/site/product-card";
 import { MORE_CATEGORY, STORE_CATEGORIES, categoryLabel, categoryOf } from "@/lib/store-categories";
 import { cleanProductText } from "@/lib/product-content";
+import { ProofUpload, type ProofFile } from "@/components/site/proof-upload";
+import { ReviewCountdown } from "@/components/site/review-countdown";
 
 type ShopSearch = { product?: string; category?: string; q?: string; buy?: boolean; view?: "orders" };
 
@@ -182,7 +184,8 @@ function ShopPage() {
   const [method, setMethod] = useState<Method | null>(null);
   const [draft, setDraft] = useState<OrderDraft | null>(null);
   const [reference, setReference] = useState("");
-  const [evidence, setEvidence] = useState("");
+  const [proof, setProof] = useState<ProofFile | null>(null);
+  const [submittedAt, setSubmittedAt] = useState<string | null>(null);
   const [emails, setEmails] = useState("");
   const [emailSummary, setEmailSummary] = useState("");
   const [wallet, setWallet] = useState<{ balance: number } | null>(null);
@@ -733,27 +736,29 @@ function ShopPage() {
                       {method?.reference_label ?? "Transaction reference"}
                       <input value={reference} onChange={(event) => setReference(event.target.value)} className={field} placeholder="Paste your transaction reference" />
                     </label>
-                    <label className="block text-sm font-medium">
-                      Screenshot link <span className="font-normal text-muted-foreground">(optional)</span>
-                      <input value={evidence} onChange={(event) => setEvidence(event.target.value)} className={field} placeholder="https://…" />
-                    </label>
+                    <ProofUpload value={proof} onChange={setProof} disabled={busy} />
                   </div>
                   <p className="mt-4 text-xs text-muted-foreground">
-                    A reference or screenshot is supporting evidence only. Your order is confirmed after the owner checks the receiving account.
+                    Both the transaction ID and the screenshot are required. They are supporting evidence only. Your order is confirmed after the owner checks the receiving account.
                   </p>
                   <div data-robot-avoid="pay" className="mt-6 flex flex-wrap gap-2">
                     <button
                       type="button"
-                      disabled={busy}
+                      disabled={busy || reference.trim().length < 6 || !proof}
                       onClick={() =>
                         void run(async () => {
-                          await submit({ data: { orderId: draft.id, reference, evidenceUrl: evidence || undefined } });
-                          setStep("email");
+                          if (!proof) throw new Error("Upload your payment screenshot.");
+                          const result = await submit({ data: { orderId: draft.id, reference, proofBase64: proof.base64 } });
+                          setSubmittedAt(result.submittedAt);
+                          setProof(null);
+                          const needsEmail = (await loadOrders({ data: undefined }).catch(() => [])).find((o) => o.id === draft.id)?.status === "awaiting_email";
+                          setStep(needsEmail ? "email" : "done");
+                          void refreshOrders();
                         })
                       }
                       className={btnPrimary}
                     >
-                      I have paid
+                      {busy ? "Submitting…" : "Submit payment"}
                     </button>
                     <button
                       type="button"
@@ -808,30 +813,35 @@ function ShopPage() {
                   <span className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
                     <CheckCircle2 className="size-6" />
                   </span>
-                  <h2 className="mt-5 text-2xl font-semibold">Thanks — your payment is being checked.</h2>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Estimated review time: about {catalog?.reviewMinutes ?? 10} minutes. You will receive an update when your order is confirmed.
-                  </p>
-                  <dl className="mt-6 grid gap-3 rounded-xl bg-muted p-4 text-sm sm:grid-cols-2">
+                  <h2 className="mt-5 text-2xl font-semibold">✓ Thank you for your purchase!</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">Your payment is under review. Please wait up to 30 minutes.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Your product will be delivered after approval.</p>
+                  {submittedAt && (
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
+                      <span className="text-sm font-medium">Under review</span>
+                      <ReviewCountdown submittedAt={submittedAt} className="text-lg font-semibold text-primary" />
+                    </div>
+                  )}
+                  <dl className="mt-4 grid gap-3 rounded-xl bg-muted p-4 text-sm sm:grid-cols-2">
                     <div>
                       <dt className="text-xs text-muted-foreground">Order ID</dt>
                       <dd className="font-mono">{draft.order_number}</dd>
                     </div>
-                    <div>
-                      <dt className="text-xs text-muted-foreground">Delivery email</dt>
-                      <dd className="break-all">{emailSummary}</dd>
-                    </div>
+                    {emailSummary && (
+                      <div>
+                        <dt className="text-xs text-muted-foreground">Delivery email</dt>
+                        <dd className="break-all">{emailSummary}</dd>
+                      </div>
+                    )}
                   </dl>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStep("orders");
-                      void refreshOrders();
-                    }}
-                    className={`${btnGhost} mt-6`}
-                  >
-                    <Receipt className="size-4" /> View my orders
-                  </button>
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => { setStep("orders"); void refreshOrders(); }} className={btnPrimary}>
+                      <Receipt className="size-4" /> Track my order
+                    </button>
+                    <button type="button" onClick={goToList} className={btnGhost}>
+                      Back to shop
+                    </button>
+                  </div>
                 </Panel>
               )}
             </div>
@@ -863,6 +873,11 @@ function ShopPage() {
                   {order.currency === "XTR" ? `${order.stars_total ?? 0} Stars` : `${order.total?.toFixed(2) ?? "—"} ${order.currency}`} ·{" "}
                   {order.payment_method_name ?? "—"}
                 </p>
+                {["under_review", "awaiting_email"].includes(order.status) && order.submitted_at && (
+                  <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    Payment under review · <ReviewCountdown submittedAt={order.submitted_at} className="font-semibold text-primary" />
+                  </p>
+                )}
                 {order.delivery_emails && <p className="mt-1 text-xs text-muted-foreground">Email: {order.delivery_emails}</p>}
                 {order.info_request && <p className="mt-2 text-xs text-warning-foreground">More info needed: {order.info_request}</p>}
                 {order.reject_reason && <p className="mt-2 text-xs text-destructive">Reason: {order.reject_reason}</p>}

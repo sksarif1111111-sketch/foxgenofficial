@@ -37,8 +37,16 @@ export const customerPlaceOrder = createServerFn({ method: "POST" }).middleware(
    return createOrder({ channel: "website", profileId: null, telegramUserId: null, customerUserId: context.userId, customerName: identity.user.email ?? null, ...data });
  });
 export const customerSubmitPayment = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
- .inputValidator((input: unknown) => z.object({ orderId: z.string().uuid(), reference: z.string().trim().min(6).max(200), evidenceUrl: z.string().url().max(700).optional() }).parse(input))
- .handler(async ({ data, context }) => { await ownOrder(data.orderId, context.userId); const { submitPayment } = await import("@/lib/shop.server"); return submitPayment(data.orderId, data.reference, data.evidenceUrl ?? null); });
+ .inputValidator((input: unknown) => z.object({ orderId: z.string().uuid(), reference: z.string().trim().min(6).max(200), proofBase64: z.string().min(16).max(7_100_000) }).parse(input))
+ .handler(async ({ data, context }) => {
+   const order = await ownOrder(data.orderId, context.userId);
+   if (!["awaiting_payment", "payment_submitted"].includes(order.status)) throw new Error("This order is no longer waiting for payment.");
+   const { storeUploadedProof, removeStoredProof } = await import("@/lib/payment-proof.server");
+   const evidence = await storeUploadedProof(data.orderId, data.proofBase64);
+   const { submitPayment } = await import("@/lib/shop.server");
+   try { return await submitPayment(data.orderId, data.reference, evidence); }
+   catch (e) { await removeStoredProof(evidence); throw e; }
+ });
 export const customerConfirmEmails = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
  .inputValidator((input: unknown) => z.object({ orderId: z.string().uuid(), emails: z.string().trim().min(5).max(600) }).parse(input))
  .handler(async ({ data, context }) => { await ownOrder(data.orderId, context.userId); const { setOrderEmails } = await import("@/lib/shop.server"); return setOrderEmails(data.orderId, data.emails); });
