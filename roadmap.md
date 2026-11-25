@@ -1,5 +1,10 @@
 # Roadmap
 
+## Full 3D Foxy
+- [ ] Replace the flat mascot with a volumetric, articulated 3D character; retain the cute face, headphones and thick soft shell.
+- [ ] Connect the existing distance-driven gait, expressions, chat, drag/drop and quiet motion states to the 3D rig.
+- [ ] Verify visible rendering, motion and chat across mobile/desktop and themes; check reduced motion and performance budgets.
+
 ## Foxy expression and natural movement repair
 - [x] Kept generated iris identity across expressions, rebuilt feathered fur backing and aligned independent paws/feet/head/tail; cursor tracking now reaches the visible rig.
 - [x] Short distance-driven planted steps, head counterbalance, tail swing, curious sniffing and gentle settling; cancellable manual falls, live reduced-motion changes, preserved chat/hide/drag and mobile purchase-bar clearance.

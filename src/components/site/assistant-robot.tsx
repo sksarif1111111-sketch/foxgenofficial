@@ -3,15 +3,8 @@ import { ASSISTANT_OPEN_EVENT, ASSISTANT_SIGNAL_EVENT, type AssistantSignal } fr
 import { avoidSpans, canChat, canFall, canPoint, clampX, gaitPose, pickTarget, pointDirection, reachableTarget, ROBOT_MOTION, robotWidth, wanderTarget } from "@/lib/robot-motion";
 
 import foxyFull from "@/assets/foxy-full.webp.asset.json";
-import foxyHead from "@/assets/foxy-rig-head.webp.asset.json";
-import foxyBody from "@/assets/foxy-rig-body.webp.asset.json";
-import foxyTail from "@/assets/foxy-rig-tail.webp.asset.json";
-import foxyPawLeft from "@/assets/foxy-rig-paw-left.webp.asset.json";
-import foxyPawRight from "@/assets/foxy-rig-paw-right.webp.asset.json";
-import foxyFootLeft from "@/assets/foxy-rig-foot-left.webp.asset.json";
-import foxyFootRight from "@/assets/foxy-rig-foot-right.webp.asset.json";
-import foxyEyeLeft from "@/assets/foxy-eye-left.webp.asset.json";
-import foxyEyeRight from "@/assets/foxy-eye-right.webp.asset.json";
+import { FOXY_3D, type FoxyAct, type FoxyFace, type FoxyRenderState } from "@/lib/foxy-pose";
+const FoxyModel = lazy(() => import("@/components/site/foxy-model"));
 
 /** Loaded only when the visitor first opens the chat, so pages stay light. */
 const AssistantChatPopup = lazy(() => import("@/components/site/assistant-chat-popup"));
@@ -28,9 +21,8 @@ const MINI_KEY = "foxy-minimized";
 const FALL_KEY = "foxy-last-drop";
 const START_KEY = "foxy-started";
 
-type Act =
-  | "idle" | "walk" | "sniff" | "turn" | "wave" | "point" | "sit" | "held" | "land" | "drop" | "splash" | "puddle" | "reform" | "dizzy" | "tail" | "juggle" | "peek";
-type Face = "normal" | "happy" | "curious" | "surprised" | "dizzy" | "sleepy";
+type Act = FoxyAct;
+type Face = FoxyFace;
 const BUSY_ACTS: Act[] = ["turn", "held", "land", "drop", "splash", "puddle", "reform", "dizzy", "tail", "juggle", "peek"];
 /** Dropped by hand from higher than this (px) it splashes into water and reforms. */
 const SPLASH_DROP = 200;
@@ -105,6 +97,10 @@ export function AssistantRobot() {
   const [burst, setBurst] = useState<{ kind: "hearts" | "sparkles"; id: number } | null>(null);
   const [reduced, setReduced] = useState(false);
   const [clearance, setClearance] = useState(false);
+  const renderRef = useRef<FoxyRenderState>({
+    act: "idle", face: "normal", dir: -1, blink: false, nod: false, hover: false,
+    reduced: false, hidden: false, press: false, gaze: { x: 0, y: 0 }, gait: gaitPose(0, 1),
+  });
   actRef.current = act;
 
   const setDir = useCallback((d: 1 | -1) => {
@@ -212,6 +208,7 @@ export function AssistantRobot() {
       const dy = last.y - cy;
       const dist = Math.hypot(dx, dy) || 1;
       const k = Math.min(1, dist / 220);
+      renderRef.current.gaze = { x: (dx / dist) * 2.4 * k, y: (dy / dist) * 2 * k };
       root.style.setProperty("--ex", `${((dx / dist) * 2.4 * k * dirRef.current).toFixed(2)}px`);
       root.style.setProperty("--ey", `${((dy / dist) * 2 * k).toFixed(2)}px`);
       if (dist < 240) {
@@ -478,8 +475,8 @@ export function AssistantRobot() {
           const d: 1 | -1 = to >= from ? 1 : -1;
           await turnTo(d);
           const distance = Math.abs(to - from);
-          const stride = robotWidth(vw) * 0.28;
-          const ms = Math.max(680, Math.ceil(distance / stride) * 680);
+          const stride = robotWidth(vw) * FOXY_3D.strideRatio;
+          const ms = Math.max(FOXY_3D.walkCycleMs, Math.ceil(distance / stride) * FOXY_3D.walkCycleMs);
           setAct("walk");
           // Distance-driven paw planting: travel, feet, head and tail share one clock.
           await new Promise<void>((resolve) => {
@@ -490,6 +487,7 @@ export function AssistantRobot() {
               const eased = p * p * (3 - 2 * p);
               const travelled = distance * eased;
               const pose = gaitPose(travelled, stride);
+              renderRef.current.gait = pose;
               const el = layerRef.current;
               if (el) {
                 for (const [name, value] of Object.entries({ "--gait-bob": pose.bob, "--gait-lean": pose.lean, "--paw-l-x": pose.left.x, "--paw-l-y": pose.left.y, "--paw-l-angle": pose.left.angle, "--paw-r-x": pose.right.x, "--paw-r-y": pose.right.y, "--paw-r-angle": pose.right.angle })) {
@@ -702,6 +700,8 @@ export function AssistantRobot() {
               ? "curious"
               : "normal");
 
+  Object.assign(renderRef.current, { act, face, dir, blink, nod, hover, reduced, hidden, press });
+
   const showBubble = !chatOpen && !mini && (bubble !== null || hover);
   const bubbleText = bubble ?? HOVER_LINE;
   const bubblePos =
@@ -771,10 +771,11 @@ export function AssistantRobot() {
             title="Ask Foxy"
             className="robot-hit pointer-events-auto block touch-none select-none rounded-[40%] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <span className="foxy-press block">
-              <span className="foxy-flip block" style={{ transform: `scaleX(${dir})` }}>
-                <FoxySvg burst={burst} />
-              </span>
+            <span className="foxy-3d-stage block">
+              {mounted && <Suspense fallback={<img src={foxyFull.url} className="foxy-model-fallback" alt="" />}>
+                <FoxyModel stateRef={renderRef} reduced={reduced} hidden={hidden} poseKey={`${act}:${face}:${blink}:${nod}:${dir}:${reduced}`} />
+              </Suspense>}
+              <FoxySvg burst={burst} />
             </span>
           </button>
         </div>
@@ -839,45 +840,10 @@ function FoxySvg({ burst }: { burst: { kind: "hearts" | "sparkles"; id: number }
         <circle cx="38" cy="130" r="2.2" />
       </g>
 
-      <g className="fx-figure">
-        <g className="fx-hop">
-          <g className="fx-bob">
-            <g className="fx-tail"><FoxyPiece url={foxyTail.url} /></g>
-            <g className="fx-leg-l"><FoxyPiece url={foxyFootLeft.url} /></g>
-            <g className="fx-leg-r"><FoxyPiece url={foxyFootRight.url} /></g>
-            <g className="fx-body"><FoxyPiece url={foxyBody.url} /></g>
-            <g className="fx-arm-l"><FoxyPiece url={foxyPawLeft.url} /></g>
-            <g className="fx-arm-r"><FoxyPiece url={foxyPawRight.url} /></g>
-            <g className="fx-juggle"><path d="M84 86 l2 4.2 4.6 .5 -3.4 3.1 1 4.5 -4.2 -2.3 -4.2 2.3 1 -4.5 -3.4 -3.1 4.6 -.5 z" /></g>
-            <g className="fx-head-motion"><g className="fx-head fx-generated-head">
-              <FoxyPiece url={foxyHead.url} />
-              <g className="fx-eyes">
-                <g className="fx-eyes-open">
-                  <g className="fx-pupil">
-                    <g className="fx-eye-l"><FoxyPiece url={foxyEyeLeft.url} /></g>
-                    <g className="fx-eye-r"><FoxyPiece url={foxyEyeRight.url} /></g>
-                  </g>
-                </g>
-                <g className="fx-eyes-happy fx-stroke">
-                  <path d="M32 54 Q40 49 48 54" /><path d="M64 54 Q72 49 80 54" />
-                </g>
-                <g className="fx-eyes-surprised">
-                  <path d="M34 49 Q40 45 46 49 M66 49 Q72 45 78 49" className="fx-stroke" />
-                </g>
-                <g className="fx-eyes-dizzy fx-stroke">
-                  <path d="M40 61 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
-                  <path d="M72 61 m-5 0 a5 5 0 1 1 5 5 a3.4 3.4 0 1 1 -3.4 -3.4 a1.8 1.8 0 1 1 1.8 1.8" />
-                </g>
-                <g className="fx-eyes-sleepy fx-stroke"><path d="M32 61 Q40 66 48 61" /><path d="M64 61 Q72 66 80 61" /></g>
-              </g>
-              <g className="fx-stars"><g className="fx-stars-spin">
-                {[-26, 0, 26].map((x) => <path key={x} d="M60 12 l1.6 3.3 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.8 -3.3 1.8 .8 -3.6 -2.7 -2.4 3.6 -.4 z" transform={`translate(${x} -8)`} />)}
-              </g></g>
-              <g className="fx-zzz"><text x="90" y="26">z</text><text x="98" y="16" className="fx-z2">z</text></g>
-            </g></g>
-          </g>
-        </g>
-      </g>
+      <g className="fx-stars"><g className="fx-stars-spin">
+        {[-26, 0, 26].map((x) => <path key={x} d="M60 12 l1.6 3.3 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.8 -3.3 1.8 .8 -3.6 -2.7 -2.4 3.6 -.4 z" transform={`translate(${x} -8)`} />)}
+      </g></g>
+      <g className="fx-zzz"><text x="90" y="26">z</text><text x="98" y="16" className="fx-z2">z</text></g>
 
       {burst && (
         <g key={burst.id} className={`fx-burst fx-burst-${burst.kind}`}>
