@@ -886,6 +886,36 @@ export type Database = {
           },
         ]
       }
+      customer_notices: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          order_id: string | null
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          read_at?: string | null
+          title?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       extension_guide_pages: {
         Row: {
           body: string
@@ -1680,6 +1710,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shop_crm_action_requests: {
+        Row: {
+          action: string
+          created_at: string
+          http_status: number | null
+          request_key: string
+          response: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          http_status?: number | null
+          request_key: string
+          response?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          http_status?: number | null
+          request_key?: string
+          response?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       shop_crm_entity_outbox: {
         Row: {
@@ -2644,7 +2704,9 @@ export type Database = {
       }
       shop_crm_order_snapshot: { Args: { _order_id: string }; Returns: Json }
       shop_crm_upsert_product: { Args: { _input: Json }; Returns: string }
+      shop_customer_stats: { Args: { _id: string }; Returns: Json }
       shop_enqueue_customer: { Args: { _id: string }; Returns: undefined }
+      shop_enqueue_topup: { Args: { _id: string }; Returns: undefined }
       shop_mark_delayed: { Args: never; Returns: number }
       shop_pause_crm_when_drained: { Args: never; Returns: undefined }
       shop_refund_wallet_atomic: {

@@ -239,6 +239,13 @@
       "when": 1795568993055,
       "tag": "0033_crm_payment_proof_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1795570466995,
+      "tag": "0034_crm_full_member_feed_and_actions",
+      "breakpoints": true
     }
   ]
 }

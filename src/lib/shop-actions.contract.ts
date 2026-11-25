@@ -8,4 +8,7 @@ export const shopActionSchema = z.discriminatedUnion("action", [
   z.object({ ...base, action: z.literal("deliver_email") }),
   z.object({ ...base, action: z.literal("deliver_telegram") }),
   z.object({ ...base, action: z.literal("request_info"), message: z.string().trim().min(3).max(600) }),
+  z.object({ action: z.literal("message_customer"), order_id: z.string().uuid().optional(), customer_id: z.string().uuid().optional(), message: z.string().trim().min(1).max(2000), channels: z.array(z.enum(["telegram", "email", "account"])).min(1).max(3) }),
+  z.object({ ...base, action: z.literal("approve_and_deliver"), fields: z.object({ account_email: z.string().trim().max(320).optional(), account_username: z.string().trim().max(200).optional(), account_number: z.string().trim().max(200).optional(), password: z.string().max(500).optional(), link: z.string().trim().max(2000).optional(), notes: z.string().max(2000).optional() }) }),
+  z.object({ action: z.literal("adjust_wallet"), customer_id: z.string().uuid(), amount_usd: z.number().finite().refine(n => n !== 0 && Math.abs(n) <= 100000), reason: z.string().trim().min(3).max(500) }),
 ]);

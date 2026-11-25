@@ -16,6 +16,19 @@ export const Route = createFileRoute("/api/public/shop/v1/actions")({
     if (!parsed.success) return json({ ok: false, error: "INVALID_ACTION_INPUT" }, 400);
     const data = parsed.data;
     const { db } = await import("@/lib/hub.server");
+    if (data.action === "message_customer" || data.action === "approve_and_deliver" || data.action === "adjust_wallet") {
+      if (data.action === "message_customer" && !data.order_id && !data.customer_id) return json({ ok: false, error: "INVALID_ACTION_INPUT" }, 400);
+      const crm = await import("@/lib/shop-crm-actions.server");
+      // Idempotency-Key header wins; otherwise the exact request body identifies a retry.
+      const header = request.headers.get("idempotency-key")?.trim();
+      const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw)));
+      const requestKey = header && header.length <= 200 ? `key:${header}` : `body:${Array.from(digest, b => b.toString(16).padStart(2, "0")).join("")}`;
+      const result = await crm.onceForRequest(requestKey, data.action, () =>
+        data.action === "message_customer" ? crm.messageCustomer(data)
+        : data.action === "approve_and_deliver" ? crm.approveAndDeliver(data)
+        : crm.adjustWallet(data));
+      return json(result.body, result.status);
+    }
     if (data.action === "upsert_product") {
       const { data: product, error } = await db.rpc("shop_crm_upsert_product", { _input: data });
       if (error) return json({ ok: false, error: "PRODUCT_UPDATE_FAILED" }, 400);

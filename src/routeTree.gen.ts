@@ -41,6 +41,7 @@ import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicShopV1ResourceRouteImport } from './routes/api/public/shop/v1/$resource'
 import { Route as ApiPublicShopV1ActionsRouteImport } from './routes/api/public/shop/v1/actions'
 import { Route as ApiPublicShopV1PaymentProofIdRouteImport } from './routes/api/public/shop/v1/payment-proof/$id'
+import { Route as ApiPublicShopV1TopupProofIdRouteImport } from './routes/api/public/shop/v1/topup-proof/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -206,6 +207,12 @@ const ApiPublicShopV1PaymentProofIdRoute =
     path: '/api/public/shop/v1/payment-proof/$id',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicShopV1TopupProofIdRoute =
+  ApiPublicShopV1TopupProofIdRouteImport.update({
+    id: '/api/public/shop/v1/topup-proof/$id',
+    path: '/api/public/shop/v1/topup-proof/$id',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
   '/api/public/shop/v1/actions': typeof ApiPublicShopV1ActionsRoute
   '/api/public/shop/v1/payment-proof/$id': typeof ApiPublicShopV1PaymentProofIdRoute
+  '/api/public/shop/v1/topup-proof/$id': typeof ApiPublicShopV1TopupProofIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -274,6 +282,7 @@ export interface FileRoutesByTo {
   '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
   '/api/public/shop/v1/actions': typeof ApiPublicShopV1ActionsRoute
   '/api/public/shop/v1/payment-proof/$id': typeof ApiPublicShopV1PaymentProofIdRoute
+  '/api/public/shop/v1/topup-proof/$id': typeof ApiPublicShopV1TopupProofIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -309,6 +318,7 @@ export interface FileRoutesById {
   '/api/public/shop/v1/$resource': typeof ApiPublicShopV1ResourceRoute
   '/api/public/shop/v1/actions': typeof ApiPublicShopV1ActionsRoute
   '/api/public/shop/v1/payment-proof/$id': typeof ApiPublicShopV1PaymentProofIdRoute
+  '/api/public/shop/v1/topup-proof/$id': typeof ApiPublicShopV1TopupProofIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -345,6 +355,7 @@ export interface FileRouteTypes {
     | '/api/public/shop/v1/$resource'
     | '/api/public/shop/v1/actions'
     | '/api/public/shop/v1/payment-proof/$id'
+    | '/api/public/shop/v1/topup-proof/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/api/public/shop/v1/$resource'
     | '/api/public/shop/v1/actions'
     | '/api/public/shop/v1/payment-proof/$id'
+    | '/api/public/shop/v1/topup-proof/$id'
   id:
     | '__root__'
     | '/'
@@ -413,6 +425,7 @@ export interface FileRouteTypes {
     | '/api/public/shop/v1/$resource'
     | '/api/public/shop/v1/actions'
     | '/api/public/shop/v1/payment-proof/$id'
+    | '/api/public/shop/v1/topup-proof/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -448,6 +461,7 @@ export interface RootRouteChildren {
   ApiPublicShopV1ResourceRoute: typeof ApiPublicShopV1ResourceRoute
   ApiPublicShopV1ActionsRoute: typeof ApiPublicShopV1ActionsRoute
   ApiPublicShopV1PaymentProofIdRoute: typeof ApiPublicShopV1PaymentProofIdRoute
+  ApiPublicShopV1TopupProofIdRoute: typeof ApiPublicShopV1TopupProofIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -676,6 +690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicShopV1PaymentProofIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/shop/v1/topup-proof/$id': {
+      id: '/api/public/shop/v1/topup-proof/$id'
+      path: '/api/public/shop/v1/topup-proof/$id'
+      fullPath: '/api/public/shop/v1/topup-proof/$id'
+      preLoaderRoute: typeof ApiPublicShopV1TopupProofIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -712,6 +733,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicShopV1ResourceRoute: ApiPublicShopV1ResourceRoute,
   ApiPublicShopV1ActionsRoute: ApiPublicShopV1ActionsRoute,
   ApiPublicShopV1PaymentProofIdRoute: ApiPublicShopV1PaymentProofIdRoute,
+  ApiPublicShopV1TopupProofIdRoute: ApiPublicShopV1TopupProofIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

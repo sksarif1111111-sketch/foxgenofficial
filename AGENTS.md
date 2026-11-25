@@ -45,3 +45,4 @@
 - Private non-extension inventory is assigned under order locks; licence products keep their existing separate manager, and marketplace jobs use the existing cron-secret boundary for delayed delivery notices.
 - Theme: `.dark` on <html> via `src/lib/theme.ts`; colours only in `src/styles.css`.
 - AI product pictures: Cloudflare Workers AI (`product-image.server.ts`) fills only imageless, never-attempted products.
+- CRM write actions (`message_customer`, `approve_and_deliver`, `adjust_wallet`) live in `src/lib/shop-crm-actions.server.ts`, run once per Idempotency-Key/body hash via `shop_crm_action_requests`, and never echo credentials; the member feed (`shop_enqueue_customer`) and top-up feed (`shop_enqueue_topup`) are emitted by database triggers so every change re-syncs without app code.
