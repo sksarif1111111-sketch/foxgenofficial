@@ -485,6 +485,7 @@ export const shopWalletReviewTopUp = createServerFn({ method: "POST" }).middlewa
   .inputValidator((input: unknown) => walletReviewSchema.parse(input)).handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");
     const result = await db.rpc("shop_review_wallet_topup", { _id: data.id, _approve: data.approve, _note: data.note, _credit_usd: data.creditUsd });
+    if (!result.error) void import("@/lib/shop-crm.server").then(m => m.kickCrmSync(), () => undefined);
     if (result.error) throw new Error("Request is no longer pending, or a verified USD credit is required.");
     const record = result.data as { profile_id: string; amount: number; currency: string; credit_usd: number | null; balance: number | null };
     const { notifyWalletReview } = await import("@/lib/wallet-topup.server");

@@ -12,7 +12,8 @@ export async function flushCrmDirectory(key: string) {
   let error: string | null = null;
   try {
     if (new TextEncoder().encode(body).length > 256 * 1024) throw new Error("Payload too large");
-    const response = await fetch("https://foxgencrm.lovable.app/api/public/store/sync", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body, signal: AbortSignal.timeout(20000) });
+    const { crmSyncUrl } = await import("./shop-crm.server");
+    const response = await fetch(await crmSyncUrl(), { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body, signal: AbortSignal.timeout(20000) });
     if (!response.ok || (await response.json() as { ok?: boolean }).ok !== true) error = `CRM did not acknowledge member feed (HTTP ${response.status}).`;
   } catch { error = "Member feed failed; queued for retry."; }
   const saved = await db.from("shop_crm_entity_outbox").update({ sent_at: error ? null : new Date().toISOString(), last_error: error, locked_until: null, claim_token: null }).in("id", rows.map(r => r.id)).eq("claim_token", token);

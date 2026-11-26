@@ -253,6 +253,13 @@
       "when": 1795686114396,
       "tag": "0035_bot_speed_helpers",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1795686640178,
+      "tag": "0036_crm_cron_lookup_by_name",
+      "breakpoints": true
     }
   ]
 }

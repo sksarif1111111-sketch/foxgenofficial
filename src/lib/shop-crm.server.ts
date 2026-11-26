@@ -15,6 +15,26 @@ export async function crmSyncStatus() {
   return { configured: Boolean(process.env["FOXGEN_CRM_API_KEY"]), lastSuccess: [last.data?.sent_at, memberLast.data?.sent_at].filter((s): s is string => Boolean(s)).sort().at(-1) ?? null, pending: (pending.count ?? 0) + (memberPending.count ?? 0), stuck: (stuck.count ?? 0) + (memberStuck.count ?? 0) };
 }
 
+/** CRM sync endpoint: CRM_BASE_URL env, then the crm_base_url setting, then the default CRM. */
+export async function crmSyncUrl() {
+  const settings = await getSettings();
+  const base = (process.env["CRM_BASE_URL"] || settings["crm_base_url"] || "https://foxgencrm.lovable.app").trim().replace(/\/+$/, "");
+  return `${base}/api/public/store/sync`;
+}
+
+let kickInFlight: Promise<unknown> | null = null;
+let kickAgain = false;
+/** Best-effort immediate CRM send after a commit; the cron job remains the retry. Never throws. */
+export function kickCrmSync() {
+  if (!process.env["FOXGEN_CRM_API_KEY"]) return;
+  if (kickInFlight) { kickAgain = true; return; }
+  kickInFlight = (async () => {
+    try { do { kickAgain = false; await flushCrmOutbox(); } while (kickAgain); }
+    catch (e) { console.error("crm immediate sync failed", e instanceof Error ? e.message : e); }
+    finally { kickInFlight = null; }
+  })();
+}
+
 export async function flushCrmOutbox() {
   const key = process.env["FOXGEN_CRM_API_KEY"];
   if (!key) return { ok: false, error: "CRM_NOT_CONFIGURED" };
@@ -25,6 +45,7 @@ export async function flushCrmOutbox() {
   if (error) throw new Error("Could not claim CRM queue.");
   if (!rows?.length) { await db.rpc("shop_pause_crm_when_drained"); return directory; }
   const settings = await getSettings();
+  const syncUrl = await crmSyncUrl();
   const fail = async (message: string, rowIds: string[]) => {
     const result = await db.from("shop_crm_outbox").update({ last_error: message, locked_until: null, claim_token: null }).in("id", rowIds).eq("claim_token", token);
     if (result.error) throw new Error("Could not record CRM retry.");
@@ -58,7 +79,7 @@ export async function flushCrmOutbox() {
   const body = JSON.stringify({ records });
   if (new TextEncoder().encode(body).length > 256 * 1024) { await fail("Order exceeds CRM's 256 KB limit.", [row.id]); continue; }
   try {
-    const response = await fetch("https://foxgencrm.lovable.app/api/public/store/sync", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body, signal: AbortSignal.timeout(20000) });
+    const response = await fetch(syncUrl, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body, signal: AbortSignal.timeout(20000) });
     if (!response.ok) {
       // Do not persist provider bodies: these may contain customer data or credentials.
       await fail(`CRM returned HTTP ${response.status}.`, [row.id]); continue;

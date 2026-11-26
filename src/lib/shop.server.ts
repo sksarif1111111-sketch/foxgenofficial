@@ -220,6 +220,7 @@ export async function websitePaymentMethods() {
 
 export async function orderEvent(orderId: string, event: string, actor: string, details?: string) {
   await db.from("shop_order_events").insert({ order_id: orderId, event, actor, details: details ?? null });
+  void import("@/lib/shop-crm.server").then(m => m.kickCrmSync(), () => undefined);
 }
 
 export async function unpaidExpiryMinutes() {
@@ -265,6 +266,7 @@ export async function createOrder(input: {
 }) {
   const result = await db.rpc("shop_create_order_atomic", { _input: input });
   if (result.error || !result.data) throw new Error(result.error?.message ?? "Could not create order.");
+  void import("@/lib/shop-crm.server").then(m => m.kickCrmSync(), () => undefined);
   return result.data as unknown as import("@/integrations/supabase/types").Database["public"]["Tables"]["shop_orders"]["Row"];
 }
 
@@ -296,6 +298,7 @@ export async function submitPayment(orderId: string, reference: string, evidence
     })
     .eq("id", orderId)
     .in("status", ["awaiting_payment", "payment_submitted"]);
+  if (!error) void import("@/lib/shop-crm.server").then(m => m.kickCrmSync(), () => undefined);
   if (error) {
     throw new Error("This transaction reference has already been submitted for another order.");
   }
@@ -477,10 +480,11 @@ export async function orderRequiresEmail(order: { id: string; channel: string; t
   });
 }
 
-export async function sendTelegramDelivery(orderId: string, actor = "admin"): Promise<EmailResult> {
+export async function sendTelegramDelivery(orderId: string, actor = "admin", chatId?: number): Promise<EmailResult> {
   const { data: order } = await db.from("shop_orders").select("*").eq("id", orderId).maybeSingle();
   if (!order) return { ok: false, reason: "order_not_found" };
-  if (!order.telegram_user_id) return { ok: false, reason: "no_telegram" };
+  const targetChat = chatId ?? order.telegram_user_id;
+  if (!targetChat) return { ok: false, reason: "no_telegram" };
   // Email-first delivery may be followed by Telegram delivery, but not an unrelated delivered state.
   if (order.status === "delivered") {
     const email = await db.from("shop_delivery_jobs").select("id").eq("order_id", orderId).eq("channel", "email").eq("status", "sent").limit(1);
@@ -501,10 +505,10 @@ export async function sendTelegramDelivery(orderId: string, actor = "admin"): Pr
   try {
     const { data: previous } = await db.from("shop_delivery_jobs").select("id,payload").eq("order_id", orderId).eq("channel", "telegram").eq("status", "sent");
     if ((previous ?? []).some(j => (j.payload as Record<string, unknown>)?.["fulfillment"] === true)) return { ok: true, reason: "already_sent" };
-    const { data: job, error } = await db.from("shop_delivery_jobs").insert({ order_id: orderId, channel: "telegram", target: String(order.telegram_user_id), payload: { text, fulfillment: true }, attempts: 1 }).select("id").single();
+    const { data: job, error } = await db.from("shop_delivery_jobs").insert({ order_id: orderId, channel: "telegram", target: String(targetChat), payload: { text, fulfillment: true }, attempts: 1 }).select("id").single();
     if (error || !job) return { ok: false, reason: "delivery_job_failed" };
     let sent = false;
-    try { const result = await tg("sendMessage", { chat_id: order.telegram_user_id, text, parse_mode: "HTML", disable_web_page_preview: true }); sent = result.ok; } catch { /* keep credential details out of errors */ }
+    try { const result = await tg("sendMessage", { chat_id: targetChat, text, parse_mode: "HTML", disable_web_page_preview: true }); sent = result.ok; } catch { /* keep credential details out of errors */ }
     if (!sent) {
       await db.from("shop_delivery_jobs").update({ status: "failed", last_error: "Telegram could not deliver the message." }).eq("id", job.id);
       return { ok: false, reason: "telegram_send_failed" };

@@ -267,7 +267,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
             <p>Method: {String(open.order["payment_method_name"] ?? "—")}</p>
             <p>Recipient used: {String(open.order["payment_recipient"] ?? "—")}</p>
             <p>Reference: {String(open.order["payment_reference"] ?? "—")}</p>
-            <p>Evidence: {open.order.payment_evidence_url ? <a href={open.order.payment_evidence_url} target="_blank" rel="noreferrer" className="text-primary">View private screenshot</a> : "—"}</p>
+            <p>Evidence: {open.order.payment_evidence_url ? <a href={`/api/admin/payment-proof/${open.order.id}`} target="_blank" rel="noreferrer" className="text-primary">View private screenshot</a> : "—"}</p>
             <p>Emails: {String(open.order["delivery_emails"] ?? "—")}</p>
             <p>
               Telegram: {open.telegram?.username ? `@${open.telegram.username}` : "—"}{" "}

@@ -14,15 +14,17 @@ export async function onceForRequest(key: string, action: string, run: () => Pro
     if (prior.data?.status === "done" && prior.data.response) return { status: prior.data.http_status ?? 200, body: { ...(prior.data.response as Record<string, unknown>), replayed: true } };
     if (prior.data?.status === "processing") return fail(409, "REQUEST_IN_PROGRESS", "The same request is still running.");
     // A previous attempt failed before doing anything durable; allow a retry.
-    await db.from("shop_crm_action_requests").update({ status: "processing", updated_at: new Date().toISOString() }).eq("request_key", key).eq("status", "failed");
+    const reclaimed = await db.from("shop_crm_action_requests").update({ status: "processing", updated_at: new Date().toISOString() }).eq("request_key", key).eq("status", "failed").select("request_key");
+    // Another retry claimed the row first (or it is not in a failed state): never run the action twice.
+    if (reclaimed.error || !reclaimed.data?.length) return fail(409, "REQUEST_IN_PROGRESS", "The same request is still running.");
   }
   let result: ActionResult;
   try { result = await run(); } catch (e) {
     console.error("crm action failed", action, e instanceof Error ? e.message : e);
     result = fail(500, "ACTION_FAILED", "The action could not be completed. Retry with the same request.");
   }
-  // Server errors may be retried; definitive answers (success, 4xx) are replayed.
-  await db.from("shop_crm_action_requests").update({ status: result.status >= 500 ? "failed" : "done", http_status: result.status, response: result.body as import("@/integrations/supabase/types").Json, updated_at: new Date().toISOString() }).eq("request_key", key);
+  // Server errors and failed deliveries may be retried; definitive answers (success, 4xx) are replayed.
+  await db.from("shop_crm_action_requests").update({ status: result.status >= 500 || result.body["error"] === "DELIVERY_FAILED" ? "failed" : "done", http_status: result.status, response: result.body as import("@/integrations/supabase/types").Json, updated_at: new Date().toISOString() }).eq("request_key", key);
   return result;
 }
 
@@ -59,6 +61,8 @@ async function sendTelegram(chatId: number, html: string): Promise<string> {
 async function resync(orderId: string | null, customerId: string | null) {
   if (orderId) await db.from("shop_orders").update({ updated_at: new Date().toISOString() }).eq("id", orderId);
   if (customerId) await db.rpc("shop_enqueue_customer", { _id: customerId });
+  const { kickCrmSync } = await import("@/lib/shop-crm.server");
+  kickCrmSync();
 }
 
 export async function messageCustomer(input: { order_id?: string; customer_id?: string; message: string; channels: Array<"telegram" | "email" | "account"> }): Promise<ActionResult> {
@@ -118,16 +122,33 @@ export async function approveAndDeliver(input: { order_id: string; fields: Deliv
   }
   // Credentials arrive with this action, so a pending email request no longer blocks delivery.
   await db.from("shop_orders").update({ status: "awaiting_fulfillment", updated_at: new Date().toISOString() }).eq("id", order.id).in("status", ["awaiting_email", "payment_confirmed"]);
-  const saved = await db.from("shop_fulfillments").insert({ order_id: order.id, kind: "instructions", content });
+  // Retries replace this order's CRM delivery text instead of adding a second fulfillment row.
+  const existing = await db.from("shop_fulfillments").select("id").eq("order_id", order.id).eq("kind", "instructions").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const saved = existing.data
+    ? await db.from("shop_fulfillments").update({ content }).eq("id", existing.data.id)
+    : await db.from("shop_fulfillments").insert({ order_id: order.id, kind: "instructions", content });
   if (saved.error) return fail(500, "FULFILLMENT_SAVE_FAILED");
-  await orderEvent(order.id, "fulfillment_added", "crm", "instructions");
+  await orderEvent(order.id, existing.data ? "fulfillment_updated" : "fulfillment_added", "crm", "instructions");
   const delivery: Record<string, string> = {};
   const isTelegram = order.channel === "telegram";
-  if (order.telegram_user_id) { const r = await sendTelegramDelivery(order.id, "crm"); delivery["telegram"] = r.ok ? "sent" : r.reason ?? "failed"; }
+  // Website orders also get a Telegram copy when the buyer's profile has a linked Telegram ID.
+  let telegramChat: number | null = order.telegram_user_id;
+  if (!telegramChat && order.customer_external_id) {
+    const linked = await db.from("profiles").select("telegram_user_id").eq("id", order.customer_external_id).maybeSingle();
+    telegramChat = linked.data?.telegram_user_id ?? null;
+  }
+  if (telegramChat) { const r = await sendTelegramDelivery(order.id, "crm", telegramChat); delivery["telegram"] = r.ok ? "sent" : r.reason ?? "failed"; }
+  else delivery["telegram"] = "no_telegram";
   if (!isTelegram) {
     const r = await sendFulfillmentEmail(order.id, "crm"); delivery["email"] = r.ok ? "sent" : r.reason ?? "failed";
-    delivery["account"] = "visible_in_my_orders";
   }
+  // Delivered only when a real channel reached the buyer; otherwise keep it waiting for fulfillment.
+  if (delivery["telegram"] !== "sent" && delivery["email"] !== "sent") {
+    await orderEvent(order.id, "delivery_failed", "crm", Object.entries(delivery).map(([k, v]) => `${k}=${v}`).join(", "));
+    await resync(order.id, order.customer_external_id);
+    return { status: 409, body: { ok: false, error: "DELIVERY_FAILED", message: "No delivery channel reached the customer. The order stays awaiting fulfillment.", delivery } };
+  }
+  if (!isTelegram) delivery["account"] = "visible_in_my_orders";
   const now = new Date().toISOString();
   await db.from("shop_orders").update({ status: "delivered", delivered_at: order.delivered_at ?? now, updated_at: now }).eq("id", order.id).neq("status", "delivered");
   await orderEvent(order.id, "approved_and_delivered", "crm", Object.entries(delivery).map(([k, v]) => `${k}=${v}`).join(", "));

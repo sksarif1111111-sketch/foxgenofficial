@@ -1830,6 +1830,24 @@ export type Database = {
           },
         ]
       }
+      shop_cron_jobs: {
+        Row: {
+          job_id: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          job_id: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          job_id?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shop_customer_accounts: {
         Row: {
           created_at: string
@@ -2735,6 +2753,7 @@ export type Database = {
         }
         Returns: Json
       }
+      shop_set_crm_cron: { Args: { _active: boolean }; Returns: undefined }
       wallet_credit: {
         Args: {
           _actor?: string
