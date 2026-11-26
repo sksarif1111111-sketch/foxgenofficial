@@ -246,6 +246,13 @@
       "when": 1795570466995,
       "tag": "0034_crm_full_member_feed_and_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1795686114396,
+      "tag": "0035_bot_speed_helpers",
+      "breakpoints": true
     }
   ]
 }

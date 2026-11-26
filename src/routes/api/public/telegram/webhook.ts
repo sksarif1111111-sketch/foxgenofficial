@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { Profile } from "@/lib/hub.server";
 import { telegramRenderer, telegramHomeKeyboard, styledKeyboard } from "@/lib/telegram-navigation";
 import { botFailureMessage, isReadOnlyBotAction } from "@/lib/telegram-recovery";
 
@@ -43,6 +44,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const receivedAt = Date.now();
         const mod = await import("@/lib/hub.server");
         const {
           db,
@@ -95,8 +97,17 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const updateId = update.update_id;
         const claimToken = crypto.randomUUID();
-        if (typeof updateId === "number") {
-          const claimed = await db.rpc("shop_claim_webhook", { _id: updateId, _token: claimToken });
+        // Claim, settings and the sender's profile are independent: load them together.
+        const earlyFrom = update.message?.from ?? update.callback_query?.from;
+        const [claimed, settingsLoaded, prefetchedProfile] = await Promise.all([
+          typeof updateId === "number" ? db.rpc("shop_claim_webhook", { _id: updateId, _token: claimToken }) : Promise.resolve(null),
+          getSettings(),
+          earlyFrom && !update.message?.text?.trim().startsWith("/start") ? profileByTelegramId(earlyFrom.id) : Promise.resolve(null),
+        ]);
+        /** Work that must not delay the user's screen; drained after the reply. */
+        const deferred: Array<Promise<unknown>> = [];
+        const later = (work: Promise<unknown>) => { deferred.push(work.catch(() => undefined)); };
+        if (claimed) {
           if (claimed.error) { await logBotError("webhook_claim", claimed.error.message, null, String(updateId)); return Response.json({ ok: false }, { status: 500 }); }
           if (claimed.data === "completed") return Response.json({ ok: true, duplicate: true });
           if (claimed.data !== "claimed") return Response.json({ ok: false }, { status: 503 });
@@ -188,7 +199,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const text = update.message?.text?.trim() ?? "";
         const cb = update.callback_query?.data ?? "";
         const editMessageId = update.callback_query?.message?.message_id;
-        const settings = await getSettings();
+        const settings = settingsLoaded;
 
         const S = (key: string, fallback: string) => (settings[key] || fallback).trim();
         /** Every icon is admin-configurable through Admin → Branding (emoji_* settings). */
@@ -207,7 +218,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
          * Centralised page renderer: one message, one fresh keyboard, no duplicates.
          * Every navigation edits the current message and safely ignores "not modified".
          */
-        const render = telegramRenderer(tg, chatId, editMessageId, Boolean(update.callback_query?.message?.photo?.length));
+        let timed = false;
+        const timedTg: typeof tg = (method, payload) => {
+          if (!timed && /^(edit|send)/.test(method)) { timed = true; console.log(`[bot-timing] ${(cb || text).slice(0, 40)} ${Date.now() - receivedAt}ms`); }
+          return tg(method, payload);
+        };
+        const render = telegramRenderer(timedTg, chatId, editMessageId, Boolean(update.callback_query?.message?.photo?.length));
 
         const storeName = S("store_name", "FoxGEN Store");
         const storeTagline = S("store_tagline", "Premium digital products at affordable prices.");
@@ -284,14 +300,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           `Choose an option below.`;
 
         /** Premium home screen with live stats. */
-        const homeBody = async (p: { id: string; credits_available: number; credits_earned: number }) => {
+        const homeBody = async (p: Profile) => {
           const { buyerStats } = await import("@/lib/telegram-marketplace.server");
           const { memberLabel } = await import("@/lib/member-number");
-          const full = await profileByTelegramId(from.id);
-          if (!full) return welcomeText;
-          const stats = await buyerStats(full);
-          const members=await db.from('profiles').select('id',{count:'exact',head:true});
-          return `<b>${esc(storeName.toUpperCase())}</b>\n${members.error?'':`👥 Total members: ${members.count??0}\n`}${LINE}\nWelcome back, ${esc(from.first_name || "Customer")}!\n${esc(storeTagline)}\n\nUsername: ${esc(from.username ? "@" + from.username : "Not set")}\nCustomer ID: ${memberLabel(full.member_number)}\nUser ID: <code>${from.id}</code>\n📦 Orders: ${stats.completed}\n👛 Wallet: $${stats.balance.toFixed(2)} USD / USDT\n💵 Total spent: ${esc(stats.spent)}\n🎁 Referral credits: ${p.credits_available}`;
+          const full = p as Profile;
+          if (!full?.id) return welcomeText;
+          const [stats, memberCount] = await Promise.all([buyerStats(full), mod.cachedMemberCount()]);
+          return `<b>${esc(storeName.toUpperCase())}</b>\n${memberCount===null?'':`👥 Total members: ${memberCount}\n`}${LINE}\nWelcome back, ${esc(from.first_name || "Customer")}!\n${esc(storeTagline)}\n\nUsername: ${esc(from.username ? "@" + from.username : "Not set")}\nCustomer ID: ${memberLabel(full.member_number)}\nUser ID: <code>${from.id}</code>\n📦 Orders: ${stats.completed}\n👛 Wallet: $${stats.balance.toFixed(2)} USD / USDT\n💵 Total spent: ${esc(stats.spent)}\n🎁 Referral credits: ${p.credits_available}`;
         };
 
         // ---------- /start ----------
@@ -299,7 +314,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const payload = text.split(/\s+/)[1] ?? "";
           const { profile: startedProfile } = await ensureProfile(from, payload);
           await send(await homeBody(startedProfile), buildHomeKeyboard(startedProfile.status === "active"));
-          void tg("setMyCommands", {
+          later(tg("setMyCommands", {
             commands: [
               { command: "start", description: `${E("brand", "🦊")} Open ${storeName}` },
               { command: "menu", description: "🏠 Main menu" },
@@ -312,11 +327,11 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
               { command: "support", description: `${E("support", "💬")} Support` },
               { command: "help", description: `${E("help", "ℹ️")} Help & rules` },
             ],
-          }).catch(() => undefined);
+          }));
           return Response.json({ ok: true });
         }
 
-        const profile = await profileByTelegramId(from.id);
+        const profile = prefetchedProfile;
         if (!profile) {
           await send("Please send /start first.", [[{ text: `${E("brand", "🦊")} Start`, callback_data: "menu" }]]);
           return Response.json({ ok: true });
@@ -333,8 +348,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (await marketplaceBot({ profile, chatId, action: marketAction, text, settings, callbackId: update.callback_query?.id, photoId: update.message?.photo?.at(-1)?.file_id, render })) return Response.json({ ok: true });
         } catch (error) {
           workFailed = true;
-          await logBotError("marketplace", error instanceof Error ? error.message : "Action failed", from.id, marketAction);
-          await render(botFailureMessage(error instanceof Error ? error.message : ""), buildHomeKeyboard(profile.status === "active"));
+          await render(botFailureMessage(error instanceof Error ? error.message : ""), buildHomeKeyboard(profile.status === "active")).catch(() => undefined);
+          later(logBotError("marketplace", error instanceof Error ? error.message : "Action failed", from.id, marketAction));
           // A delivered read-only error is handled. Telegram must not replay it endlessly.
           if (isReadOnlyBotAction(marketAction)) {
             workFailed = false;
@@ -421,8 +436,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         try {
           if (action === "menu") {
-            const fresh = (await profileByTelegramId(from.id)) ?? profile;
-            await render(await homeBody(fresh), buildHomeKeyboard(fresh.status === "active"));
+            await render(await homeBody(profile), buildHomeKeyboard(profile.status === "active"));
             return Response.json({ ok: true });
           }
 
@@ -465,149 +479,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
                 `Stay connected with official updates, tutorials and offers.`,
               buildCommunityKeyboard(),
             );
-            return Response.json({ ok: true });
-          }
-
-          // ---------- shop (database-driven, Telegram Stars channel) ----------
-          if (action === "shop" || action.startsWith("shop:")) {
-            const { shopProductRows } = await import("@/lib/shop.server");
-            const page = Math.max(1, Number(action.split(":")[1] ?? 1) || 1);
-            const perPage = 5;
-            const all = await shopProductRows("telegram");
-            const totalPages = Math.max(1, Math.ceil(all.length / perPage));
-            const current = Math.min(page, totalPages);
-            const slice = all.slice((current - 1) * perPage, current * perPage);
-            const rows: Keyboard = [];
-            let body =
-              `${E("brand", "🦊")} <b>${esc(storeName.toUpperCase())}</b>\n` +
-              `Choose a product to view its details.\n` +
-              `📄 Page ${current} of ${totalPages}\n${LINE}\n`;
-            if (slice.length === 0) {
-              body += `No products are published yet.\n`;
-            }
-            for (const p of slice) {
-              body += `${p.emoji ?? "💎"} <b>${esc(p.name)}</b> — ${esc(p.price_label)} · ${esc(p.stock_label)}\n`;
-              rows.push([{ text: `${p.emoji ?? "💎"} ${p.name.slice(0, 30)}`, callback_data: `prod:${p.id}` }]);
-            }
-            const nav: Btn[] = [];
-            if (current > 1) nav.push({ text: "◀️ Previous", callback_data: `shop:${current - 1}` });
-            if (current < totalPages) nav.push({ text: "Next ▶️", callback_data: `shop:${current + 1}` });
-            if (nav.length) rows.push(nav);
-            rows.push([
-              { text: "🔄 Refresh", callback_data: `shop:${current}` },
-              { text: "🧾 My Orders", callback_data: "myorders" },
-            ]);
-            rows.push([{ text: `${E("support", "💬")} Support`, url: supportUrl }]);
-            rows.push(backRow());
-            await render(body, rows);
-            return Response.json({ ok: true });
-          }
-
-          if (action.startsWith("prod:")) {
-            const { shopProductById, maxUnits } = await import("@/lib/shop.server");
-            const product = await shopProductById(action.slice(5), "telegram");
-            if (!product) {
-              await render(`${E("error", "⚠️")} This product is no longer available.`, [backRow("shop")]);
-              return Response.json({ ok: true });
-            }
-            let body =
-              `${product.emoji ?? "💎"} <b>${esc(product.name)}</b>\n${LINE}\n` +
-              (product.description ? `${esc(product.description)}\n\n` : "");
-            for (const feature of product.features) body += `✅ ${esc(feature)}\n`;
-            if (product.duration_label) body += `\n⏳ Duration: <b>${esc(product.duration_label)}</b>\n`;
-            if (product.credits_per_interval !== null) {
-              body += `💠 Includes ${product.credits_per_interval} credits every ${esc(product.renewal_interval ?? "month")}.\n`;
-            }
-            body += `\n💰 Price: <b>${esc(product.price_label)}</b>\n📦 ${esc(product.stock_label)}\n`;
-            body += `📧 Access details are emailed to you after your payment is confirmed.\n`;
-            if (product.terms) body += `\n<i>${esc(product.terms)}</i>\n`;
-            const rows: Keyboard = [];
-            if (product.purchasable && maxUnits(product) > 0) {
-              rows.push([{ text: "🛒 Buy Now", callback_data: `qty:${product.id}` }]);
-            } else if (product.price_stars === null) {
-              body += `\n<i>Telegram purchase is not enabled for this product yet. Details only.</i>\n`;
-            }
-            rows.push([{ text: `${E("support", "💬")} Support`, url: supportUrl }]);
-            rows.push(backRow("shop"));
-            await render(body, rows);
-            return Response.json({ ok: true });
-          }
-
-          if (action.startsWith("qty:")) {
-            const { shopProductById, maxUnits } = await import("@/lib/shop.server");
-            const product = await shopProductById(action.slice(4), "telegram");
-            if (!product || !product.purchasable) {
-              await render(`${E("error", "⚠️")} This product cannot be purchased right now.`, [backRow("shop")]);
-              return Response.json({ ok: true });
-            }
-            const limit = maxUnits(product);
-            const rows: Keyboard = [];
-            const choices: Btn[] = [];
-            for (let n = 1; n <= Math.min(4, limit); n += 1) {
-              choices.push({ text: `${n}x`, callback_data: `buy:${product.id}:${n}` });
-            }
-            rows.push(choices);
-            rows.push([{ text: `${E("back", "⬅️")} Back`, callback_data: `prod:${product.id}` }]);
-            await render(
-              `🛒 <b>${esc(product.name)}</b>\n${LINE}\nHow many units would you like?\nMaximum for this product: <b>${limit}</b>\nUnit price: <b>${esc(product.price_label)}</b>`,
-              rows,
-            );
-            return Response.json({ ok: true });
-          }
-
-          if (action.startsWith("buy:")) {
-            const [, productId, qtyRaw] = action.split(":");
-            const quantity = Math.max(1, Number(qtyRaw) || 1);
-            const { createOrder, shopProductById } = await import("@/lib/shop.server");
-            const product = await shopProductById(productId ?? "", "telegram");
-            if (!product || !product.price_stars) {
-              await render(`${E("error", "⚠️")} Telegram purchase is not configured for this product.`, [backRow("shop")]);
-              return Response.json({ ok: true });
-            }
-            try {
-              const order = await createOrder({
-                channel: "telegram",
-                profileId: profile.id,
-                telegramUserId: from.id,
-                customerName: [from.first_name, from.last_name].filter(Boolean).join(" ") || null,
-                productId: product.id,
-                quantity,
-              });
-              await tg("sendInvoice", {
-                chat_id: chatId,
-                title: product.name.slice(0, 32),
-                description: (product.short_description ?? product.name).slice(0, 255),
-                payload: order.id,
-                currency: "XTR",
-                prices: [{ label: `${product.name} x${quantity}`.slice(0, 32), amount: Number(order.stars_total) }],
-              });
-              await render(
-                `🧾 Order <b>${esc(String(order.order_number))}</b> created.\n${LINE}\n${esc(product.name)} x${quantity}\nTotal: <b>${Number(order.stars_total)} ⭐</b>\n\nComplete the Telegram Stars invoice sent below.`,
-                [[{ text: "🧾 My Orders", callback_data: "myorders" }], backRow("shop")],
-              );
-            } catch (error) {
-              await render(
-                `${E("error", "⚠️")} ${esc(error instanceof Error ? error.message : "Could not create this order.")}`,
-                [backRow("shop")],
-              );
-            }
-            return Response.json({ ok: true });
-          }
-
-          if (action === "myorders") {
-            const { data: orders } = await db
-              .from("shop_orders")
-              .select("order_number, status, currency, total, stars_total, delivery_emails, created_at")
-              .eq("profile_id", profile.id)
-              .order("created_at", { ascending: false })
-              .limit(10);
-            let body = `🧾 <b>MY ORDERS</b>\n${LINE}\n`;
-            if (!orders || orders.length === 0) body += "You have no orders yet.\n";
-            for (const o of orders ?? []) {
-              const amount = o.currency === "XTR" ? `${o.stars_total ?? 0} ⭐` : `${Number(o.total ?? 0).toFixed(2)} ${o.currency}`;
-              body += `• <b>${esc(o.order_number)}</b> — ${esc(amount)}\n  Status: ${esc(String(o.status).replace(/_/g, " "))}\n`;
-            }
-            await render(body, [[{ text: `${E("shop", "🛍️")} Shop`, callback_data: "shop" }], backRow()]);
             return Response.json({ ok: true });
           }
 
@@ -1094,15 +965,14 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             return Response.json({ ok: true });
           }
 
-          const fresh = (await profileByTelegramId(from.id)) ?? profile;
-          await render(await homeBody(fresh), buildHomeKeyboard(fresh.status === "active"));
+          await render(await homeBody(profile), buildHomeKeyboard(profile.status === "active"));
           return Response.json({ ok: true });
         } catch (err) {
           workFailed = true;
-          await logBotError("callback", err instanceof Error ? err.message : "unhandled error", from.id, action);
           await render(`${E("error", "⚠️")} Something went wrong. Please try again shortly.`, [
             [{ text: "🏠 Home", callback_data: "menu" }],
-          ]);
+          ]).catch(() => undefined);
+          later(logBotError("callback", err instanceof Error ? err.message : "unhandled error", from.id, action));
           if (isReadOnlyBotAction(action)) workFailed = false;
           return Response.json({ ok: true });
         } finally {
@@ -1113,6 +983,8 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           await logBotError("webhook", error instanceof Error ? error.message : "Unhandled webhook failure", null, String(updateId));
           return Response.json({ ok: false }, { status: 500 });
         } finally {
+          // Runs after the user's screen was sent: bookkeeping never delays the reply.
+          await Promise.all(deferred);
           if (typeof updateId === "number") await db.from("shop_webhook_work").update({ status: workFailed ? "failed" : "completed", locked_until: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("update_id", updateId).eq("claim_token", claimToken);
         }
       },

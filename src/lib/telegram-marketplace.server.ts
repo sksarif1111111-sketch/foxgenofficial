@@ -1,5 +1,5 @@
 import { db, tg, type Profile } from './hub.server';
-import { createOrder, maxUnits, shopProductById, shopProductRows, cancelOrder, submitPayment } from './shop.server';
+import { createOrder, maxUnits, shopProductById, shapeProduct, cancelOrder, submitPayment, type ShopProduct } from './shop.server';
 import { quantityChoices, orderTime } from './telegram-marketplace.policy';
 import { memberLabel } from './member-number';
 import { dualPrice } from './wallet-rate';
@@ -12,26 +12,51 @@ type Button = TelegramButton;
 type Keyboard = Button[][];
 const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const home: Keyboard = [[{ text: '⬅️ Home', callback_data: 'menu' }]];
-export async function buyerStats(profile: Profile) {
-  const totals = new Map<string, number>(); let completed = 0; let pending = 0;
-  for (let offset = 0; ; offset += 1000) {
-    const res = await db.from('shop_orders').select('status,currency,total,stars_total').eq('profile_id', profile.id).eq('channel', 'telegram').order('id').range(offset, offset + 999);
-    if (res.error) throw new Error('Could not read orders');
-    for (const o of res.data ?? []) {
-      if (o.status === 'delivered') completed++;
-      if (!['delivered','cancelled','rejected','expired','refunded'].includes(o.status)) pending++;
-      if (o.status === 'delivered' || ['payment_confirmed','awaiting_email','awaiting_fulfillment'].includes(o.status)) totals.set(o.currency, (totals.get(o.currency) ?? 0) + Number(o.currency === 'XTR' ? o.stars_total : o.total));
-    }
-    if ((res.data?.length ?? 0) < 1000) break;
-  }
-  const balance = await db.from('wallets').select('balance_usd').eq('profile_id',profile.id).maybeSingle();
-  return { completed, pending, balance: Number(balance.data?.balance_usd ?? 0), spent: [...totals].map(([c,n]) => `${n.toFixed(2)} ${c === 'XTR' ? '⭐' : c}`).join(' · ') || '0.00 USD' };
+export async function walletBalance(profileId: string) {
+  const balance = await db.from('wallets').select('balance_usd').eq('profile_id',profileId).maybeSingle();
+  return Number(balance.data?.balance_usd ?? 0);
 }
-export async function marketplaceBot(input: { profile: Profile; chatId: number; action: string; text: string; settings: Record<string,string>; callbackId?: string; photoId?: string; render?: (body: string, keys: Keyboard, image?: string | null) => Promise<void> }) {
+/** Order totals from one SQL aggregate, with the wallet read in parallel. */
+export async function buyerStats(profile: Pick<Profile, 'id'>) {
+  const [agg, balance] = await Promise.all([db.rpc('bot_buyer_stats', { _profile_id: profile.id }), walletBalance(profile.id)]);
+  if (agg.error) throw new Error('Could not read orders');
+  const s = agg.data as { completed: number; pending: number; totals: Array<{ currency: string; total: number }> };
+  return { completed: Number(s.completed), pending: Number(s.pending), balance, spent: (s.totals ?? []).map(t => `${Number(t.total).toFixed(2)} ${t.currency === 'XTR' ? '⭐' : t.currency}`).join(' · ') || '0.00 USD' };
+}
+const LIST_COLUMNS = 'id,name,emoji,price_usdt,price_inr,price_stars,stock_mode,stock_quantity,availability,max_per_order,shop_order,created_at';
+let listCache: { at: number; rows: ShopProduct[] } | null = null;
+let listInFlight: Promise<ShopProduct[]> | null = null;
+/** Published bot product list, cached 60 s per server instance with only list columns. */
+export async function cachedProductList(): Promise<ShopProduct[]> {
+  if (listCache && Date.now() - listCache.at < 60_000) return listCache.rows;
+  listInFlight ??= (async () => {
+    const { data, error } = await db.from('products').select(LIST_COLUMNS).eq('shop_published', true).neq('status', 'archived').order('shop_order').order('created_at');
+    if (error) throw new Error('Could not load products');
+    const rows = (data ?? []).map(r => shapeProduct(r as Record<string, unknown>, 'website'));
+    listCache = { at: Date.now(), rows };
+    return rows;
+  })().finally(() => { listInFlight = null; });
+  return listInFlight;
+}
+type ProductRow = Record<string, unknown> & { id: string; min_per_order: number | null; warranty_label: string | null; product_type: string; telegram_image_file_id: string | null; telegram_image_source: string | null };
+/** One product read: returns the raw row (extra fields) plus the shaped product, or null if not for sale. */
+async function productOnce(id: string) {
+  const { data } = await db.from('products').select('*').eq('id', id).maybeSingle();
+  if (!data || !data.shop_published || data.status === 'archived' || data.supplier_removed) return null;
+  return { row: data as unknown as ProductRow, p: shapeProduct(data as Record<string, unknown>, 'website') };
+}
+export async function marketplaceBot(input: { profile: Profile; chatId: number; action: string; text: string; settings: Record<string,string>; callbackId?: string; photoId?: string; render?: (body: string, keys: Keyboard, image?: string | null) => Promise<string | undefined | void> }) {
   const { profile, chatId, action, text, settings } = input;
-  const send = async (body: string, keys: Keyboard = home, image?: string | null) => {
+  const send = async (body: string, keys: Keyboard = home, image?: string | null, cached?: { fileId: string | null; source: string | null; productId: string }) => {
     if (image?.startsWith('/')) image = new URL(image, settings['shop_url'] || 'https://foxgenofficial.lovable.app').href;
-    if (input.render) return input.render(body, keys, image && /^https:\/\//.test(image) && body.length <= 1024 ? image : undefined);
+    if (input.render) {
+      const url = image && /^https:\/\//.test(image) && body.length <= 1024 ? image : undefined;
+      // Reuse Telegram's stored copy of this exact product image instead of the remote URL.
+      const reuse = url && cached?.fileId && cached.source === url ? cached.fileId : undefined;
+      const fileId = await input.render(body, keys, reuse ?? url);
+      if (url && cached && !reuse && typeof fileId === 'string') void db.from('products').update({ telegram_image_file_id: fileId, telegram_image_source: url }).eq('id', cached.productId).then(() => undefined, () => undefined);
+      return;
+    }
     if (image && /^https:\/\//.test(image) && body.length <= 1024) {
       const r = await tg('sendPhoto',{ chat_id:chatId,photo:image,caption:body,parse_mode:'HTML',reply_markup:{inline_keyboard:styledKeyboard(keys)} });
       if (r.ok) return;
@@ -40,7 +65,8 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
     if (!result.ok) throw new Error('Telegram message failed');
   };
   const support: Button = { text:'💬 Help', url:settings['support_url'] || 'https://t.me/FoXGENSPORT' };
-  const session = await db.from('shop_bot_sessions').select('*').eq('profile_id',profile.id).maybeSingle();
+  // Sessions only matter for typed text or photos; button taps never read them.
+  const session = (text || input.photoId) ? await db.from('shop_bot_sessions').select('*').eq('profile_id',profile.id).maybeSingle() : { data: null };
   const state = session.data && Date.now()-Date.parse(session.data.updated_at)<1800000 ? session.data : null;
   const saveState = async (name:string,data:Record<string,Json>) => { await db.from('shop_bot_sessions').upsert({profile_id:profile.id,state:name,data,updated_at:new Date().toISOString()}); };
   const clear = async () => { await db.from('shop_bot_sessions').delete().eq('profile_id',profile.id); };
@@ -54,7 +80,7 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
     keys.push([{text:'📦 My Orders',callback_data:'myorders'}],...home);
     await send(`<b>${esc(o.data.order_number)}</b>\n${(items.data??[]).map(i=>`${esc(i.product_name)} ×${i.quantity}`).join('\n')}\nStatus: ${esc(o.data.status.replace(/_/g,' '))}\nTotal: ${o.data.currency==='XTR' ? `${o.data.stars_total} ⭐` : `${o.data.total} ${esc(o.data.currency)}`}\n${clock ? `Delivery target: ${esc(settings['shop_delivery_sla_minutes'] || 30)} min\n${clock}` : ''}\n${o.data.info_request ? `More information needed: ${esc(o.data.info_request)}` : ''}`,keys);
   };
-  if (action==='menu') { await clear(); return false; }
+  if (action==='menu') { if (session.data) await clear(); return false; }
   if (action==='virtual' || action==='reseller') { await send('This option has been removed.',[[support],...home]); return true; }
   if (action==='wallet' || action==='storeprofile') {
     const s=await buyerStats(profile);
@@ -66,12 +92,12 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
   }
   if(action==='search'){await saveState('search',{});await send('🔍 Send a product name to search.');return true;}
   if(action==='categories') {
-    const products=await shopProductRows('website');
+    const products=await cachedProductList();
     const categories=[...new Set(products.map(p=>categoryOf(p.name)))];
     await send('<b>PRODUCT CATEGORIES</b>',[...categories.map(id=>[{text:categoryLabel(id),callback_data:`category:${id}`}]),[{text:'All products',callback_data:'shop'}],...home]);return true;
   }
   if(action==='shop'||action.startsWith('shop:')||action.startsWith('category:')||(state?.state==='search'&&text&&!text.startsWith('/'))) {
-    const all=await shopProductRows('website'); let filtered=all; let page=Number(action.split(':')[1])||1;
+    const all=await cachedProductList(); let filtered=all; let page=Number(action.split(':')[1])||1;
     if(action.startsWith('category:')) { filtered=all.filter(p=>categoryOf(p.name)===action.slice(9));page=1; }
     if(state?.state==='search'&&text&&!text.startsWith('/')) { const q=text.trim().slice(0,120).toLowerCase();filtered=all.filter(p=>p.name.toLowerCase().includes(q));await clear();page=1; }
     const pages=Math.max(1,Math.ceil(filtered.length/8));page=Math.min(pages,Math.max(1,page));
@@ -79,22 +105,23 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
     await send(`<b>${esc(settings['store_name']||'FOXGEN AI STORE')} · PRODUCTS</b>\nPage ${page}/${pages} · ${filtered.length} products\n${rows.map(p=>`${esc(p.name)} · ${esc(dualPrice(p))} · ${esc(p.stock_label)}`).join('\n')||'No products found.'}`,[...rows.map(p=>[{text:`${p.emoji||'🛍️'} ${p.name}`.slice(0,60),callback_data:`prod:${p.id}`}]),...(action.startsWith('category:')||state?.state==='search'?[]:[[{text:'◀ Previous',callback_data:`shop:${Math.max(1,page-1)}`},{text:'Next ▶',callback_data:`shop:${Math.min(pages,page+1)}`}]]),[{text:'🔄 Refresh',callback_data:'shop'},{text:'🔍 Search',callback_data:'search'},{text:'Categories',callback_data:'categories'}],...home]);return true;
   }
   if(action.startsWith('prod:')) {
-    const p=await shopProductById(action.slice(5),'website');const row=await db.from('products').select('warranty_label,product_type,shop_published').eq('id',action.slice(5)).maybeSingle();
-    if(!p||!row.data?.shop_published){await send('Product unavailable.');return true;}
+    const found=await productOnce(action.slice(5));
+    if(!found){await send('Product unavailable.');return true;}
+    const {p}=found;const row={data:found.row};
     const body=`<b>${esc(p.name)}</b>\nPrice: ${esc(dualPrice(p))}\n${esc(p.stock_label)}\n${row.data.warranty_label?`Warranty: ${esc(row.data.warranty_label)}\n`:''}Product type: ${esc(row.data.product_type)}\nDelivery: ${p.requires_buyer_email?'Email required':'Telegram chat'}\n\n${esc(p.description||p.short_description||'')}\n${p.installation_instructions?`\n<b>How to use</b>\n${esc(p.installation_instructions)}`:''}\n${esc(p.terms||'')}`;
-    await send(body.slice(0,3900),[...(p.purchasable?[[{text:'🛒 Buy · choose quantity',callback_data:`qty:${p.id}`}]]:[]),[support,{text:'⬅ Shop',callback_data:'shop'}]],p.image_url);return true;
+    await send(body.slice(0,3900),[...(p.purchasable?[[{text:'🛒 Buy · choose quantity',callback_data:`qty:${p.id}`}]]:[]),[support,{text:'⬅ Shop',callback_data:'shop'}]],p.image_url,{fileId:found.row.telegram_image_file_id,source:found.row.telegram_image_source,productId:p.id});return true;
   }
   const confirm=async(id:string,qty:number)=>{
-    const p=await shopProductById(id,'website');const limits=await db.from('products').select('min_per_order').eq('id',id).maybeSingle();if(!p||!p.purchasable||!Number.isInteger(qty)||qty<(limits.data?.min_per_order??1)||qty>maxUnits(p)){await send('Quantity unavailable. Open the product again.');return;}
-    const methods=await db.from('payment_methods').select('*').eq('channel','telegram').eq('enabled',true).order('display_order');
+    const [found,methods,balance]=await Promise.all([productOnce(id),db.from('payment_methods').select('*').eq('channel','telegram').eq('enabled',true).order('display_order'),walletBalance(profile.id)]);
+    const p=found?.p;if(!p||!p.purchasable||!Number.isInteger(qty)||qty<(found.row.min_per_order??1)||qty>maxUnits(p)){await send('Quantity unavailable. Open the product again.');return;}
     if(methods.error) throw new Error('Could not load payment methods');
-    const s=await buyerStats(profile);
+    const s={balance};
     await send(`🧾 <b>ORDER SUMMARY</b>\n━━━━━━━━━━━━━━\n🛍️ Product: ${esc(p.name)}\n🔢 Quantity: ${qty}\n💵 Unit price: ${esc(dualPrice(p))}\n━━━━━━━━━━━━━━\n💰 Total: ${esc(dualPrice({price_usdt:p.price_usdt===null?null:p.price_usdt*qty,price_inr:p.price_inr===null?null:p.price_inr*qty}))}\n👛 Your balance: $${s.balance.toFixed(2)} USD / USDT\n\nChoose a payment method 👇\nWallet purchases deduct dollars, not referral credits. UPI / Binance payments require review.`,[...paymentMenu(p.id,qty,methods.data??[],p,s.balance),...(p.price_stars?[[{text:`⭐ Telegram Stars · ${p.price_stars*qty}`,callback_data:`buystars:${p.id}:${qty}`}]]:[]),[{text:'💳 Visa / Mastercard · Coming Soon',callback_data:'soon'}],[{text:'🏦 International bank · Coming Soon',callback_data:'soon'}],[{text:'💰 Add funds',callback_data:'addfunds'}],[{text:'⬅ Change quantity',callback_data:`qty:${p.id}`}],...home]);
   };
   if(action==='soon'){await send('Coming Soon — this payment method is not supported yet.');return true;}
   if(action.startsWith('qty:')) {
-    const p=await shopProductById(action.slice(4),'website');if(!p){await send('Product unavailable.');return true;}
-    const limits=await db.from('products').select('min_per_order').eq('id',p.id).maybeSingle();const limit=maxUnits(p);await send(`<b>${esc(p.name)}</b>\nUnit: ${esc(dualPrice(p))}\nAvailable purchase quantity: ${limit}`,[quantityChoices(limit,limits.data?.min_per_order??1).map(n=>({text:n===limit&&n>5?`All (${n})`:String(n),callback_data:`buy:${p.id}:${n}`})),[{text:'Custom quantity',callback_data:`customqty:${p.id}`}],...home]);return true;
+    const found=await productOnce(action.slice(4));if(!found){await send('Product unavailable.');return true;}
+    const p=found.p;const limits={data:found.row};const limit=maxUnits(p);await send(`<b>${esc(p.name)}</b>\nUnit: ${esc(dualPrice(p))}\nAvailable purchase quantity: ${limit}`,[quantityChoices(limit,limits.data?.min_per_order??1).map(n=>({text:n===limit&&n>5?`All (${n})`:String(n),callback_data:`buy:${p.id}:${n}`})),[{text:'Custom quantity',callback_data:`customqty:${p.id}`}],...home]);return true;
   }
   if(action.startsWith('customqty:')){await saveState('quantity',{productId:action.slice(10)});await send('Send a whole number of units.');return true;}
   if(state?.state==='quantity'&&text&&!text.startsWith('/')){const data=state.data as Record<string,unknown>;await clear();await confirm(String(data['productId']),Number(text));return true;}

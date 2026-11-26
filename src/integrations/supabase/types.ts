@@ -1419,6 +1419,8 @@ export type Database = {
           stock_mode: string
           stock_quantity: number | null
           supplier_removed: boolean
+          telegram_image_file_id: string | null
+          telegram_image_source: string | null
           terms: string | null
           tutorial_url: string | null
           updated_at: string
@@ -1473,6 +1475,8 @@ export type Database = {
           stock_mode?: string
           stock_quantity?: number | null
           supplier_removed?: boolean
+          telegram_image_file_id?: string | null
+          telegram_image_source?: string | null
           terms?: string | null
           tutorial_url?: string | null
           updated_at?: string
@@ -1527,6 +1531,8 @@ export type Database = {
           stock_mode?: string
           stock_quantity?: number | null
           supplier_removed?: boolean
+          telegram_image_file_id?: string | null
+          telegram_image_source?: string | null
           terms?: string | null
           tutorial_url?: string | null
           updated_at?: string
@@ -2611,6 +2617,7 @@ export type Database = {
         }[]
       }
       award_referral: { Args: { _referred_user_id: string }; Returns: boolean }
+      bot_buyer_stats: { Args: { _profile_id: string }; Returns: Json }
       crm_record_sale: {
         Args: {
           _currency: string

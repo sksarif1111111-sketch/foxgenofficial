@@ -4,7 +4,7 @@ import { walletUsd } from "./wallet-rate";
 import { topupAmount, topupReference, topupEvidence } from "./wallet-topup.contract";
 import { styledKeyboard, type TelegramKeyboard } from './telegram-navigation';
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-export async function walletFundingBot(profileId: string, chatId: number, action: string, text: string, photoId?: string, render?: (body: string, buttons: TelegramKeyboard, image?: string | null) => Promise<void>) {
+export async function walletFundingBot(profileId: string, chatId: number, action: string, text: string, photoId?: string, render?: (body: string, buttons: TelegramKeyboard, image?: string | null) => Promise<unknown>) {
   const send = async (body: string, buttons: TelegramKeyboard = [], image?: string | null) => {
     const keyboard = [...buttons, [{ text: "⬅️ Home", callback_data: "menu" }]];
     if (render) return render(body, keyboard, image);
@@ -41,6 +41,11 @@ export async function walletFundingBot(profileId: string, chatId: number, action
     await send(`💰 <b>${esc(method.name)}</b>\n━━━━━━━━━━━━━━\nRecipient: <code>${esc(method.recipient)}</code>\nNetwork: ${esc(method.network ?? "UPI")}\n${esc(method.instructions ?? "")}\n\nEnter the amount in ${esc(method.currency)}. ₹100 = $1 USD / USDT wallet funds. Funds are added only after payment verification; referral credits remain separate.`);
     return true;
   }
+  // Leaving via Home still discards any half-finished entry, without blocking the reply.
+  if (action === "menu" && !text) { void db.from("wallet_topup_sessions").delete().eq("profile_id", profileId).then(() => undefined, () => undefined); return false; }
+  // Only typed messages, photos and fund… actions can continue a funding session.
+  if (!text && !photoId && !action.startsWith("fund")) return false;
+  if (action && !action.startsWith("fund") && action !== "menu" && !text.startsWith("/")) return false;
   const { data: session } = await db.from("wallet_topup_sessions").select("*").eq("profile_id", profileId).maybeSingle();
   if (!session) return false;
   if (Date.now() - Date.parse(session.updated_at) > 30 * 60000 || action === "menu" || text.startsWith("/")) {

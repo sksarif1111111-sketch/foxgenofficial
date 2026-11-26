@@ -17,15 +17,35 @@ export function makeReferralCode() {
   return `FOXGEN-${block(5)}`;
 }
 
+let settingsCache: { at: number; value: Record<string, string> } | null = null;
+let settingsInFlight: Promise<Record<string, string>> | null = null;
+/** App settings, cached per server instance for 60 s with one shared in-flight read. */
 export async function getSettings(): Promise<Record<string, string>> {
-  const { data } = await db.from("app_settings").select("key, value");
-  const out: Record<string, string> = {};
-  for (const row of data ?? []) out[row.key] = row.value ?? "";
-  return out;
+  if (settingsCache && Date.now() - settingsCache.at < 60_000) return settingsCache.value;
+  settingsInFlight ??= (async () => {
+    const { data, error } = await db.from("app_settings").select("key, value");
+    const out: Record<string, string> = {};
+    for (const row of data ?? []) out[row.key] = row.value ?? "";
+    if (!error) settingsCache = { at: Date.now(), value: out };
+    return out;
+  })().finally(() => { settingsInFlight = null; });
+  return settingsInFlight;
+}
+export function clearSettingsCache() { settingsCache = null; }
+
+let memberCache: { at: number; value: number } | null = null;
+/** Total member count, cached for 5 minutes (display only). */
+export async function cachedMemberCount(): Promise<number | null> {
+  if (memberCache && Date.now() - memberCache.at < 300_000) return memberCache.value;
+  const r = await db.from("profiles").select("id", { count: "exact", head: true });
+  if (r.error) return memberCache?.value ?? null;
+  memberCache = { at: Date.now(), value: r.count ?? 0 };
+  return memberCache.value;
 }
 
 export async function setSetting(key: string, value: string) {
   await db.from("app_settings").upsert({ key, value, updated_at: new Date().toISOString() });
+  clearSettingsCache();
 }
 
 export function botToken(): string {
