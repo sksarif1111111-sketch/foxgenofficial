@@ -46,4 +46,4 @@
 - Theme: `.dark` on <html> via `src/lib/theme.ts`; colours only in `src/styles.css`.
 - AI product pictures: Cloudflare Workers AI (`product-image.server.ts`) fills only imageless, never-attempted products.
 - CRM write actions run once per request key (`shop_crm_action_requests`) and never echo credentials; member/top-up feeds come from DB triggers so every change re-syncs.
-- Telegram webhook hot path: settings, product list and member count use short in-memory caches; sessions are read only for typed text/photos; logging and bookkeeping run after the reply. Keeps button taps fast.
+- Bot hot path: short in-memory caches, sessions read only for text/photos, logging after reply; keeps taps fast.
