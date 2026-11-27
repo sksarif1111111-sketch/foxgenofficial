@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, RotateCcw, Save, Search, Trash2 } from "lucide-react";
@@ -13,7 +13,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StatusDot } from "@/components/admin/admin-shell";
-import { adminAdjustCredits, adminDeleteTask, adminResetUserTasks, adminSaveTask, adminSetUserStatus, adminTasks, adminUsers } from "@/lib/hubadmin.functions";
+import { adminAdjustCredits, adminDeleteTask, adminResetUserTasks, adminSaveTask, adminSetUserStatus, adminTasks, adminUsers, adminMemberDetail } from "@/lib/hubadmin.functions";
+import { memberLabel } from "@/lib/member-number";
 import { shortDate } from "@/lib/format";
 
 type Notify = (message: string) => void;
@@ -216,6 +217,11 @@ type UserRow = Awaited<ReturnType<typeof adminUsers>>[number];
 
 export function MembersPanel({ notify }: { notify: Notify }) {
   const fUsers = useServerFn(adminUsers);
+  const fDetail=useServerFn(adminMemberDetail);
+  const [detail,setDetail]=useState<Awaited<ReturnType<typeof adminMemberDetail>>|null>(null);
+  const [page,setPage]=useState(1);
+  const [busy,setBusy]=useState(false);
+  const actionLock=useRef(false);
   const fStatus = useServerFn(adminSetUserStatus);
   const fCredits = useServerFn(adminAdjustCredits);
   const fReset = useServerFn(adminResetUserTasks);
@@ -223,24 +229,25 @@ export function MembersPanel({ notify }: { notify: Notify }) {
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
   const [adjust, setAdjust] = useState<{ user: UserRow; amount: string; reason: string } | null>(null);
-  const q = useQuery({ queryKey: ["admin-users", term], queryFn: () => fUsers({ data: { search: term } }) });
+  const q = useQuery({ queryKey: ["admin-users", term,page], queryFn: () => fUsers({ data: { search: term,page } }) });
   const refresh = () => cache.invalidateQueries({ queryKey: ["admin-users"] });
 
   const run = async (fn: () => Promise<unknown>, ok: string) => {
-    try { await fn(); notify(ok); await refresh(); } catch (e) { notify(errMsg(e, "Action failed.")); }
+    if(actionLock.current)return;actionLock.current=true;setBusy(true);
+    try { await fn(); notify(ok); await refresh(); } catch (e) { notify(errMsg(e, "Action failed.")); } finally {actionLock.current=false;setBusy(false);}
   };
 
   return (
     <div className="space-y-4">
-      <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); setTerm(search.trim()); }}>
+      <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); setTerm(search.trim());setPage(1); }}>
         <label className="relative min-w-60 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search username, name or referral code" className={`${field} pl-9`} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search member number, name, @username, Telegram ID or email" className={`${field} pl-9`} />
         </label>
         <Button type="submit" variant="outline">Search</Button>
       </form>
       {q.isLoading ? (
-        <p className="flex items-center gap-2 py-8 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading members…</p>
+        <div role="status" aria-label="Loading members" className="space-y-3">{[1,2,3].map(i=><div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />)}</div>
       ) : q.isError ? (
         <p role="alert" className="text-sm text-destructive">Could not load members.</p>
       ) : (
@@ -248,15 +255,16 @@ export function MembersPanel({ notify }: { notify: Notify }) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px] text-left text-sm">
               <thead className="bg-muted/50 text-xs text-muted-foreground">
-                <tr>{["Member", "Code", "Status", "Credits (avail. / earned / spent)", "Joined", "Actions"].map((h) => <th key={h} className="px-4 py-3 font-medium">{h}</th>)}</tr>
+                <tr>{["Member", "Member ID", "Status", "Wallet / Orders / Spent", "Credits (avail. / earned / spent)", "Joined", "Actions"].map((h) => <th key={h} className="px-4 py-3 font-medium">{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {(q.data ?? []).map((u) => (
                   <tr key={u.id} className="align-top hover:bg-muted/30">
                     <td className="px-4 py-3"><p className="font-medium">{u.telegram_username ? `@${u.telegram_username}` : (u.first_name ?? "Member")}</p><p className="text-xs text-muted-foreground">TG {u.telegram_user_id}</p></td>
-                    <td className="px-4 py-3 font-mono text-xs">{u.referral_code}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{memberLabel(u.member_number)}</td>
                     <td className="px-4 py-3">
                       <select
+                        disabled={busy}
                         aria-label="Member status"
                         value={u.status}
                         onChange={(e) => void run(() => fStatus({ data: { id: u.id, status: e.target.value as "active" | "pending" | "banned" | "suspicious" } }), "Status updated.")}
@@ -265,12 +273,14 @@ export function MembersPanel({ notify }: { notify: Notify }) {
                         {["active", "pending", "banned", "suspicious"].map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </td>
+                    <td className="px-4 py-3 text-xs font-mono">${u.balance.toFixed(2)} · {u.orders} orders<p>{u.spent.map(t=>`${Number(t.total).toFixed(2)} ${t.currency}`).join(' · ')||'No paid orders'}</p></td>
                     <td className="px-4 py-3 tabular-nums"><b>{u.credits_available}</b> <span className="text-muted-foreground">/ {u.credits_earned} / {u.credits_spent}</span></td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{shortDate(u.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1.5">
-                        <Button size="sm" variant="outline" onClick={() => setAdjust({ user: u, amount: "1", reason: "" })}>Adjust credits</Button>
-                        <Button size="sm" variant="ghost" title="Reset task progress" onClick={() => void run(() => fReset({ data: { userId: u.id } }), "Task progress reset — member is pending again.")}><RotateCcw className="size-3.5" /></Button>
+                        <Button size="sm" variant="outline" disabled={busy} onClick={()=>void run(async()=>setDetail(await fDetail({data:{id:u.id}})), 'Member profile opened.')}>Profile</Button>
+                        <Button size="sm" variant="outline" disabled={busy} onClick={() => setAdjust({ user: u, amount: "1", reason: "" })}>Adjust credits</Button>
+                        <Button size="sm" variant="ghost" disabled={busy} title="Reset task progress" onClick={() => void run(() => fReset({ data: { userId: u.id } }), "Task progress reset — member is pending again.")}><RotateCcw className="size-3.5" /></Button>
                       </div>
                     </td>
                   </tr>
@@ -281,6 +291,15 @@ export function MembersPanel({ notify }: { notify: Notify }) {
           </div>
         </div>
       )}
+      <div className="flex items-center gap-2"><Button variant="outline" disabled={q.isFetching||page===1} onClick={()=>setPage(p=>p-1)}>Previous</Button><span className="text-sm">Page {page}</span><Button variant="outline" disabled={q.isFetching||(q.data?.length??0)<50} onClick={()=>setPage(p=>p+1)}>Next</Button></div>
+      {detail && <section className="space-y-4 border-t border-border pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{[detail.profile.first_name,detail.profile.last_name].filter(Boolean).join(' ')||'Member'} · {memberLabel(detail.profile.member_number)}</h3><Button variant="outline" onClick={()=>setDetail(null)}>Close profile</Button></div>
+        <p className="text-sm">Telegram ID: {detail.profile.telegram_user_id} · Joined {shortDate(detail.profile.created_at)}</p>
+        <Button asChild variant="outline"><a href={detail.profile.telegram_username?`https://t.me/${detail.profile.telegram_username.replace(/^@/,'')}`:`tg://user?id=${detail.profile.telegram_user_id}`} target="_blank" rel="noreferrer">Open Telegram chat</a></Button>
+        <h4 className="font-semibold">Orders · latest 100</h4>{detail.orders.length?detail.orders.map(o=><p key={o.id} className="text-sm font-mono break-words">{o.order_number} · {o.status.replaceAll('_',' ')} · {o.currency==='XTR'?o.stars_total:o.total} {o.currency} · {shortDate(o.created_at)}</p>):<p className="text-sm text-muted-foreground">No orders yet.</p>}
+        <h4 className="font-semibold">Wallet history · latest 100</h4>{detail.wallet.length?detail.wallet.map(t=><p key={t.id} className="text-sm break-words">{t.amount_usd} USD · {t.kind} · {t.note} · {shortDate(t.created_at)}</p>):<p className="text-sm text-muted-foreground">No wallet transactions.</p>}
+        <h4 className="font-semibold">Top-up requests · latest 100</h4>{detail.topups.length?detail.topups.map(t=><p key={t.id} className="text-sm break-words">{t.amount} {t.currency} · {t.status} · {t.reference}</p>):<p className="text-sm text-muted-foreground">No top-up requests.</p>}
+      </section>}
       <AlertDialog open={!!adjust} onOpenChange={(v) => !v && setAdjust(null)}>
         <AlertDialogContent>
           <AlertDialogTitle>Adjust credits</AlertDialogTitle>
@@ -294,7 +313,7 @@ export function MembersPanel({ notify }: { notify: Notify }) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              disabled={!adjust || !adjust.reason.trim() || !Number.isInteger(Number(adjust.amount)) || Number(adjust.amount) === 0}
+              disabled={busy || !adjust || !adjust.reason.trim() || !Number.isInteger(Number(adjust.amount)) || Number(adjust.amount) === 0}
               onClick={() => adjust && void run(() => fCredits({ data: { id: adjust.user.id, amount: Number(adjust.amount), reason: adjust.reason.trim() } }), `${Number(adjust.amount) > 0 ? "+" : ""}${adjust.amount} credits applied.`)}
             >
               Apply

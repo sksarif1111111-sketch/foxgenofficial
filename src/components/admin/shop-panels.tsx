@@ -6,7 +6,7 @@ import { catalogCategories } from "@/lib/hubcatalog.functions";
 import { Button } from "@/components/ui/button";
 import { DeliveryCountdown } from "@/components/admin/delivery-countdown";
 import { memberLabel } from "@/lib/member-number";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { useServerFn } from "@tanstack/react-start";
 import { adminSaveSettings } from "@/lib/hubadmin.functions";
@@ -47,6 +47,7 @@ const ghostBtn = "rounded-xl border border-border px-4 py-2 text-xs font-bold te
 
 const STATUSES = [
   "all",
+  "overdue",
   "awaiting_payment",
   "payment_submitted",
   "awaiting_email",
@@ -68,6 +69,7 @@ const DELIVERY_REASONS: Record<string, string> = {
   telegram_material_too_long: "Delivery material is too long for one Telegram message. Shorten it or use email.",
   telegram_send_failed: "Telegram could not deliver. Check the delivery job and retry.",
   delivery_in_progress: "Delivery is already in progress.",
+  delivery_failed: "Nothing was delivered. The order is still waiting for fulfillment. Check the channel results and retry.",
   email_send_failed: "The email provider rejected the send. See the delivery jobs list for the error.",
   sent: "Delivery email sent.",
   pending: "Payment approved. Add delivery material, then send.",
@@ -108,6 +110,11 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<Awaited<ReturnType<typeof shopOrderDetail>> | null>(null);
   const [notes, setNotes] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [loading,setLoading] = useState(true);
+  const [loadError,setLoadError] = useState('');
+  const [deliveryResult,setDeliveryResult] = useState<{sent:boolean;channels:Record<string,string>} | null>(null);
+  const loadVersion=useRef(0);
   const [reason, setReason] = useState("");
   const [material, setMaterial] = useState("");
   const [kind, setKind] = useState<"link" | "code" | "instructions">("link");
@@ -115,12 +122,16 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
   const [emailBody, setEmailBody] = useState("");
   const [drafting, setDrafting] = useState(false);
   const [busy, setBusy] = useState(false);
+  const actionLock = useRef(false);
 
   const load = useCallback(async () => {
-    const [s, o] = await Promise.all([fSummary({ data: undefined }), fOrders({ data: { status, search } })]);
-    setSummary(s);
-    setSlaDraft(String(s.deliverySlaMinutes));
-    setRows(o as Row[]);
+    const version=++loadVersion.current;setLoading(true);setLoadError('');
+    try {
+      const [s, o] = await Promise.all([fSummary({ data: undefined }), fOrders({ data: { status, search } })]);
+      if(version!==loadVersion.current)return;
+      setSummary(s);setSlaDraft(String(s.deliverySlaMinutes));setRows(o as Row[]);
+    } catch {if(version===loadVersion.current)setLoadError('Could not load orders. Try Refresh.');}
+    finally {if(version===loadVersion.current)setLoading(false);}
   }, [fOrders, fSummary, search, status]);
 
   useEffect(() => {
@@ -138,6 +149,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
   };
 
   const act = async (fn: () => Promise<void>) => {
+    if(actionLock.current)return;actionLock.current=true;
     setBusy(true);
     try {
       await fn();
@@ -145,7 +157,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
     } catch (error) {
       notify(error instanceof Error ? error.message : "Action failed.");
     } finally {
-      setBusy(false);
+      actionLock.current=false;setBusy(false);
     }
   };
 
@@ -167,6 +179,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
         ))}
       </div>
 
+      {summary && <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[["Orders today",summary.operations.today.orders],["Delivered today",summary.operations.today.delivered],["Overdue",summary.operations.overdue],["Wallet change today",`$${summary.operations.walletChange.toFixed(2)}`]].map(([label,value])=><div key={label} className={card}><p className="text-xs text-muted-foreground">{label}</p><p className="text-xl font-bold font-mono">{value}</p></div>)}</div>}
       <p className="text-xs text-muted-foreground">CRM sync · {summary?.crmSync.configured ? "Connected" : "Key missing"} · Last success: {summary?.crmSync.lastSuccess ? new Date(summary.crmSync.lastSuccess).toLocaleString() : "Not yet"} · {summary?.crmSync.pending ?? 0} queued · <span className={summary?.crmSync.stuck ? "text-destructive" : ""}>{summary?.crmSync.stuck ?? 0} stuck (5+ attempts)</span></p>
       <div className="flex flex-wrap items-end gap-3">
         <Field label="Delivery SLA (minutes)"><input type="number" min="1" max="1440" value={slaDraft} onChange={e => setSlaDraft(e.target.value)} className={input} /></Field>
@@ -202,17 +215,31 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
         <Field label="Search order / email / reference">
           <input value={search} onChange={(e) => setSearch(e.target.value)} className={input} />
         </Field>
-        <button type="button" className={ghostBtn} onClick={() => void load()}>
+        <Button type="button" className={ghostBtn} onClick={() => void load()}>
           Refresh
-        </button>
+        </Button>
       </div>
 
+      {loadError && <p role="alert" className="text-destructive">{loadError}</p>}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">{selected.length} selected</span>
+        <Button variant="outline" disabled={busy||!selected.length} onClick={()=>{
+          if(!window.confirm(`Approve payment for ${selected.length} selected orders? Verified payments only. This does not send delivery material.`))return;
+          void act(async()=>{let done=0;const failures:string[]=[];for(const id of selected){try{await fApprove({data:{id,notes:'Bulk approval from Admin'}});done++;}catch{failures.push(id);}}setSelected(failures);notify(`${done} approved; ${failures.length} could not be approved. Failed orders remain selected.`);});
+        }}>Approve selected</Button>
+        <Button variant="outline" disabled={busy||!selected.length||reason.trim().length<3} onClick={()=>{
+          if(!window.confirm(`Reject ${selected.length} selected orders with reason: ${reason}? Customers will be notified and reserved stock released.`))return;
+          void act(async()=>{let done=0;const failures:string[]=[];for(const id of selected){try{await fReject({data:{id,reason}});done++;}catch{failures.push(id);}}setSelected(failures);notify(`${done} rejected; ${failures.length} could not be rejected.`);});
+        }}>Reject selected</Button>
+        <input aria-label="Bulk rejection reason" className={input+' max-w-xs'} value={reason} onChange={e=>setReason(e.target.value)} placeholder="Rejection reason" />
+      </div>
       <div className="space-y-3">
-        {rows.length === 0 && <p className="text-sm text-muted-foreground">No orders match these filters.</p>}
+        {loading && Array.from({length:3},(_,i)=><div key={i} className="h-32 animate-pulse rounded-lg bg-muted" />)}
+        {!loading && rows.length === 0 && <p className="text-sm text-muted-foreground">No orders match these filters.</p>}
         {rows.map((row) => (
           <article key={String(row["id"])} className={`${card} space-y-2`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-bold">{String(row["order_number"])}</span>
+              <label className="flex items-center gap-2"><input type="checkbox" aria-label={`Select ${String(row['order_number'])}`} disabled={busy||!['payment_submitted','under_review','awaiting_email'].includes(String(row['status']))} checked={selected.includes(String(row['id']))} onChange={e=>setSelected(p=>e.target.checked?[...p,String(row['id'])]:p.filter(id=>id!==row['id']))} /><span className="font-bold">{String(row["order_number"])}</span></label>
               <div className="flex flex-wrap items-center gap-2"><DeliveryCountdown order={row as { status: string; confirmed_at: string | null; delivered_at: string | null }} minutes={summary?.deliverySlaMinutes ?? 30} now={now} /><span className="rounded-full border border-border px-3 py-1 text-xs">{String(row["status"])}</span></div>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -229,21 +256,21 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
             {row["delivery_emails"] ? (
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 {String(row["delivery_emails"])}
-                <button
+                <Button
                   type="button"
                   className={ghostBtn}
                   onClick={() => void navigator.clipboard.writeText(String(row["delivery_emails"]))}
                 >
                   Copy Email
-                </button>
+                </Button>
               </p>
             ) : null}
             {row["payment_reference"] ? (
               <p className="text-xs text-muted-foreground">Reference: {String(row["payment_reference"])}</p>
             ) : null}
-            <button type="button" className={primaryBtn} onClick={() => void openOrder(String(row["id"]))}>
+            <Button type="button" className={primaryBtn} onClick={() => void openOrder(String(row["id"]))}>
               View Order
-            </button>
+            </Button>
           </article>
         ))}
       </div>
@@ -252,9 +279,9 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
         <div className={`${card} space-y-4 border-primary/40`}>
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-black">Order {String(open.order["order_number"])}</h3>
-            <button type="button" className={ghostBtn} onClick={() => setOpen(null)}>
+            <Button type="button" className={ghostBtn} onClick={() => setOpen(null)}>
               Close
-            </button>
+            </Button>
           </div>
           <div className="grid gap-2 text-sm sm:grid-cols-2">
             <p className="flex flex-wrap items-center gap-2">Status: {String(open.order["status"])} <DeliveryCountdown order={open.order} minutes={summary?.deliverySlaMinutes ?? 30} now={now} /></p>
@@ -277,12 +304,13 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
             <p>Stock consumed: {open.order["stock_consumed"] ? "yes" : "no"}</p>
           </div>
 
+          {deliveryResult && <div role="status" className={`rounded-lg border p-3 text-sm ${deliveryResult.sent?'border-success/30 text-success':'border-destructive/30 bg-destructive/10 text-destructive'}`}><p className="font-semibold">{deliveryResult.sent?'Delivery result':'Nothing sent — waiting for fulfillment'}</p>{Object.entries(deliveryResult.channels).map(([channel,result])=><p key={channel}>{channel}: {DELIVERY_REASONS[result]??result.replaceAll('_',' ')}</p>)}</div>}
           <div className="space-y-2">
             <Field label="Review notes (optional)">
               <input value={notes} onChange={(e) => setNotes(e.target.value)} className={input} />
             </Field>
             <div className="flex flex-wrap gap-2">
-              <button
+              <Button
                 type="button"
                 disabled={busy}
                 className={primaryBtn}
@@ -295,21 +323,23 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                 }
               >
                 Approve Payment
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 disabled={busy}
                 className={primaryBtn}
                 onClick={() =>
                   void act(async () => {
+                    if(!window.confirm(`Approve ${open.order.order_number} and send its saved delivery material to ${[open.order.delivery_emails,open.order.telegram_user_id?`Telegram ${open.order.telegram_user_id}`:null].filter(Boolean).join(' and ') || 'its configured delivery channel'}?`))return;
                     const result = await fApprove({ data: { id: String(open.order["id"]), notes, send: true } });
+                    setDeliveryResult({sent:result.ok,channels:result.channels??{}});
                     notify(DELIVERY_REASONS[result.delivery ?? "pending"] ?? "Done.");
                     await openOrder(String(open.order["id"]));
                   })
                 }
               >
                 Approve and Send
-              </button>
+              </Button>
               {open.order.delivery_emails && (              <Button
                 type="button"
                 disabled={busy}
@@ -322,24 +352,25 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                   })
                 }
               >
-                Send Delivery
+                Send Email
               </Button>)}
               {open.order.telegram_user_id != null && <Button type="button" variant="outline" disabled={busy} className={ghostBtn} onClick={() => void act(async () => {
                 const result = await fSendTelegram({ data: { id: open.order.id } });
                 notify(result.ok ? "Telegram delivery sent." : (DELIVERY_REASONS[result.reason ?? ""] ?? "Telegram delivery failed. Check delivery jobs."));
                 await openOrder(open.order.id);
-              })}>Send via Telegram</Button>}
+              })}>Send Telegram</Button>}
             </div>
             <Field label="Rejection reason or information request">
               <input value={reason} onChange={(e) => setReason(e.target.value)} className={input} />
             </Field>
             <div className="flex flex-wrap gap-2">
-              <button
+              <Button
                 type="button"
                 disabled={busy || reason.trim().length < 3}
                 className={ghostBtn}
                 onClick={() =>
                   void act(async () => {
+                    if(!window.confirm(`Reject ${open.order.order_number}? Reason: ${reason}. The customer will be notified.`))return;
                     await fReject({ data: { id: String(open.order["id"]), reason } });
                     notify("Order rejected and the customer was notified.");
                     setOpen(null);
@@ -347,8 +378,8 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                 }
               >
                 Reject Payment
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 disabled={busy || reason.trim().length < 3}
                 className={ghostBtn}
@@ -360,7 +391,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                 }
               >
                 Request More Information
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -383,7 +414,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
               <Field label="Content">
                 <input value={material} onChange={(e) => setMaterial(e.target.value)} className={input} />
               </Field>
-              <button
+              <Button
                 type="button"
                 disabled={busy || material.trim().length < 3}
                 className={primaryBtn}
@@ -397,7 +428,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                 }
               >
                 Add
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -408,7 +439,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
               payment details), review it, then save. A saved draft is what gets sent.
             </p>
             <div className="flex flex-wrap gap-2">
-              <button
+              <Button
                 type="button"
                 disabled={busy || drafting}
                 className={primaryBtn}
@@ -429,8 +460,8 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                 }}
               >
                 {drafting ? "Writing draft…" : "Draft with AI"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 disabled={busy || emailSubject.trim().length < 3 || emailBody.trim().length < 10}
                 className={ghostBtn}
@@ -445,7 +476,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                 }
               >
                 Save draft
-              </button>
+              </Button>
             </div>
             <Field label="Subject">
               <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={input} />
@@ -537,6 +568,9 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
   const fProducts = useServerFn(shopAdminProducts);
   const fCategories = useServerFn(catalogCategories);
   const fGenerateImage = useServerFn(marketplaceGenerateImage);
+  const [busy,setBusy]=useState(false);
+  const actionLock=useRef(false);
+  const [loading,setLoading]=useState(true);
   const [generating,setGenerating] = useState(false);
   const fFillImages = useServerFn(marketplaceFillMissingImages);
   const fQuota = useServerFn(marketplacePictureQuota);
@@ -559,10 +593,13 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
   const [draft, setDraft] = useState<Draft | null>(null);
 
   const load = useCallback(async () => {
+    setLoading(true);
+    try {
     const [p, m, c] = await Promise.all([fProducts({ data: undefined }), fMethods({ data: undefined }), fCategories()]);
     setCategories(c);
     setRows(p as Row[]);
     setMethods(m as Row[]);
+    } catch { notify("Could not load products. Refresh this page to retry."); } finally {setLoading(false);}
   }, [fMethods, fProducts, fCategories]);
 
   useEffect(() => {
@@ -582,13 +619,14 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
   }, [rows, query, sourceFilter]);
 
   const act = async (fn: () => Promise<unknown>, ok: string) => {
+    if(actionLock.current)return;actionLock.current=true;setBusy(true);
     try {
       await fn();
       notify(ok);
       await load();
     } catch (error) {
       notify(error instanceof Error ? error.message : "Action failed.");
-    }
+    } finally {actionLock.current=false;setBusy(false);}
   };
 
   const edit = (row: Row) =>
@@ -629,7 +667,8 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
     });
 
   const save = async () => {
-    if (!draft) return;
+    if (!draft || actionLock.current) return;
+    actionLock.current=true;setBusy(true);
     try {
       await fSave({
         data: {
@@ -672,7 +711,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
       await load();
     } catch (error) {
       notify(error instanceof Error ? error.message : "Could not save this product.");
-    }
+    } finally {actionLock.current=false;setBusy(false);}
   };
 
   return (
@@ -684,24 +723,25 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
             <b className={quota.left === 0 ? "text-destructive" : "text-foreground"}>{quota.limited ? "limit reached" : `about ${quota.left} left`}</b> of ~{quota.estimatedCap} free · resets in {formatReset(msUntilReset(new Date(nowTick)))}
           </p>
         )}
-        <button type="button" className={ghostBtn} disabled={generating} onClick={() => { setGenerating(true); void act(async () => { const r = await fFillImages(); notify(`${r.made} picture(s) created.`); }, "Missing pictures checked.").finally(() => { setGenerating(false); refreshQuota(); }); }}>{generating ? "Creating pictures…" : "Create missing pictures"}</button>
-        <button type="button" className={primaryBtn} onClick={() => { setDraft({ ...emptyProduct }); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>
+        <Button type="button" className={ghostBtn} disabled={generating||busy} onClick={() => { setGenerating(true); void act(async () => { const r = await fFillImages(); notify(`${r.made} picture(s) created.`); }, "Missing pictures checked.").finally(() => { setGenerating(false); refreshQuota(); }); }}>{generating ? "Creating pictures…" : "Create missing pictures"}</Button>
+        <Button type="button" disabled={busy} className={primaryBtn} onClick={() => { setDraft({ ...emptyProduct }); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>
           + Add Product
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search products" aria-label="Search products" className="h-10 min-w-56 flex-1 rounded-lg border border-input bg-background px-3 text-sm" />
         <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">
           {([["all", "All"], ["manual", "Store managed"], ["api", "Supplier API"], ["featured", "Featured"], ["unpublished", "Hidden"]] as const).map(([id, label]) => (
-            <button key={id} type="button" onClick={() => setSourceFilter(id)} className={`h-8 rounded-md px-3 text-xs font-medium ${sourceFilter === id ? "bg-card shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>
+            <Button key={id} type="button" onClick={() => setSourceFilter(id)} className={`h-8 rounded-md px-3 text-xs font-medium ${sourceFilter === id ? "bg-card shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>
               {label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
       <p className="text-xs text-muted-foreground">{visibleRows.length} of {rows.length} products. Supplier API products refresh name and stock on sync; selling prices stay unchanged; store-only edits (images, Stars price, descriptions) are kept.</p>
 
+      {loading && <div className="h-40 animate-pulse rounded-lg bg-muted" />}
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-left text-sm">
@@ -718,7 +758,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted text-base">
-                          {row["logo_url"] ? <img src={String(row["logo_url"])} alt="" className="size-6 object-contain" /> : String(row["emoji"] ?? "") || String(row["name"]).charAt(0)}
+                          {row["image_url"] || row["logo_url"] ? <img src={String(row["image_url"] || row["logo_url"])} alt="" className="size-6 object-contain" /> : String(row["emoji"] ?? "") || String(row["name"]).charAt(0)}
                         </span>
                         <div className="min-w-0">
                           <p className="flex items-center gap-1.5 truncate font-medium">{row["featured"] === true && <span className="text-warning" aria-label="Featured">★</span>}{String(row["name"])}</p>
@@ -733,31 +773,33 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
                     </td>
                     <td className="px-4 py-3 tabular-nums">
                       {row["price_usdt"] === null ? <span className="text-muted-foreground">Not set</span> : `${Number(row["price_usdt"]).toFixed(2)} USDT`}
-                      <p className="text-xs text-muted-foreground">{row["price_stars"] === null ? "No Stars price" : `${String(row["price_stars"])} Stars`}</p>
+                      <p className="text-xs text-muted-foreground">{row["price_inr"] == null ? "No INR price" : `${Number(row["price_inr"]).toFixed(2)} INR`}</p><p className="text-xs text-muted-foreground">{row["price_stars"] === null ? "No Stars price" : `${String(row["price_stars"])} Stars`}</p>
                     </td>
                     <td className="px-4 py-3 text-xs">{String(row["availability"]).replaceAll("_", " ")}{row["stock_mode"] === "tracked" ? ` · ${String(row["stock_quantity"] ?? 0)} left` : ""}</td>
                     <td className="px-4 py-3">
-                      <button
+                      <Button
                         type="button"
+                        disabled={busy}
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${row["shop_published"] ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}
                         onClick={() => void act(() => fState({ data: { id, shop_published: !(row["shop_published"] === true) } }), row["shop_published"] ? "Product hidden from the store and bot." : "Product published to the store and bot.")}
                       >
                         {row["shop_published"] ? "Published" : "Hidden"}
-                      </button>
+                      </Button>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1.5">
-                        <button type="button" className={ghostBtn} onClick={() => { edit(row); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>Edit</button>
-                        <button type="button" className={ghostBtn} onClick={() => void act(() => fState({ data: { id, featured: !(row["featured"] === true) } }), row["featured"] ? "Removed from featured." : "Marked as featured on the Home page.")}>
+                        {!row['image_url'] && <Button size="sm" variant="outline" disabled={busy||generating} onClick={()=>{edit(row);document.getElementById('product-editor')?.scrollIntoView({behavior:'smooth'});}}>Generate picture</Button>}
+                        <Button type="button" disabled={busy} className={ghostBtn} onClick={() => { edit(row); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>Edit</Button>
+                        <Button type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fState({ data: { id, featured: !(row["featured"] === true) } }), row["featured"] ? "Removed from featured." : "Marked as featured on the Home page.")}>
                           {row["featured"] ? "Unfeature" : "Feature"}
-                        </button>
-                        <button type="button" className={ghostBtn} onClick={() => void act(() => fDuplicate({ data: { id } }), "Product duplicated as a hidden draft.")}>Duplicate</button>
+                        </Button>
+                        <Button type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fDuplicate({ data: { id } }), "Product duplicated as a hidden draft.")}>Duplicate</Button>
                         {archived ? (
-                          <button type="button" className={ghostBtn} onClick={() => void act(() => fState({ data: { id, status: "active" } }), "Product restored.")}>Restore</button>
+                          <Button type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fState({ data: { id, status: "active" } }), "Product restored.")}>Restore</Button>
                         ) : (
-                          <button type="button" className={ghostBtn} onClick={() => void act(() => fState({ data: { id, status: "archived" } }), "Product archived.")}>Archive</button>
+                          <Button type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fState({ data: { id, status: "archived" } }), "Product archived.")}>Archive</Button>
                         )}
-                        <button
+                        <Button
                           type="button"
                           className="rounded-xl border border-destructive/40 px-3 py-2 text-xs font-bold text-destructive"
                           onClick={() => {
@@ -766,7 +808,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
                           }}
                         >
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -894,12 +936,12 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
             Requires a buyer email
           </label>
           <div className="flex gap-2">
-            <button type="button" className={primaryBtn} onClick={() => void save()}>
+            <Button type="button" className={primaryBtn} disabled={busy||generating} onClick={() => void save()}>
               Save product
-            </button>
-            <button type="button" className={ghostBtn} onClick={() => setDraft(null)}>
+            </Button>
+            <Button type="button" disabled={busy} className={ghostBtn} onClick={() => setDraft(null)}>
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -921,6 +963,8 @@ function PaymentMethodsEditor({
   save: ReturnType<typeof useServerFn<typeof shopSavePaymentMethod>>;
 }) {
   const [draft, setDraft] = useState<Row | null>(null);
+  const [busy,setBusy]=useState(false);
+  const actionLock=useRef(false);
 
   const field = (key: string) => String(draft?.[key] ?? "");
 
@@ -928,7 +972,7 @@ function PaymentMethodsEditor({
     <section className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-black">Payment methods</h3>
-        <button
+        <Button
           type="button"
           className={primaryBtn}
           onClick={() =>
@@ -949,7 +993,7 @@ function PaymentMethodsEditor({
           }
         >
           + Add Payment Method
-        </button>
+        </Button>
       </div>
       {rows.map((row) => (
         <article key={String(row["id"])} className={`${card} flex flex-wrap items-center justify-between gap-2`}>
@@ -958,9 +1002,9 @@ function PaymentMethodsEditor({
             {String(row["network"] ?? "no network")} · {String(row["recipient"] ?? "—")} ·{" "}
             {row["enabled"] ? "enabled" : "disabled"}
           </span>
-          <button type="button" className={ghostBtn} onClick={() => setDraft(row)}>
+          <Button type="button" disabled={busy} className={ghostBtn} onClick={() => setDraft(row)}>
             Edit
-          </button>
+          </Button>
         </article>
       ))}
       {draft && (
@@ -1000,11 +1044,13 @@ function PaymentMethodsEditor({
             Enabled
           </label>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               className={primaryBtn}
               onClick={() =>
                 void (async () => {
+                  if(actionLock.current)return;
+                  actionLock.current=true;setBusy(true);
                   try {
                     await save({
                       data: {
@@ -1029,15 +1075,15 @@ function PaymentMethodsEditor({
                     await reload();
                   } catch (error) {
                     notify(error instanceof Error ? error.message : "Could not save this payment method.");
-                  }
+                  } finally {actionLock.current=false;setBusy(false);}
                 })()
               }
             >
               Save
-            </button>
-            <button type="button" className={ghostBtn} onClick={() => setDraft(null)}>
+            </Button>
+            <Button type="button" disabled={busy} className={ghostBtn} onClick={() => setDraft(null)}>
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1065,30 +1111,36 @@ export function WalletPanel({ notify }: { notify: Notify }) {
   const [pending, setPending] = useState<Awaited<ReturnType<typeof shopWalletPendingTopUps>>>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
+  const [page,setPage]=useState(1);
+  const [loading,setLoading]=useState(true);
   const [rows, setRows] = useState<WalletAccount[]>([]);
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const actionLock = useRef(false);
 
   const load = useCallback(async () => {
     try {
-      setRows(await fAccounts({ data: { search: search.trim() || undefined } }));
+      setLoading(true);
+      setRows(await fAccounts({ data: { search: search.trim() || undefined, page } }));
       setPending(await fPending());
     } catch {
       notify("Could not load wallets.");
-    }
-  }, [fAccounts, fPending, notify, search]);
+    } finally {setLoading(false);}
+  }, [fAccounts, fPending, notify, search, page]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const topUp = async (row: WalletAccount) => {
-    const amount = Number(amounts[row.id] ?? "");
+  const topUp = async (row: WalletAccount, quick?: number) => {
+    if(actionLock.current)return;
+    const amount = quick ?? Number(amounts[row.id] ?? "");
     if (!Number.isFinite(amount) || amount <= 0) {
       notify("Enter a dollar amount greater than zero.");
       return;
     }
-    setBusy(true);
+    if(!window.confirm(`Add $${amount.toFixed(2)} to ${row.name} (${memberLabel(row.member_number)})? This changes the wallet balance immediately and is logged.`))return;
+    actionLock.current=true;setBusy(true);
     try {
       await fTopUp({ data: { profileId: row.id, amount, note: "Added by admin" } });
       setAmounts((prev) => ({ ...prev, [row.id]: "" }));
@@ -1097,7 +1149,7 @@ export function WalletPanel({ notify }: { notify: Notify }) {
     } catch (err) {
       notify(err instanceof Error ? err.message : "Could not add funds.");
     } finally {
-      setBusy(false);
+      actionLock.current=false;setBusy(false);
     }
   };
 
@@ -1107,13 +1159,15 @@ export function WalletPanel({ notify }: { notify: Notify }) {
       <div className="space-y-3">
         {pending.map(r => <div key={r.id} className="border-b border-border pb-4 space-y-2">
           <p className="font-semibold">{r.amount} {r.currency} · {r.reference}</p>
-          <p className="text-xs text-muted-foreground break-all">{r.profile_id} · {r.network} · {r.recipient_used}</p>
+          <p className="text-xs text-muted-foreground break-all">{r.member ? `${[r.member.first_name,r.member.last_name].filter(Boolean).join(" ")} · ${memberLabel(r.member.member_number)}` : "Customer"} · {r.member?.telegram_username?`@${r.member.telegram_username}`:r.profile_id} · {r.network} · {r.recipient_used}</p>
           {r.evidence_url && <a href={/^(telegram-file|storage):/.test(r.evidence_url) ? `/api/admin/payment-proof/${r.id}` : r.evidence_url} target="_blank" rel="noreferrer" className="text-primary text-sm">Payment evidence</a>}
           <input aria-label={`Review note ${r.id}`} placeholder="Review note or rejection reason" className={input} value={notes[r.id] ?? ""} onChange={e => setNotes(p => ({ ...p, [r.id]: e.target.value }))} />
           <p className="text-sm text-muted-foreground">On approval: ${walletUsd(Number(r.amount), r.currency).toFixed(2)} USD / USDT · ₹100 = $1. Payment must be verified first.</p>
           <div className="flex gap-2">{[true,false].map(approve => <Button key={String(approve)} variant={approve ? "default" : "outline"} disabled={busy} onClick={async () => {
             if ((notes[r.id] ?? "").trim().length < 3) { notify("Enter a payment verification note or rejection reason."); return; }
-            setBusy(true); try { const result = await fReview({ data: { id: r.id, approve, note: notes[r.id], creditUsd: undefined } }); notify(result.notified ? "Top up reviewed." : "Reviewed; Telegram notification failed."); await load(); } catch(e) { notify(e instanceof Error ? e.message : "Review failed."); } finally { setBusy(false); }
+            if(actionLock.current)return;
+            if(!window.confirm(`${approve?'Approve verified':'Reject'} top-up of ${r.amount} ${r.currency}? ${approve?`The wallet receives $${walletUsd(Number(r.amount),r.currency).toFixed(2)}.`:'No funds will be added.'} The customer will be notified.`))return;
+            actionLock.current=true;setBusy(true); try { const result = await fReview({ data: { id: r.id, approve, note: notes[r.id], creditUsd: undefined } }); notify(result.notified ? "Top up reviewed." : "Reviewed; Telegram notification failed."); await load(); } catch(e) { notify(e instanceof Error ? e.message : "Review failed."); } finally { actionLock.current=false;setBusy(false); }
           }}>{approve ? "Approve" : "Reject"}</Button>)}</div>
         </div>)}
         {!pending.length && <p className="text-sm text-muted-foreground">No pending top ups.</p>}
@@ -1131,13 +1185,13 @@ export function WalletPanel({ notify }: { notify: Notify }) {
           placeholder="Search by name or username"
           className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
         />
-        <button
+        <Button
           type="button"
           onClick={() => void load()}
           className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted/40"
         >
           Search
-        </button>
+        </Button>
       </div>
       <div className="space-y-2">
         {rows.map((row) => (
@@ -1150,6 +1204,7 @@ export function WalletPanel({ notify }: { notify: Notify }) {
             </div>
             <div className="flex flex-wrap items-center gap-2 max-w-full">
               <span className="text-sm font-black text-primary">${row.balance.toFixed(2)}</span>
+              {[5,10,20].map(value=><Button key={value} size="sm" variant="outline" disabled={busy} onClick={()=>void topUp(row,value)}>Add ${value}</Button>)}
               <input
                 value={amounts[row.id] ?? ""}
                 onChange={(event) => setAmounts((prev) => ({ ...prev, [row.id]: event.target.value }))}
@@ -1157,23 +1212,27 @@ export function WalletPanel({ notify }: { notify: Notify }) {
                 inputMode="decimal"
                 className="w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm"
               />
-              <button
+              <Button
                 type="button"
                 disabled={busy}
                 onClick={() => void topUp(row)}
                 className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
                 Add funds
-              </button>
+              </Button>
               <input aria-label={`Deduction note ${row.id}`} placeholder="Deduction note" className="min-w-0 w-32 border border-border rounded-md p-2 text-sm" value={notes[row.id] ?? ""} onChange={e => setNotes(p => ({ ...p, [row.id]: e.target.value }))} />
               <Button variant="outline" disabled={busy} onClick={async () => {
                 if (!(Number(amounts[row.id]) > 0) || (notes[row.id] ?? "").trim().length < 3) { notify("Enter an amount and short deduction note."); return; }
-                setBusy(true); try { await fDeduct({ data: { profileId: row.id, amount: Number(amounts[row.id]), note: notes[row.id] } }); await load(); notify("Wallet corrected."); } catch(e) { notify(e instanceof Error ? e.message : "Deduction failed."); } finally { setBusy(false); }
+                if(actionLock.current)return;
+                if(!window.confirm(`Deduct $${Number(amounts[row.id]).toFixed(2)} from ${row.name}? Reason: ${notes[row.id]}. This is logged.`))return;
+                actionLock.current=true;setBusy(true); try { await fDeduct({ data: { profileId: row.id, amount: Number(amounts[row.id]), note: notes[row.id] } }); await load(); notify("Wallet corrected."); } catch(e) { notify(e instanceof Error ? e.message : "Deduction failed."); } finally { actionLock.current=false;setBusy(false); }
               }}>Deduct</Button>
             </div>
           </div>
         ))}
-        {rows.length === 0 && <p className="text-sm text-muted-foreground">No customers found.</p>}
+        {loading && <div className="h-32 rounded-lg bg-muted animate-pulse" />}
+        {!loading && rows.length === 0 && <p className="text-sm text-muted-foreground">No customers found.</p>}
+        <div className="flex gap-2"><Button variant="outline" disabled={loading||page===1} onClick={()=>setPage(p=>p-1)}>Previous</Button><span className="self-center text-sm">Page {page}</span><Button variant="outline" disabled={loading||rows.length<50} onClick={()=>setPage(p=>p+1)}>Next</Button></div>
       </div>
     </section>
   );

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useCustomerSession } from "@/components/site/customer-session";
 import { customerPlaceOrder, customerSubmitPayment, customerConfirmEmails, customerCancelOrder, customerMyOrders } from "@/lib/customer-shop.functions";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -33,6 +33,7 @@ import { PriceTag, ProductCard, StockPill } from "@/components/site/product-card
 import { MORE_CATEGORY, STORE_CATEGORIES, categoryLabel, categoryOf } from "@/lib/store-categories";
 import { cleanProductText } from "@/lib/product-content";
 import { ProofUpload, type ProofFile } from "@/components/site/proof-upload";
+import { validDeliveryEmails } from "@/lib/store-order.policy";
 import { ReviewCountdown } from "@/components/site/review-countdown";
 
 type ShopSearch = { product?: string; category?: string; q?: string; buy?: boolean; view?: "orders" };
@@ -108,7 +109,7 @@ const field =
 function Copy({ value, label }: { value: string; label: string }) {
   const [done, setDone] = useState(false);
   return (
-    <button
+    <Button
       type="button"
       onClick={() => {
         void navigator.clipboard.writeText(value);
@@ -119,7 +120,7 @@ function Copy({ value, label }: { value: string; label: string }) {
     >
       {done ? <Check className="size-3.5 text-success" /> : <CopyIcon className="size-3.5" />}
       {done ? "Copied" : label}
-    </button>
+    </Button>
   );
 }
 
@@ -190,6 +191,10 @@ function ShopPage() {
   const [emailSummary, setEmailSummary] = useState("");
   const [wallet, setWallet] = useState<{ balance: number } | null>(null);
   const [busy, setBusy] = useState(false);
+  const actionLock=useRef(false);
+  const checkoutKey=useRef('');
+  const [ordersLoading,setOrdersLoading]=useState(false);
+  const [ordersError,setOrdersError]=useState('');
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState(search.q ?? "");
   useEffect(() => {
@@ -228,11 +233,10 @@ function ShopPage() {
 
   const refreshOrders = useCallback(async () => {
     if (!user) { setOrders([]); return; }
-    try {
-      setOrders(await loadOrders({ data: undefined }));
-    } catch {
-      /* invalid token — orders stay hidden */
-    }
+    setOrdersLoading(true);setOrdersError('');
+    try {setOrders(await loadOrders({ data: undefined }));}
+    catch {setOrders([]);setOrdersError('Could not load your orders. Try again.');}
+    finally {setOrdersLoading(false);}
   }, [loadOrders, user]);
 
   useEffect(() => {
@@ -283,6 +287,7 @@ function ShopPage() {
   }, [catalog, category, query, sort]);
 
   const run = async (fn: () => Promise<void>) => {
+    if(actionLock.current)return;actionLock.current=true;
     setBusy(true);
     setError(null);
     try {
@@ -290,14 +295,14 @@ function ShopPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
-      setBusy(false);
+      actionLock.current=false;setBusy(false);
     }
   };
 
   const goToList = () => {
     setStep("list");
     setProduct(null);
-    setDraft(null);
+    setDraft(null);checkoutKey.current='';
     if (search.product) void navigate({ search: (prev) => ({ ...prev, product: undefined }) });
   };
 
@@ -353,7 +358,7 @@ function ShopPage() {
     <div className="min-h-screen bg-background text-foreground">
       <SiteNav
         right={
-          <button
+          <Button
             type="button"
             onClick={() => {
               setStep("orders");
@@ -363,7 +368,7 @@ function ShopPage() {
           >
             <Receipt className="size-4" />
             <span className="hidden sm:inline">My orders</span>
-          </button>
+          </Button>
         }
       />
 
@@ -372,9 +377,9 @@ function ShopPage() {
         <div className="container-page grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 py-4 sm:flex sm:justify-between sm:py-10">
           <div className="min-w-0">
             <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <button type="button" onClick={goToList} className="hover:text-foreground">
+              <Button type="button" onClick={goToList} className="hover:text-foreground">
                 Shop
-              </button>
+              </Button>
               {step !== "list" && (
                 <>
                   <ChevronRight className="size-3" />
@@ -398,9 +403,9 @@ function ShopPage() {
               </span>
             )}
             {step !== "list" && (
-              <button type="button" onClick={goToList} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted">
+              <Button type="button" onClick={goToList} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted">
                 <ArrowLeft className="size-4" /> All products
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -442,19 +447,19 @@ function ShopPage() {
                     </option>
                   ))}
                 </select>
-                <button
+                <Button
                   type="button"
                   aria-label="Refresh products"
                   onClick={() => void loadCatalog({ data: undefined }).then(setCatalog)}
                   className="inline-flex size-11 items-center justify-center rounded-xl border border-input bg-card shadow-soft hover:bg-muted"
                 >
                   <RefreshCw className="size-4" />
-                </button>
+                </Button>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {[{ id: "all", label: "All", count: catalog?.products.length ?? 0 }, ...categories].map((c) => (
-                <button
+                <Button
                   key={c.id}
                   type="button"
                   onClick={() => void navigate({ search: (prev) => ({ ...prev, category: c.id === "all" ? undefined : c.id }) })}
@@ -464,7 +469,7 @@ function ShopPage() {
                 >
                   {c.label}
                   <span className={`text-xs tabular-nums ${category === c.id ? "text-ink-foreground/70" : "text-muted-foreground"}`}>{c.count}</span>
-                </button>
+                </Button>
               ))}
             </div>
             {!catalog ? (
@@ -478,7 +483,7 @@ function ShopPage() {
                 <PackageOpen className="size-10 text-muted-foreground" />
                 <p className="mt-4 font-semibold">No products match your search</p>
                 <p className="mt-1 text-sm text-muted-foreground">Try another name or clear the category filter.</p>
-                <button
+                <Button
                   type="button"
                   onClick={() => {
                     setQuery("");
@@ -487,7 +492,7 @@ function ShopPage() {
                   className={`${btnGhost} mt-6`}
                 >
                   Clear filters
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -550,17 +555,17 @@ function ShopPage() {
                 )}
                 <div className="mt-6 flex flex-col gap-2">
                   {product.purchasable ? (
-                    <button type="button" onClick={() => setStep("quantity")} className={`${btnPrimary} h-12 w-full`}>
+                    <Button type="button" onClick={() => setStep("quantity")} className={`${btnPrimary} h-12 w-full`}>
                       Buy now
-                    </button>
+                    </Button>
                   ) : (
                     <span className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-muted text-sm font-medium text-muted-foreground">
-                      Purchase unavailable
+                      {product.stock_label.toLowerCase().includes("out of stock") ? "Out of stock" : "Purchase unavailable"}
                     </span>
                   )}
-                  <button type="button" onClick={goToList} className={`${btnGhost} w-full`}>
+                  <Button type="button" onClick={goToList} className={`${btnGhost} w-full`}>
                     Continue shopping
-                  </button>
+                  </Button>
                 </div>
                 <ul className="mt-6 space-y-3 text-sm">
                   <li className="flex items-start gap-3">
@@ -591,9 +596,9 @@ function ShopPage() {
                   <h2 className="text-xl font-semibold">How many units?</h2>
                   <p className="mt-1 text-sm text-muted-foreground">Maximum {product.max_units} per order.</p>
                   <div className="mt-6 flex items-center gap-3">
-                    <button type="button" aria-label="Decrease" onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="inline-flex size-12 items-center justify-center rounded-xl border border-border hover:bg-muted">
+                    <Button type="button" aria-label="Decrease" onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="inline-flex size-12 items-center justify-center rounded-xl border border-border hover:bg-muted">
                       <Minus className="size-4" />
-                    </button>
+                    </Button>
                     <input
                       type="number"
                       aria-label="Quantity"
@@ -606,31 +611,31 @@ function ShopPage() {
                       }}
                       className="h-12 w-24 rounded-xl border border-input bg-card text-center font-display text-xl font-bold tabular-nums"
                     />
-                    <button type="button" aria-label="Increase" onClick={() => setQuantity((q) => Math.min(product.max_units, q + 1))} className="inline-flex size-12 items-center justify-center rounded-xl border border-border hover:bg-muted">
+                    <Button type="button" aria-label="Increase" onClick={() => setQuantity((q) => Math.min(product.max_units, q + 1))} className="inline-flex size-12 items-center justify-center rounded-xl border border-border hover:bg-muted">
                       <Plus className="size-4" />
-                    </button>
+                    </Button>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {[1, 2, 3, 4]
                       .filter((n) => n <= product.max_units)
                       .map((n) => (
-                        <button
+                        <Button
                           key={n}
                           type="button"
                           onClick={() => setQuantity(n)}
                           className={`h-9 rounded-lg border px-4 text-sm font-medium ${quantity === n ? "border-ink bg-ink text-ink-foreground" : "border-border hover:bg-muted"}`}
                         >
                           {n}×
-                        </button>
+                        </Button>
                       ))}
                   </div>
                   <div className="mt-8 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setStep("review")} className={btnPrimary}>
+                    <Button type="button" onClick={() => setStep("review")} className={btnPrimary}>
                       Continue
-                    </button>
-                    <button type="button" onClick={() => setStep("detail")} className={btnGhost}>
+                    </Button>
+                    <Button type="button" onClick={() => setStep("detail")} className={btnGhost}>
                       Back
-                    </button>
+                    </Button>
                   </div>
                 </Panel>
               )}
@@ -640,7 +645,7 @@ function ShopPage() {
                   <h2 className="text-xl font-semibold">Choose a payment method</h2>
                   <div className="mt-5 grid gap-2.5">
                     {availableMethods.map((m) => (
-                      <button
+                      <Button
                         key={m.id}
                         type="button"
                         onClick={() => setMethod(m)}
@@ -660,7 +665,7 @@ function ShopPage() {
                         <span className="text-xs text-muted-foreground">
                           {m.provider === "wallet" ? `Balance $${(wallet?.balance ?? 0).toFixed(2)}` : m.currency === "INR" ? "INR" : m.currency}
                         </span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                   {walletShort && <p className="mt-3 text-xs text-destructive">Your wallet balance is not enough for this order. Ask support to add funds.</p>}
@@ -668,14 +673,15 @@ function ShopPage() {
                     <p className="mt-3 text-xs text-muted-foreground">UPI is unavailable for this product until an INR price is configured.</p>
                   )}
                   <div data-robot-avoid="order" className="mt-8 flex flex-wrap gap-2">
-                    <button
+                    <Button
                       type="button"
-                      disabled={busy || !method || !user || walletShort}
+                      disabled={busy || !method || !user || walletShort || !product.purchasable || quantity<1 || quantity>product.max_units}
                       onClick={() =>
                         void run(async () => {
                           if (!method) return;
+                          checkoutKey.current ||= crypto.randomUUID();
                           const order = await place({
-                            data: { productId: product.id, quantity, paymentMethodId: method.id },
+                            data: { productId: product.id, quantity, paymentMethodId: method.id, checkoutKey:checkoutKey.current },
                           });
                           setDraft(order);
                           if (method?.provider === "wallet") {
@@ -690,13 +696,13 @@ function ShopPage() {
                       className={btnPrimary}
                     >
                       {busy ? "Creating order…" : "Continue to payment"}
-                    </button>
-                    <button type="button" onClick={() => setStep("quantity")} className={btnGhost}>
+                    </Button>
+                    <Button type="button" onClick={() => setStep("quantity")} className={btnGhost}>
                       Back
-                    </button>
-                    <button type="button" onClick={goToList} className="inline-flex h-11 items-center px-3 text-sm font-medium text-muted-foreground hover:text-foreground">
+                    </Button>
+                    <Button type="button" onClick={goToList} className="inline-flex h-11 items-center px-3 text-sm font-medium text-muted-foreground hover:text-foreground">
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 </Panel>
               )}
@@ -734,7 +740,7 @@ function ShopPage() {
                   <div className="mt-6 grid gap-4">
                     <label className="block text-sm font-medium">
                       {method?.reference_label ?? "Transaction reference"}
-                      <input value={reference} onChange={(event) => setReference(event.target.value)} className={field} placeholder="Paste your transaction reference" />
+                      <input value={reference} maxLength={200} onChange={(event) => setReference(event.target.value)} className={field} placeholder="Paste your transaction reference" />
                     </label>
                     <ProofUpload value={proof} onChange={setProof} disabled={busy} />
                   </div>
@@ -742,9 +748,9 @@ function ShopPage() {
                     Both the transaction ID and the screenshot are required. They are supporting evidence only. Your order is confirmed after the owner checks the receiving account.
                   </p>
                   <div data-robot-avoid="pay" className="mt-6 flex flex-wrap gap-2">
-                    <button
+                    <Button
                       type="button"
-                      disabled={busy || reference.trim().length < 6 || !proof}
+                      disabled={busy || reference.trim().length < 6 || reference.trim().length>200 || !proof}
                       onClick={() =>
                         void run(async () => {
                           if (!proof) throw new Error("Upload your payment screenshot.");
@@ -759,8 +765,8 @@ function ShopPage() {
                       className={btnPrimary}
                     >
                       {busy ? "Submitting…" : "Submit payment"}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       disabled={busy}
                       onClick={() =>
@@ -773,7 +779,7 @@ function ShopPage() {
                       className={btnGhost}
                     >
                       Cancel order
-                    </button>
+                    </Button>
                   </div>
                 </Panel>
               )}
@@ -789,11 +795,13 @@ function ShopPage() {
                     Delivery email
                     <input value={emails} onChange={(event) => setEmails(event.target.value)} className={field} placeholder="you@example.com" />
                   </label>
-                  <button
+                  {emails && !validDeliveryEmails(emails,quantity) && <p role="alert" className="mt-2 text-xs text-destructive">Enter one valid email, or {quantity} emails separated by commas.</p>}
+                  <Button
                     type="button"
-                    disabled={busy}
+                    disabled={busy || !validDeliveryEmails(emails,quantity)}
                     onClick={() =>
                       void run(async () => {
+                        if(!validDeliveryEmails(emails,quantity))throw new Error("Enter a valid email address, or one address per unit.");
                         const result = await confirmEmails({ data: { orderId: draft.id, emails } });
                         setEmailSummary(result.emails.join(", "));
                         setStep("done");
@@ -802,8 +810,8 @@ function ShopPage() {
                     }
                     data-robot-avoid="email" className={`${btnPrimary} mt-6`}
                   >
-                    Confirm email
-                  </button>
+                    {busy ? "Processing…" : "Confirm email"}
+                  </Button>
                 </Panel>
               )}
 
@@ -835,12 +843,12 @@ function ShopPage() {
                     )}
                   </dl>
                   <div className="mt-6 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => { setStep("orders"); void refreshOrders(); }} className={btnPrimary}>
+                    <Button type="button" onClick={() => { setStep("orders"); void refreshOrders(); }} className={btnPrimary}>
                       <Receipt className="size-4" /> Track my order
-                    </button>
-                    <button type="button" onClick={goToList} className={btnGhost}>
+                    </Button>
+                    <Button type="button" onClick={goToList} className={btnGhost}>
                       Back to shop
-                    </button>
+                    </Button>
                   </div>
                 </Panel>
               )}
@@ -853,13 +861,15 @@ function ShopPage() {
         {step === "orders" && (
           <div className="mx-auto max-w-3xl space-y-3">
             
-            {user && orders.length === 0 && (
+            {ordersError && <div role="alert" className="text-destructive text-sm">{ordersError} <Button variant="outline" onClick={()=>void refreshOrders()}>Try again</Button></div>}
+            {ordersLoading && [1,2,3].map(i=><div key={i} className="h-32 animate-pulse rounded-lg bg-muted" />)}
+            {user && !ordersLoading && !ordersError && orders.length === 0 && (
               <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
                 <Receipt className="size-10 text-muted-foreground" />
                 <p className="mt-4 font-semibold">No orders yet</p>
-                <button type="button" onClick={goToList} className={`${btnGhost} mt-6`}>
+                <Button type="button" onClick={goToList} className={`${btnGhost} mt-6`}>
                   Start shopping
-                </button>
+                </Button>
               </div>
             )}
             {orders.map((order) => (
@@ -878,6 +888,8 @@ function ShopPage() {
                     Payment under review · <ReviewCountdown submittedAt={order.submitted_at} className="font-semibold text-primary" />
                   </p>
                 )}
+                <p className="mt-2 text-xs text-muted-foreground">Ordered: {new Date(order.created_at).toLocaleString()}</p>
+                {order.status==='delivered' && order.delivered_at && <p className="mt-1 text-xs text-success">Delivered: {new Date(order.delivered_at).toLocaleString()}</p>}
                 {order.delivery_emails && <p className="mt-1 text-xs text-muted-foreground">Email: {order.delivery_emails}</p>}
                 {order.info_request && <p className="mt-2 text-xs text-warning-foreground">More info needed: {order.info_request}</p>}
                 {order.reject_reason && <p className="mt-2 text-xs text-destructive">Reason: {order.reject_reason}</p>}

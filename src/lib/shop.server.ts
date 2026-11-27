@@ -366,103 +366,62 @@ export async function notifyBuyerTelegram(orderId: string, text: string) {
 
 /* --------------------------------- email ---------------------------------- */
 
-export type EmailResult = { ok: boolean; reason?: string };
+export type EmailResult = { ok: boolean; reason?: string; targets?: Record<string,string> };
 
 export async function sendFulfillmentEmail(orderId: string, actor = "system"): Promise<EmailResult> {
-  const settings = await getSettings();
-  const { data: order } = await db.from("shop_orders").select("*").eq("id", orderId).maybeSingle();
-  if (!order) return { ok: false, reason: "order_not_found" };
-  const { data: items } = await db.from("shop_order_items").select("*").eq("order_id", orderId);
-  const { data: fulfillments } = await db
-    .from("shop_fulfillments")
-    .select("*")
-    .eq("order_id", orderId)
-    .order("created_at");
-  if (!fulfillments || fulfillments.length === 0) return { ok: false, reason: "no_delivery_material" };
-  if (order.status !== "payment_confirmed" && order.status !== "awaiting_fulfillment" && order.status !== "delivered") {
-    return { ok: false, reason: "payment_not_confirmed" };
-  }
-
-  const apiKey = process.env["RESEND_API_KEY"];
-  const from = (settings["shop_email_from"] ?? "").trim();
-  const fromName = (settings["shop_email_from_name"] ?? "FOXGEN STORE").trim();
-  const support = settings["support_url"] ?? settings["whatsapp_support_url"] ?? "our support channel";
-  const productName = (items ?? []).map((i) => `${i.product_name} x${i.quantity}`).join(", ");
-  const material = fulfillments.map((f) => f.content).join("\n\n");
-  const recipients = [...new Set((items ?? []).map((i) => i.delivery_email).filter(Boolean))] as string[];
-  const fallback = (order.delivery_emails ?? "").split(",").map((e: string) => e.trim()).filter(Boolean);
-  const targets = recipients.length > 0 ? recipients : fallback;
-  if (targets.length === 0) return { ok: false, reason: "no_email" };
-
-  const subject =
-    (order.email_subject ?? "").trim() || `Your FOXGEN STORE order ${order.order_number} — access details`;
-  const body =
-    (order.email_body ?? "").trim() ||
-    `Hi ${order.customer_name ?? "there"},
-
-Your payment for ${productName} has been confirmed.
-Use the activation link or instructions below to access your purchase.
-
-${material}
-
-Order ID: ${order.order_number}
-For help, contact ${support}.
-Thank you for choosing FOXGEN STORE.`;
-
-  for (const target of targets) {
-    const { data: job } = await db
-      .from("shop_delivery_jobs")
-      .insert({ order_id: orderId, channel: "email", target, payload: { subject, body } })
-      .select("id")
-      .single();
-
-    if (!apiKey || !from) {
-      if (job) {
-        await db
-          .from("shop_delivery_jobs")
-          .update({ status: "blocked", last_error: "Email provider is not configured (sender address / API key missing)." })
-          .eq("id", job.id);
+  const { acquireLock, releaseLock } = await import('./hub.server');
+  const lock = `delivery:${orderId}`;
+  if (!await acquireLock(lock, 60000)) return { ok: false, reason: 'delivery_in_progress' };
+  try {
+    const [settings, read, itemRead, materialRead] = await Promise.all([
+      getSettings(), db.from('shop_orders').select('*').eq('id',orderId).maybeSingle(),
+      db.from('shop_order_items').select('product_name,quantity,delivery_email').eq('order_id',orderId),
+      db.from('shop_fulfillments').select('content').eq('order_id',orderId).order('created_at'),
+    ]);
+    const order = read.data;
+    if (read.error || itemRead.error || materialRead.error) return {ok:false,reason:'delivery_read_failed'};
+    if (!order) return {ok:false,reason:'order_not_found'};
+    if (!['payment_confirmed','awaiting_fulfillment','delivered'].includes(order.status)) return {ok:false,reason:'payment_not_confirmed'};
+    if (!materialRead.data?.length) return {ok:false,reason:'no_delivery_material'};
+    const targets = [...new Set([...(itemRead.data??[]).map(i=>i.delivery_email).filter((v): v is string => !!v), ...(order.delivery_emails??'').split(',').map(v=>v.trim()).filter(Boolean)])];
+    if (!targets.length) return {ok:false,reason:'no_email'};
+    const apiKey = process.env['RESEND_API_KEY'];
+    const from = (settings['shop_email_from']??'').trim();
+    const name = settings['shop_email_from_name'] || 'FOXGEN STORE';
+    const subject = order.email_subject?.trim() || `Your ${name} order ${order.order_number} — access details`;
+    const body = order.email_body?.trim() || `Hi ${order.customer_name || 'there'},\n\nYour payment for ${(itemRead.data??[]).map(i=>`${i.product_name} x${i.quantity}`).join(', ')} is confirmed.\n\n${materialRead.data.map(f=>f.content).join('\n\n')}\n\nOrder ID: ${order.order_number}\nFor help, contact ${settings['support_url'] || 'our support team'}.`;
+    const results: Record<string,string> = {};
+    for (const target of targets) {
+      const existing = await db.from('shop_delivery_jobs').select('id,status').eq('order_id',orderId).eq('channel','email').eq('target',target).order('created_at',{ascending:false}).limit(1).maybeSingle();
+      if (existing.error) {results[target]='delivery_read_failed';continue;}
+      if (existing.data?.status==='sent') {results[target]='sent';continue;}
+      const job = existing.data ?? (await db.from('shop_delivery_jobs').insert({order_id:orderId,channel:'email',target,payload:{subject,body,fulfillment:true}}).select('id,status').single()).data;
+      if (!job) {results[target]='delivery_job_failed';continue;}
+      if (!apiKey || !from) {
+        await db.from('shop_delivery_jobs').update({status:'blocked',last_error:'Email sender or API key is missing.'}).eq('id',job.id);
+        results[target]='email_provider_not_configured';continue;
       }
-      return { ok: false, reason: "email_provider_not_configured" };
+      try {
+        // Provider deduplication covers a network timeout after the provider accepted the message.
+        const response = await fetch('https://api.resend.com/emails', {method:'POST',headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json','Idempotency-Key':`fulfillment-${job.id}`},body:JSON.stringify({from:`${name} <${from}>`,to:[target],subject,text:body})});
+        if (!response.ok) {await response.text();throw new Error(`Email provider returned ${response.status}`);}
+        const recorded = await db.from('shop_delivery_jobs').update({status:'sent',attempts:1,sent_at:new Date().toISOString(),last_error:null,payload:{subject,body,fulfillment:true}}).eq('id',job.id);
+        results[target]=recorded.error?'delivery_record_failed':'sent';
+      } catch {
+        await db.from('shop_delivery_jobs').update({status:'failed',attempts:1,last_error:'Email delivery failed. Retry this order; provider deduplication prevents a duplicate.'}).eq('id',job.id);
+        results[target]='email_send_failed';
+      }
     }
-
-    try {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: `${fromName} <${from}>`,
-          to: [target],
-          subject,
-          text: body,
-        }),
-      });
-      if (!response.ok) throw new Error(`${response.status} ${await response.text()}`.slice(0, 300));
-      if (job)
-        await db
-          .from("shop_delivery_jobs")
-          .update({ status: "sent", attempts: 1, sent_at: new Date().toISOString() })
-          .eq("id", job.id);
-    } catch (error) {
-      if (job)
-        await db
-          .from("shop_delivery_jobs")
-          .update({ status: "failed", attempts: 1, last_error: String(error).slice(0, 400) })
-          .eq("id", job.id);
-      return { ok: false, reason: "email_send_failed" };
+    if (!Object.values(results).includes('sent')) {
+      await orderEvent(orderId,'delivery_failed',actor,'Email delivery failed; check delivery jobs.');
+      return {ok:false,reason:Object.values(results)[0] || 'email_send_failed',targets:results};
     }
-  }
-
-  await db
-    .from("shop_orders")
-    .update({ status: "delivered", delivered_at: order.delivered_at ?? new Date().toISOString(), updated_at: new Date().toISOString() })
-    .eq("id", orderId);
-  await orderEvent(orderId, "delivered", actor, targets.join(", "));
-  await notifyBuyerTelegram(
-    orderId,
-    `Your access email has been sent to ${targets.join(", ")}. Please check your inbox and spam folder.`,
-  );
-  return { ok: true };
+    const now = new Date().toISOString();
+    const updated = await db.from('shop_orders').update({status:'delivered',delivered_at:order.delivered_at??now,updated_at:now}).eq('id',orderId);
+    if(updated.error)return {ok:false,reason:'delivery_record_failed',targets:results};
+    await orderEvent(orderId,'delivered',actor,'Email fulfillment');
+    return {ok:true,targets:results};
+  } finally {await releaseLock(lock);}
 }
 
 export { db };
@@ -485,6 +444,9 @@ export async function sendTelegramDelivery(orderId: string, actor = "admin", cha
   if (!order) return { ok: false, reason: "order_not_found" };
   const targetChat = chatId ?? order.telegram_user_id;
   if (!targetChat) return { ok: false, reason: "no_telegram" };
+  const sentBefore = await db.from('shop_delivery_jobs').select('payload').eq('order_id', orderId).eq('channel','telegram').eq('status','sent');
+  if (sentBefore.error) return {ok:false,reason:'delivery_read_failed'};
+  if ((sentBefore.data??[]).some(j=>(j.payload as Record<string,unknown> | null)?.['fulfillment']===true)) return {ok:true,reason:'already_sent'};
   // Email-first delivery may be followed by Telegram delivery, but not an unrelated delivered state.
   if (order.status === "delivered") {
     const email = await db.from("shop_delivery_jobs").select("id").eq("order_id", orderId).eq("channel", "email").eq("status", "sent").limit(1);

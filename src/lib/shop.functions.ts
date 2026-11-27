@@ -187,6 +187,8 @@ export type MyOrder = {
   order_number: string;
   status: string;
   submitted_at?: string | null;
+  delivered_at?: string | null;
+  expires_at?: string | null;
   currency: string;
   total: number | null;
   stars_total: number | null;
@@ -224,6 +226,9 @@ export const shopMyOrders = createServerFn({ method: "POST" })
       id: order.id,
       order_number: order.order_number,
       status: order.status,
+      submitted_at: order.submitted_at,
+      delivered_at: order.delivered_at,
+      expires_at: order.expires_at,
       currency: order.currency,
       total: order.total === null ? null : Number(order.total),
       stars_total: order.stars_total,

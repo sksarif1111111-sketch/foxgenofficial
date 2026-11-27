@@ -2,6 +2,7 @@ import { db, tg } from "@/lib/hub.server";
 import { storeTelegramProof } from "./payment-proof.server";
 import { walletUsd } from "./wallet-rate";
 import { topupAmount, topupReference, topupEvidence } from "./wallet-topup.contract";
+import { sessionIsFresh } from './store-order.policy';
 import { styledKeyboard, type TelegramKeyboard } from './telegram-navigation';
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 export async function walletFundingBot(profileId: string, chatId: number, action: string, text: string, photoId?: string, render?: (body: string, buttons: TelegramKeyboard, image?: string | null) => Promise<unknown>) {
@@ -48,7 +49,12 @@ export async function walletFundingBot(profileId: string, chatId: number, action
   if (action && !action.startsWith("fund") && action !== "menu" && !text.startsWith("/")) return false;
   const { data: session } = await db.from("wallet_topup_sessions").select("*").eq("profile_id", profileId).maybeSingle();
   if (!session) return false;
-  if (Date.now() - Date.parse(session.updated_at) > 30 * 60000 || action === "menu" || text.startsWith("/")) {
+  if (!sessionIsFresh(session.updated_at)) {
+    await db.from("wallet_topup_sessions").delete().eq("profile_id", profileId);
+    await send('Your funding entry expired after 30 minutes of inactivity. Start a new entry; submitted requests are unchanged.', [[{text:'💰 Add funds',callback_data:'addfunds'}]]);
+    return true;
+  }
+  if (action === "menu" || text.startsWith("/")) {
     await db.from("wallet_topup_sessions").delete().eq("profile_id", profileId); return false;
   }
   if (action && !action.startsWith("fund")) return false;

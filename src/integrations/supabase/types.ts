@@ -2777,7 +2777,12 @@ export type Database = {
       shop_customer_stats: { Args: { _id: string }; Returns: Json }
       shop_enqueue_customer: { Args: { _id: string }; Returns: undefined }
       shop_enqueue_topup: { Args: { _id: string }; Returns: undefined }
+      shop_expire_unpaid: {
+        Args: { _customer?: string; _profile?: string }
+        Returns: number
+      }
       shop_mark_delayed: { Args: never; Returns: number }
+      shop_member_summaries: { Args: { _ids: string[] }; Returns: Json }
       shop_pause_crm_when_drained: { Args: never; Returns: undefined }
       shop_refund_wallet_atomic: {
         Args: { _id: string; _reason: string }

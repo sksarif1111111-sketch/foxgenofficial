@@ -1,5 +1,6 @@
 import { db, tg, type Profile } from './hub.server';
 import { createOrder, maxUnits, shopProductById, shapeProduct, cancelOrder, submitPayment, type ShopProduct } from './shop.server';
+import { orderStatus, paymentExpired } from './store-order.policy';
 import { quantityChoices, orderTime } from './telegram-marketplace.policy';
 import { memberLabel } from './member-number';
 import { dualPrice } from './wallet-rate';
@@ -20,23 +21,15 @@ export async function walletBalance(profileId: string) {
 export async function buyerStats(profile: Pick<Profile, 'id'>) {
   const [agg, balance] = await Promise.all([db.rpc('bot_buyer_stats', { _profile_id: profile.id }), walletBalance(profile.id)]);
   if (agg.error) throw new Error('Could not read orders');
-  const s = agg.data as { completed: number; pending: number; totals: Array<{ currency: string; total: number }> };
-  return { completed: Number(s.completed), pending: Number(s.pending), balance, spent: (s.totals ?? []).map(t => `${Number(t.total).toFixed(2)} ${t.currency === 'XTR' ? '⭐' : t.currency}`).join(' · ') || '0.00 USD' };
+  const s = agg.data as { placed: number; completed: number; pending: number; totals: Array<{ currency: string; total: number }> };
+  return { placed: Number(s.placed ?? Number(s.completed) + Number(s.pending)), completed: Number(s.completed), pending: Number(s.pending), balance, spent: (s.totals ?? []).map(t => `${Number(t.total).toFixed(2)} ${t.currency === 'XTR' ? '⭐' : t.currency}`).join(' · ') || '0.00 USD' };
 }
 const LIST_COLUMNS = 'id,name,emoji,price_usdt,price_inr,price_stars,stock_mode,stock_quantity,availability,max_per_order,shop_order,created_at';
-let listCache: { at: number; rows: ShopProduct[] } | null = null;
-let listInFlight: Promise<ShopProduct[]> | null = null;
-/** Published bot product list, cached 60 s per server instance with only list columns. */
+/** Live publication and stock are read on each visit; one bounded catalogue query. */
 export async function cachedProductList(): Promise<ShopProduct[]> {
-  if (listCache && Date.now() - listCache.at < 60_000) return listCache.rows;
-  listInFlight ??= (async () => {
-    const { data, error } = await db.from('products').select(LIST_COLUMNS).eq('shop_published', true).neq('status', 'archived').order('shop_order').order('created_at');
-    if (error) throw new Error('Could not load products');
-    const rows = (data ?? []).map(r => shapeProduct(r as Record<string, unknown>, 'website'));
-    listCache = { at: Date.now(), rows };
-    return rows;
-  })().finally(() => { listInFlight = null; });
-  return listInFlight;
+  const { data, error } = await db.from('products').select(LIST_COLUMNS).eq('shop_published', true).eq('supplier_removed', false).neq('status', 'archived').order('shop_order').order('id').limit(1000);
+  if (error) throw new Error('Could not load products');
+  return (data ?? []).map(r => shapeProduct(r as Record<string, unknown>, 'website'));
 }
 type ProductRow = Record<string, unknown> & { id: string; min_per_order: number | null; warranty_label: string | null; product_type: string; telegram_image_file_id: string | null; telegram_image_source: string | null };
 /** One product read: returns the raw row (extra fields) plus the shaped product, or null if not for sale. */
@@ -70,21 +63,31 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
   const state = session.data && Date.now()-Date.parse(session.data.updated_at)<1800000 ? session.data : null;
   const saveState = async (name:string,data:Record<string,Json>) => { await db.from('shop_bot_sessions').upsert({profile_id:profile.id,state:name,data,updated_at:new Date().toISOString()}); };
   const clear = async () => { await db.from('shop_bot_sessions').delete().eq('profile_id',profile.id); };
+  const ordersHome: Keyboard = [[{text:'🏠 Home',callback_data:'menu'}]];
+  const expireOwnOrders = async () => {
+    const result = await db.rpc('shop_expire_unpaid', { _profile: profile.id });
+    if (result.error) throw new Error('Could not refresh order expiry');
+  };
   const detail = async (id:string) => {
-    const o = await db.from('shop_orders').select('*').eq('id',id).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();
-    if (!o.data) { await send('Order unavailable.'); return; }
-    const items = await db.from('shop_order_items').select('product_name,quantity').eq('order_id',id);
+    await expireOwnOrders();
+    const o = await db.from('shop_orders').select('*').eq('id',id).eq('profile_id',profile.id).maybeSingle();
+    if (o.error) throw new Error('Could not read order');
+    if (!o.data) { await send('Order unavailable.',[...ordersHome,[{text:'⬅️ Back to My Orders',callback_data:'myorders'}],...home]); return; }
+    const items = await db.from('shop_order_items').select('product_name,quantity,product_id').eq('order_id',id);
+    if (items.error) throw new Error('Could not read order items');
     const clock = orderTime(o.data.confirmed_at,o.data.delivered_at,Number(settings['shop_delivery_sla_minutes'] || 30));
-    const keys:Keyboard = [[{text:'🔄 Refresh',callback_data:`order:${id}`},support]];
-    if (o.data.status==='awaiting_payment') keys.push([{text:'Submit transaction ID',callback_data:`proof:${id}`},{text:'Cancel',callback_data:`cancelshop:${id}`}]);
-    keys.push([{text:'📦 My Orders',callback_data:'myorders'}],...home);
-    await send(`<b>${esc(o.data.order_number)}</b>\n${(items.data??[]).map(i=>`${esc(i.product_name)} ×${i.quantity}`).join('\n')}\nStatus: ${esc(o.data.status.replace(/_/g,' '))}\nTotal: ${o.data.currency==='XTR' ? `${o.data.stars_total} ⭐` : `${o.data.total} ${esc(o.data.currency)}`}\n${clock ? `Delivery target: ${esc(settings['shop_delivery_sla_minutes'] || 30)} min\n${clock}` : ''}\n${o.data.info_request ? `More information needed: ${esc(o.data.info_request)}` : ''}`,keys);
+    const keys:Keyboard = [...ordersHome,[{text:'📦 Track Order',callback_data:`order:${id}`},support]];
+    if (o.data.status==='awaiting_payment' && !paymentExpired(o.data)) keys.push([{text:'Submit transaction ID',callback_data:`proof:${id}`},{text:'Cancel',callback_data:`cancelshop:${id}`}]);
+    if (['expired','cancelled','rejected'].includes(o.data.status)) keys.push([{text:'🛍️ Retry in Shop',callback_data:'shop'}]);
+    keys.push([{text:'⬅️ Back to My Orders',callback_data:'myorders'}],...home);
+    const expiry = o.data.status === 'awaiting_payment' && o.data.expires_at ? Math.max(0,Math.ceil((Date.parse(o.data.expires_at)-Date.now())/60000)) : null;
+    await send(`<b>${esc(o.data.order_number)}</b>\n${(items.data??[]).map(i=>`${esc(i.product_name)} ×${i.quantity}`).join('\n')}\nStatus: ${o.data.status==='delivered'?'✅ ':''}${esc(orderStatus(o.data))}\nTotal: ${o.data.currency==='XTR' ? `${o.data.stars_total} ⭐` : `${o.data.total} ${esc(o.data.currency)}`}\nMethod: ${esc(o.data.payment_method_name || '—')}\nOrdered: ${esc(o.data.created_at.slice(0,16).replace('T',' '))} UTC\n${o.data.delivered_at ? `Delivered: ${esc(o.data.delivered_at.slice(0,16).replace('T',' '))} UTC\n` : ''}${expiry === null ? '' : `Payment time left: ${expiry} min\n`}${clock ? `Delivery target: ${esc(settings['shop_delivery_sla_minutes'] || 30)} min\n${clock}\n` : ''}${o.data.info_request ? `More information needed: ${esc(o.data.info_request)}` : ''}`,keys);
   };
   if (action==='menu') { if (session.data) await clear(); return false; }
   if (action==='virtual' || action==='reseller') { await send('This option has been removed.',[[support],...home]); return true; }
   if (action==='wallet' || action==='storeprofile') {
     const s=await buyerStats(profile);
-    await send(`<b>${action==='wallet'?'WALLET':esc(profile.first_name || 'Customer')}</b>\nUsername: ${profile.telegram_username ? '@'+esc(profile.telegram_username) : 'Not set'}\nCustomer ID: ${memberLabel(profile.member_number)}\nTelegram ID: <code>${profile.telegram_user_id}</code>\nWallet: $${s.balance.toFixed(2)} USD / USDT\nReferral credits: ${profile.credits_available}\nCompleted orders: ${s.completed}\nPending orders: ${s.pending}\nTotal spent: ${esc(s.spent)}\nJoined: ${esc(profile.created_at.slice(0,10))}`,[...(action==='wallet' ? [[{text:'💰 Add funds',callback_data:'addfunds'},{text:'Wallet history',callback_data:'walletlog'}]] : [[{text:'Credits & earnings',callback_data:'me'}, ...(profile.status==='active' ? [{text:'👥 Invite & Earn',callback_data:'invite'}] : [{text:'🔒 Complete tasks',callback_data:'tasks'}])],[{text:'🎁 Free Rewards',callback_data:'rewards'}]]),[{text:'📦 My Orders',callback_data:'myorders'}],...home]); return true;
+    await send(`<b>${action==='wallet'?'WALLET':esc(profile.first_name || 'Customer')}</b>\nUsername: ${profile.telegram_username ? '@'+esc(profile.telegram_username) : 'Not set'}\nCustomer ID: ${memberLabel(profile.member_number)}\nTelegram ID: <code>${profile.telegram_user_id}</code>\nWallet: $${s.balance.toFixed(2)} USD / USDT\nReferral credits: ${profile.credits_available}\nCompleted orders: ${s.completed}\nPending orders: ${s.pending}\nTotal spent: ${esc(s.spent)}\nJoined: ${esc(profile.created_at.slice(0,10))}`,[...(action==='wallet' ? [[{text:'💰 Add funds',callback_data:'addfunds'},{text:'Wallet history',callback_data:'walletlog'}]] : [[{text:'Credits & earnings',callback_data:'me'}, ...(profile.status==='active' ? [{text:'👥 Invite & Earn',callback_data:'invite'}] : [{text:'🔒 Complete tasks',callback_data:'tasks'}])],[{text:'🎁 Free Rewards',callback_data:'rewards'}],[{text:'📋 Copy Member ID',copy_text:{text:memberLabel(profile.member_number)}}]]),[{text:'📦 My Orders',callback_data:'myorders'}],...home]); return true;
   }
   if(action==='walletlog') {
     const [ledger,deposits]=await Promise.all([db.from('wallet_transactions').select('amount_usd,kind,created_at').eq('profile_id',profile.id).order('created_at',{ascending:false}).limit(20),db.from('wallet_topup_requests').select('amount,currency,status,created_at').eq('profile_id',profile.id).order('created_at',{ascending:false}).limit(20)]);
@@ -102,7 +105,7 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
     if(state?.state==='search'&&text&&!text.startsWith('/')) { const q=text.trim().slice(0,120).toLowerCase();filtered=all.filter(p=>p.name.toLowerCase().includes(q));await clear();page=1; }
     const pages=Math.max(1,Math.ceil(filtered.length/8));page=Math.min(pages,Math.max(1,page));
     const rows=filtered.slice((page-1)*8,page*8);
-    await send(`<b>${esc(settings['store_name']||'FOXGEN AI STORE')} · PRODUCTS</b>\nPage ${page}/${pages} · ${filtered.length} products\n${rows.map(p=>`${esc(p.name)} · ${esc(dualPrice(p))} · ${esc(p.stock_label)}`).join('\n')||'No products found.'}`,[...rows.map(p=>[{text:`${p.emoji||'🛍️'} ${p.name}`.slice(0,60),callback_data:`prod:${p.id}`}]),...(action.startsWith('category:')||state?.state==='search'?[]:[[{text:'◀ Previous',callback_data:`shop:${Math.max(1,page-1)}`},{text:'Next ▶',callback_data:`shop:${Math.min(pages,page+1)}`}]]),[{text:'🔄 Refresh',callback_data:'shop'},{text:'🔍 Search',callback_data:'search'},{text:'Categories',callback_data:'categories'}],...home]);return true;
+    await send(`<b>${esc(settings['store_name']||'FOXGEN AI STORE')} · PRODUCTS</b>\nPage ${page}/${pages} · ${filtered.length} products\n${rows.map(p=>`${esc(p.name)} · ${esc(dualPrice(p))} · ${esc(p.stock_label)}`).join('\n')||(all.length ? 'No products found.' : 'No products available right now. Check back soon.')}`,[...rows.map(p=>[{text:`${p.emoji||'🛍️'} ${p.name}`.slice(0,60),callback_data:`prod:${p.id}`}]),...(action.startsWith('category:')||state?.state==='search'?[]:[[{text:'◀ Previous',callback_data:`shop:${Math.max(1,page-1)}`},{text:'Next ▶',callback_data:`shop:${Math.min(pages,page+1)}`}]]),[{text:'🔄 Refresh',callback_data:'shop'},{text:'🔍 Search',callback_data:'search'},{text:'Categories',callback_data:'categories'}],...(all.length?[]:[[support]]),...home]);return true;
   }
   if(action.startsWith('prod:')) {
     const found=await productOnce(action.slice(5));
@@ -147,7 +150,17 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
   if(state?.state==='photo_reference'&&text&&!text.startsWith('/')){if(text.length<6||text.length>200){await send('Enter the exact transaction ID (6–200 characters).');return true;}const data=state.data as Record<string,unknown>;const id=String(data['orderId']);const owned=await db.from('shop_orders').select('id').eq('id',id).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();if(!owned.data)throw new Error('Order unavailable');await submitPayment(id,text,await storeTelegramProof('orders',id,String(data['photoId'])));await clear();await send('⏳ <b>PAYMENT UNDER REVIEW</b>\nScreenshot and transaction ID received. Payment is not confirmed until approved.',[[{text:'📦 Track order',callback_data:`order:${id}`}],...home]);return true;}
   if(state?.state==='reference'&&text&&!text.startsWith('/')){if(text.length<6||text.length>200){await send('Enter the exact transaction ID (6–200 characters).');return true;}await saveState('evidence',{...(state.data as Record<string,Json>),reference:text});await send('Send the payment screenshot as a photo.');return true;}
   if(state?.state==='evidence'&&input.photoId){const data=state.data as Record<string,unknown>;const id=String(data['orderId']);const o=await db.from('shop_orders').select('id').eq('id',id).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();if(!o.data)throw new Error('Order unavailable');await submitPayment(id,String(data['reference']),await storeTelegramProof('orders',id,input.photoId));await clear();await send('⏳ Proof submitted. Your payment is under review; no payment has been confirmed yet.',[[{text:'📦 Track order',callback_data:`order:${id}`}],...home]);return true;}
-  if(action==='myorders'||action.startsWith('myorders:')) {const page=Math.max(1,Number(action.split(':')[1])||1);const orders=await db.from('shop_orders').select('id,order_number,status').eq('profile_id',profile.id).eq('channel','telegram').order('created_at',{ascending:false}).range((page-1)*8,page*8);await send(`<b>MY ORDERS</b> · Page ${page}\nSelect an order.`,[...(orders.data??[]).slice(0,8).map(o=>[{text:`${o.order_number} · ${o.status.replace(/_/g,' ')}`,callback_data:`order:${o.id}`}]),[{text:'◀ Previous',callback_data:`myorders:${Math.max(1,page-1)}`},...(orders.data?.length===9?[{text:'Next ▶',callback_data:`myorders:${page+1}`}]:[])],...home]);return true;}
+  if(action==='myorders'||action.startsWith('myorders:')) {
+    await expireOwnOrders();
+    const page=Math.min(10000,Math.max(1,Math.floor(Number(action.split(':')[1])||1)));
+    const result=await db.from('shop_orders').select('id,order_number,status,currency,total,stars_total,payment_method_name,created_at,delivered_at,expires_at,shop_order_items(product_name,quantity)').eq('profile_id',profile.id).order('created_at',{ascending:false}).order('id').range((page-1)*8,page*8);
+    if(result.error)throw new Error('Could not load orders');
+    const orders=(result.data??[]).slice(0,8);
+    const amount=(o:typeof orders[number])=>o.currency==='XTR'?`${o.stars_total} ⭐`:`${o.total} ${o.currency}`;
+    const content=orders.map(o=>`${esc(o.order_number)} · ${esc(orderStatus(o))}\n${o.shop_order_items.map(i=>`${esc(i.product_name)} ×${i.quantity}`).join(', ')}\n${esc(amount(o))} · ${esc(o.payment_method_name||'—')} · ${o.created_at.slice(0,10)}${o.delivered_at?`\n✅ Delivered: ${o.delivered_at.slice(0,16).replace('T',' ')} UTC`:''}`).join('\n\n');
+    await send(`<b>MY ORDERS</b> · Page ${page}\n\n${content|| (page===1?'📭 You have not placed any orders yet.':'No orders on this page.')}`.slice(0,3900),[...ordersHome,...orders.map(o=>[{text:`${o.order_number} · ${o.shop_order_items.map(i=>`${i.product_name} ×${i.quantity}`).join(', ')} · ${amount(o)} · ${o.payment_method_name||'—'} · ${orderStatus(o)} · ${o.created_at.slice(5,10)}`.slice(0,60),callback_data:`order:${o.id}`}]),...(orders.length||page>1?[[...(page>1?[{text:'◀ Previous',callback_data:`myorders:${page-1}`}]:[]),...(result.data?.length===9?[{text:'Next ▶',callback_data:`myorders:${page+1}`}]:[])]]:[]),[{text:'🛍️ Browse Shop',callback_data:'shop'}],...home]);
+    return true;
+  }
   if(action.startsWith('order:')){await detail(action.slice(6));return true;}
   if(action.startsWith('cancelshop:')){const id=action.slice(11);const o=await db.from('shop_orders').select('id').eq('id',id).eq('profile_id',profile.id).eq('channel','telegram').maybeSingle();if(!o.data)throw new Error('Order unavailable');await cancelOrder(id,'customer','Customer cancelled');await detail(id);return true;}
   return false;

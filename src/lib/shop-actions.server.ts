@@ -35,9 +35,17 @@ export async function shopApproveOrder(data: { id: string; notes?: string; send?
     }
 
     if (data.send) {
-      const result = order.telegram_user_id && !requiresEmail ? await sendTelegramDelivery(data.id, actor) : await sendFulfillmentEmail(data.id, actor);
-      if (!result.ok) return { ok: true, delivery: result.reason };
-      return { ok: true, delivery: "sent" };
+      const channels: Record<string, string> = {};
+      if (order.delivery_emails || requiresEmail) {
+        const result = await sendFulfillmentEmail(data.id, actor);
+        channels['email'] = result.ok ? 'sent' : result.reason ?? 'email_send_failed';
+      }
+      if (order.telegram_user_id) {
+        const result = await sendTelegramDelivery(data.id, actor);
+        channels['telegram'] = result.ok ? 'sent' : result.reason ?? 'telegram_send_failed';
+      }
+      const sent = Object.values(channels).includes('sent');
+      return { ok: sent, delivery: sent ? 'sent' : 'delivery_failed', channels };
     }
     return { ok: true, delivery: "pending" };
 }

@@ -61,6 +61,7 @@ export function ProductCard({ product, onOpen }: { product: CatalogProduct; onOp
             </>
           )}
         </div>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2"><StockPill product={product} /><span className={`button-5 ${product.purchasable?'text-primary':'text-muted-foreground'}`}>{product.purchasable?'Buy':product.availability==='coming_soon'?'Coming soon':'Out of stock'}</span></div>
       </div>
     </>
   );

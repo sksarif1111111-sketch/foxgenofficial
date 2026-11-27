@@ -18,20 +18,28 @@ export type BuyingSummary = {
   completed: number;
   rejected: number;
   revenue: Array<{ currency: string; total: number }>;
+  operations: ReturnType<typeof import('./admin-dashboard.metrics').operationalMetrics>;
 };
 
 export const shopSummary = createServerFn({ method: "POST" }).middleware([requireAdminPassword]).handler(async (): Promise<BuyingSummary> => {
   const { db, getSettings } = await import("@/lib/hub.server");
   const { deliverySlaMinutes: parseSla, deliveryClock } = await import("@/lib/shop-fulfillment");
   const { crmSyncStatus } = await import("@/lib/shop-crm.server");
+  const { operationalMetrics, kolkataPeriods } = await import('./admin-dashboard.metrics');
   const [settings, crmSync] = await Promise.all([getSettings(), crmSyncStatus()]);
   const deliverySlaMinutes = parseSla(settings["shop_delivery_sla_minutes"]);
-  const rows: Array<{ status: string; currency: string; total: number | null; stars_total: number | null; confirmed_at: string | null; delivered_at: string | null }> = [];
+  const rows: Array<{ status: string; currency: string; total: number | null; stars_total: number | null; confirmed_at: string | null; delivered_at: string | null; created_at: string }> = [];
   for (let offset = 0; ; offset += 1000) {
-    const result = await db.from("shop_orders").select("status,currency,total,stars_total,confirmed_at,delivered_at").order("id").range(offset, offset + 999);
+    const result = await db.from("shop_orders").select("status,currency,total,stars_total,confirmed_at,delivered_at,created_at").order("id").range(offset, offset + 999);
     if (result.error) throw new Error("Could not load order summary.");
     rows.push(...(result.data ?? []));
     if ((result.data ?? []).length < 1000) break;
+  }
+  const walletRows: Array<{amount_usd:number;created_at:string}> = [];
+  for(let offset=0;;offset+=1000){
+    const result=await db.from('wallet_transactions').select('amount_usd,created_at').gte('created_at',kolkataPeriods().todayStart).order('id').range(offset,offset+999);
+    if(result.error)throw new Error('Could not read wallet changes.');
+    walletRows.push(...(result.data??[])); if((result.data?.length??0)<1000)break;
   }
   const revenueMap = new Map<string, number>();
   for (const row of rows) {
@@ -43,6 +51,7 @@ export const shopSummary = createServerFn({ method: "POST" }).middleware([requir
     }
   }
   return {
+    operations: operationalMetrics(rows,walletRows),
     deliverySlaMinutes, crmSync,
     deliveryDeadlines: rows.filter(r => ["payment_confirmed", "awaiting_fulfillment"].includes(r.status) && r.confirmed_at).map(r => String(r.confirmed_at)),
     ordersOverdue: rows.filter(r => deliveryClock(r, deliverySlaMinutes)?.overdue).length,
@@ -69,12 +78,14 @@ export const shopOrders = createServerFn({ method: "POST" }).middleware([require
   )
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
-    let query = db.from("shop_orders").select("*").order("created_at", { ascending: false }).limit(300);
-    if (data.status && data.status !== "all") query = query.eq("status", data.status);
+    let query = db.from("shop_orders").select("*").order("created_at", { ascending: ['payment_submitted','under_review','overdue'].includes(data.status??'') }).limit(300);
+    if (data.status === 'overdue') query = query.in('status',['payment_confirmed','awaiting_fulfillment']).lte('confirmed_at',new Date(Date.now()-30*60000).toISOString());
+    else if (data.status && data.status !== "all") query = query.eq("status", data.status);
     if (data.method && data.method !== "all") query = query.eq("payment_method_name", data.method);
     if (data.from) query = query.gte("created_at", data.from);
     if (data.to) query = query.lte("created_at", `${data.to}T23:59:59Z`);
-    const { data: orders } = await query;
+    const { data: orders, error } = await query;
+    if(error)throw new Error("Could not load orders. Please retry.");
     let rows = orders ?? [];
     const search = (data.search ?? "").trim().toLowerCase();
     if (search) {
@@ -422,21 +433,18 @@ export const shopSaveEmailDraft = createServerFn({ method: "POST" }).middleware(
   });
 
 export const shopWalletAccounts = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
-  .inputValidator((input: unknown) => z.object({ search: z.string().trim().max(120).optional() }).parse(input))
+  .inputValidator((input: unknown) => z.object({ search: z.string().trim().max(120).optional(), page:z.number().int().min(1).max(10000).optional() }).parse(input??{}))
   .handler(async ({ data }) => {
     const { db } = await import("@/lib/hub.server");
-    let query = db
-      .from("profiles")
-      .select("id, first_name, last_name, telegram_username, telegram_user_id,member_number")
-      .order("created_at", { ascending: false })
-      .limit(40);
-    const search = data.search?.trim();
-    if (search) {
-      query = query.or(
-        `telegram_username.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`,
-      );
+    const {matchesMemberSearch}=await import('./store-order.policy');
+    const all=[];
+    for(let start=0;;start+=500){
+      const r=await db.from('profiles').select('id,first_name,last_name,telegram_username,telegram_user_id,member_number').order('created_at',{ascending:false}).order('id').range(start,start+499);
+      if(r.error)throw new Error('Could not load wallet accounts.');
+      all.push(...(r.data??[]));if((r.data?.length??0)<500)break;
     }
-    const { data: profiles } = await query;
+    const page=data.page??1;
+    const profiles=all.filter(p=>matchesMemberSearch(p,data.search??'')).slice((page-1)*50,page*50);
     const ids = (profiles ?? []).map((p) => p.id);
     const { data: wallets } = ids.length
       ? await db.from("wallets").select("profile_id, balance_usd").in("profile_id", ids)
@@ -482,7 +490,10 @@ export const shopWalletPendingTopUps = createServerFn({ method: "POST" }).middle
   const { db } = await import("@/lib/hub.server");
   const { data, error } = await db.from("wallet_topup_requests").select("*").eq("status", "pending").order("created_at").limit(100);
   if (error) throw new Error("Could not load top ups.");
-  return data ?? [];
+  const ids=[...new Set((data??[]).map(r=>r.profile_id))];
+  const profiles=ids.length?await db.from('profiles').select('id,first_name,last_name,member_number,telegram_username').in('id',ids):{data:[],error:null};
+  if(profiles.error)throw new Error('Could not read top-up members.');
+  return (data??[]).map(r=>({...r,member:(profiles.data??[]).find(p=>p.id===r.profile_id)??null}));
 });
 export const shopWalletReviewTopUp = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) => walletReviewSchema.parse(input)).handler(async ({ data }) => {

@@ -27,14 +27,14 @@ async function ownOrder(id: string, userId: string) {
   return data;
 }
 export const customerPlaceOrder = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
- .inputValidator((input: unknown) => z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1).max(50), paymentMethodId: z.string().uuid() }).parse(input))
+ .inputValidator((input: unknown) => z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1).max(50), paymentMethodId: z.string().uuid(), checkoutKey: z.string().uuid().optional() }).parse(input))
  .handler(async ({ data, context }) => {
    // Middleware already verified the caller; this stateless client has no persisted session for getUser().
    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
    const { data: identity, error } = await supabaseAdmin.auth.admin.getUserById(context.userId);
    if (error || !identity.user?.email_confirmed_at) throw new Error("Verify your email before ordering.");
    const { createOrder } = await import("@/lib/shop.server");
-   return createOrder({ channel: "website", profileId: null, telegramUserId: null, customerUserId: context.userId, customerName: identity.user.email ?? null, ...data });
+   return createOrder({ ...data, ...(data.checkoutKey ? { checkoutKey: `website:${context.userId}:${data.checkoutKey}` } : {}), channel: "website", profileId: null, telegramUserId: null, customerUserId: context.userId, customerName: identity.user.email ?? null });
  });
 export const customerSubmitPayment = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
  .inputValidator((input: unknown) => z.object({ orderId: z.string().uuid(), reference: z.string().trim().min(6).max(200), proofBase64: z.string().min(16).max(7_100_000) }).parse(input))
@@ -55,6 +55,8 @@ export const customerCancelOrder = createServerFn({ method: "POST" }).middleware
  .handler(async ({ data, context }) => { await ownOrder(data.orderId, context.userId); const { cancelOrder } = await import("@/lib/shop.server"); return cancelOrder(data.orderId, "customer", "Cancelled by customer"); });
 export const customerMyOrders = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }): Promise<MyOrder[]> => {
   const { db } = await import("@/lib/hub.server");
+  const expired = await db.rpc('shop_expire_unpaid', { _customer: context.userId });
+  if (expired.error) throw new Error('Could not refresh your orders. Please try again.');
   const result = await db.from("shop_orders").select("*").eq("customer_user_id", context.userId).eq("channel", "website").order("created_at", { ascending: false }).limit(50);
   if (result.error) throw new Error("Could not read your orders.");
   const orders = result.data ?? [], ids = orders.map(o => o.id);

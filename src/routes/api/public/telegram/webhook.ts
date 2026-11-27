@@ -306,7 +306,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           const full = p as Profile;
           if (!full?.id) return welcomeText;
           const [stats, memberCount] = await Promise.all([buyerStats(full), mod.cachedMemberCount()]);
-          return `<b>${esc(storeName.toUpperCase())}</b>\n${memberCount===null?'':`👥 Total members: ${memberCount}\n`}${LINE}\nWelcome back, ${esc(from.first_name || "Customer")}!\n${esc(storeTagline)}\n\nUsername: ${esc(from.username ? "@" + from.username : "Not set")}\nCustomer ID: ${memberLabel(full.member_number)}\nUser ID: <code>${from.id}</code>\n📦 Orders: ${stats.completed}\n👛 Wallet: $${stats.balance.toFixed(2)} USD / USDT\n💵 Total spent: ${esc(stats.spent)}\n🎁 Referral credits: ${p.credits_available}`;
+          return `<b>${esc(storeName.toUpperCase())}</b>\n${memberCount===null?'':`👥 Total members: ${memberCount}\n`}${LINE}\nWelcome back, ${esc(from.first_name || "Customer")}!\n${esc(storeTagline)}\n\nUsername: ${esc(from.username ? "@" + from.username : "Not set")}\nCustomer ID: ${memberLabel(full.member_number)}\nUser ID: <code>${from.id}</code>\n📦 Orders placed: ${stats.placed}\n👛 Wallet: $${stats.balance.toFixed(2)} USD / USDT\n💵 Total spent: ${esc(stats.spent)}\n🎁 Referral credits: ${p.credits_available}`;
         };
 
         // ---------- /start ----------

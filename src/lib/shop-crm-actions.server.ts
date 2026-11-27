@@ -102,7 +102,7 @@ export async function messageCustomer(input: { order_id?: string; customer_id?: 
 export type DeliveryFields = { account_email?: string; account_username?: string; account_number?: string; password?: string; link?: string; notes?: string };
 export function deliveryContent(f: DeliveryFields) {
   const rows: Array<[string, string | undefined]> = [["Account email", f.account_email], ["Username", f.account_username], ["Account number", f.account_number], ["Password", f.password], ["Link", f.link], ["Notes", f.notes]];
-  return rows.filter(([, v]) => v && v.trim()).map(([k, v]) => `${k}: ${v!.trim()}`).join("\n");
+  return rows.flatMap(([k, v]) => v?.trim() ? [`${k}: ${v.trim()}`] : []).join("\n");
 }
 
 const APPROVABLE = ["payment_submitted", "under_review", "awaiting_email", "payment_confirmed", "awaiting_fulfillment"];

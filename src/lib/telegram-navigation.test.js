@@ -33,7 +33,7 @@ describe('single Telegram navigation screen', () => {
     expect(actions.filter(a => a === 'shop')).toHaveLength(1);
     expect(actions.filter(a => a === 'storeprofile')).toHaveLength(1);
     expect(new Set(actions).size).toBe(actions.length);
-    expect(actions).toEqual(['shop', 'wallet', 'rewards', 'storeprofile', 'support', 'help']);
+    expect(actions).toEqual(['shop', 'wallet', 'myorders', 'storeprofile', 'invite', 'rewards', 'support', 'help']);
   });
   it('keeps invitations hidden for inactive buyers', () => {
     expect(telegramHomeKeyboard(false, (_, fallback) => fallback).flat().map(b => b.callback_data)).not.toContain('invite');

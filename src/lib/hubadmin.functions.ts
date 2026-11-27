@@ -51,22 +51,47 @@ export const adminOverview = createServerFn({ method: "POST" }).middleware([requ
   };
 });
 
-export const adminUsers = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
-  .inputValidator((input: unknown) => z.object({ search: z.string().max(100).optional() }).parse(input))
-  .handler(async ({ data }) => {
-    const { db } = await import("@/lib/hub.server");
-    let query = db
-      .from("profiles")
-      .select(
-        "id, telegram_user_id, telegram_username, first_name, status, referral_code, credits_available, credits_earned, credits_spent, created_at",
-      )
-      .order("created_at", { ascending: false })
-      .limit(200);
-    const s = (data.search ?? "").trim();
-    if (s) query = query.or(`telegram_username.ilike.%${s}%,first_name.ilike.%${s}%,referral_code.ilike.%${s}%`);
-    const { data: rows } = await query;
-    return rows ?? [];
-  });
+export const adminUsers = createServerFn({method:'POST'}).middleware([requireAdminPassword])
+ .inputValidator((input:unknown)=>z.object({search:z.string().max(100).optional(),page:z.number().int().min(1).max(10000).optional()}).parse(input??{}))
+ .handler(async({data})=>{
+  const {db}=await import('./hub.server');
+  const {matchesMemberSearch}=await import('./store-order.policy');
+  const profiles = [];
+  for(let start=0;;start+=500){
+    const result=await db.from('profiles').select('id,telegram_user_id,telegram_username,first_name,last_name,member_number,status,referral_code,credits_available,credits_earned,credits_spent,created_at').order('created_at',{ascending:false}).order('id').range(start,start+499);
+    if(result.error)throw new Error('Could not load members. Please retry.');
+    profiles.push(...(result.data??[]));if((result.data?.length??0)<500)break;
+  }
+  const contacts = new Map<string,string[]>();
+  if(data.search?.includes('@') || data.search?.includes('.')){
+    for(let start=0;;start+=500){
+      const result=await db.from('shop_orders').select('profile_id,delivery_emails').not('profile_id','is',null).not('delivery_emails','is',null).order('id').range(start,start+499);
+      if(result.error)throw new Error('Could not search member emails.');
+      for(const o of result.data??[])if(o.profile_id && o.delivery_emails)contacts.set(o.profile_id,[...(contacts.get(o.profile_id)??[]),...o.delivery_emails.split(',').map(v=>v.trim())]);
+      if((result.data?.length??0)<500)break;
+    }
+  }
+  const filtered=profiles.filter(p=>matchesMemberSearch(p,data.search??'',contacts.get(p.id)));
+  const page=data.page??1;
+  const rows=filtered.slice((page-1)*50,page*50);
+  const result=rows.length?await db.rpc('shop_member_summaries',{_ids:rows.map(p=>p.id)}):{data:[],error:null};
+  if(result.error)throw new Error('Could not load member balances.');
+  const summaries=result.data as Array<{id:string;balance:number;orders:number;spent:Array<{currency:string;total:number}>}>;
+  return rows.map(p=>({...p,...(summaries??[]).find(r=>r.id===p.id),balance:Number((summaries??[]).find(r=>r.id===p.id)?.balance??0),orders:Number((summaries??[]).find(r=>r.id===p.id)?.orders??0),spent:(summaries??[]).find(r=>r.id===p.id)?.spent??[]}));
+ });
+
+export const adminMemberDetail=createServerFn({method:'POST'}).middleware([requireAdminPassword])
+ .inputValidator((v:unknown)=>z.object({id:z.string().uuid()}).parse(v)).handler(async({data})=>{
+  const {db}=await import('./hub.server');
+  const [profile,orders,wallet,topups]=await Promise.all([
+    db.from('profiles').select('id,member_number,telegram_user_id,telegram_username,first_name,last_name,created_at,status').eq('id',data.id).maybeSingle(),
+    db.from('shop_orders').select('id,order_number,status,currency,total,stars_total,created_at').eq('profile_id',data.id).order('created_at',{ascending:false}).limit(100),
+    db.from('wallet_transactions').select('id,amount_usd,balance_after,kind,note,created_at').eq('profile_id',data.id).order('created_at',{ascending:false}).limit(100),
+    db.from('wallet_topup_requests').select('id,amount,currency,status,reference,created_at').eq('profile_id',data.id).order('created_at',{ascending:false}).limit(100),
+  ]);
+  if(!profile.data || [profile,orders,wallet,topups].some(r=>r.error))throw new Error('Could not load this member.');
+  return {profile:profile.data,orders:orders.data??[],wallet:wallet.data??[],topups:topups.data??[]};
+ });
 
 export const adminSetUserStatus = createServerFn({ method: "POST" }).middleware([requireAdminPassword])
   .inputValidator((input: unknown) =>

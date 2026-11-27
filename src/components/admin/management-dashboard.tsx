@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowUpRight, CircleCheck, Database, KeyRound, PackageCheck, RefreshCw, ShoppingBag, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { shopSummary } from "@/lib/shopadmin.functions";
+import { percentageChange } from "@/lib/admin-dashboard.metrics";
 import { adminDashboard } from "@/lib/admin-dashboard.functions";
 
 const money = (n: number, currency: string) => `${currency} ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -12,6 +14,8 @@ type Target = "Buying" | "Users" | "Referrals" | "Licenses" | "Bot" | "Extension
 /** Sales analytics from paid orders (Kolkata day/month boundaries, currencies kept separate). */
 export function ManagementDashboard({ onOpen }: { onOpen: (section: Target) => void }) {
   const load = useServerFn(adminDashboard);
+  const loadShop=useServerFn(shopSummary);
+  const operational=useQuery({queryKey:["admin-shop-operations"],queryFn:()=>loadShop(),refetchOnWindowFocus:false});
   const { data, error, isFetching, refetch } = useQuery({ queryKey: ["admin-management-dashboard"], queryFn: () => load(), refetchOnWindowFocus: false });
   const [period, setPeriod] = useState("today");
   if (error)
@@ -21,7 +25,7 @@ export function ManagementDashboard({ onOpen }: { onOpen: (section: Target) => v
         <Button variant="outline" onClick={() => void refetch()}>Try again</Button>
       </div>
     );
-  if (!data) return <p role="status" className="py-12 text-muted-foreground">Loading sales figures…</p>;
+  if (!data) return <div role="status" aria-label="Loading sales figures" className="grid grid-cols-2 gap-3">{[1,2,3,4].map(i=><div key={i} className="h-28 rounded-lg bg-muted animate-pulse" />)}</div>;
   const summary = period === "today" ? data.today : data.month;
   const labels: Array<[string, keyof (typeof summary.totals)[number]]> = [
     ["Sales", "sales"],
@@ -57,11 +61,18 @@ export function ManagementDashboard({ onOpen }: { onOpen: (section: Target) => v
               <TabsTrigger value="month">This month</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button variant="outline" disabled={isFetching} onClick={() => void refetch()} className="gap-1.5">
+          <Button variant="outline" disabled={isFetching} onClick={() => {void refetch();void operational.refetch();}} className="gap-1.5">
             <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Refresh
           </Button>
         </div>
       </header>
+      {operational.isError && <p role="alert" className="text-destructive text-sm">Store overview unavailable. <Button variant="link" onClick={()=>void operational.refetch()}>Retry</Button></p>}
+      {operational.data && <section className="space-y-3">
+        <h3 className="font-semibold">Store today · Kolkata time</h3>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[["Orders",operational.data.operations.today.orders],["Delivered",operational.data.operations.today.delivered],["Overdue",operational.data.operations.overdue],["Pending review",operational.data.pendingReview],["Wallet change",`$${operational.data.operations.walletChange.toFixed(2)}`],...['USD','INR','XTR','USDT'].map(c=>[`${c} revenue`,`${(operational.data?.operations.today.revenue.find(r=>r.currency===c)?.total??0).toFixed(2)} ${c}`])].map(([label,value])=><div key={label} className="rounded-lg border border-border bg-card p-4"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-2 break-words font-mono text-xl font-bold">{value}</p></div>)}</div>
+        <h3 className="font-semibold">This week vs last week</h3>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[['Orders',operational.data.operations.thisWeek.orders,operational.data.operations.lastWeek.orders],['Delivered',operational.data.operations.thisWeek.delivered,operational.data.operations.lastWeek.delivered],...['USD','USDT','INR','XTR'].map(c=>[`${c} revenue`,operational.data?.operations.thisWeek.revenue.find(r=>r.currency===c)?.total??0,operational.data?.operations.lastWeek.revenue.find(r=>r.currency===c)?.total??0])].map(([label,current,previous])=>{const change=percentageChange(Number(current),Number(previous));return <div key={label} className="border-l border-border pl-3"><p className="text-xs text-muted-foreground">{label}</p><p className="font-mono text-sm">{Number(current).toFixed(2)} / {Number(previous).toFixed(2)}</p><p className="text-xs text-muted-foreground">{change===null?'New this week':`${change>=0?'↑':'↓'} ${Math.abs(change)}%`}</p></div>;})}</div>
+      </section>}
       <p className="text-sm text-muted-foreground">Paid orders: {summary.orders} · website, bot and manual sales</p>
       {summary.totals.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card px-5 py-6">

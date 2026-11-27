@@ -1,5 +1,12 @@
 # Roadmap
 
+## Final comprehensive pass (Nov 28 2026)
+- [ ] Audit and complete Telegram My Orders, home/profile navigation and stale funding sessions.
+- [ ] Audit storefront stock, checkout, account history, validation and loading/error states without merging unverified identities.
+- [ ] Complete Admin overview, order bulk/review/delivery controls, wallet, products and member details.
+- [ ] Verify concurrency safeguards and external-service failure paths; run focused tests and phone-sized checks.
+- [ ] Record changed files, migrations, flow evidence, required secrets and any externally blocked checks in a review checklist.
+
 ## FoxGEN Pro 5.40 replacement
 - [x] Preserved 30 original files byte-for-byte in an independent edition; applied FoxGEN name/logo/version and exact-path existing-panel licence adapter. Admin passwords remain unchanged, as confirmed.
 - [x] Replaced DG downloads in Extension/Rewards, removed its served ZIP, and added 5.40 download controls inside unlocked Licence Center and Release details.

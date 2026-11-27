@@ -45,7 +45,8 @@ export function photoFileId(result: unknown): string | undefined {
 export function telegramHomeKeyboard(active: boolean, icon: (key: string, fallback: string) => string): TelegramKeyboard {
   return [
     [{ text: '🛍️ Shop', callback_data: 'shop' }, { text: '👛 Wallet', callback_data: 'wallet' }],
-    [{ text: `${icon('rewards', '🎁')} Free Rewards`, callback_data: 'rewards' }, { text: '👤 Profile', callback_data: 'storeprofile' }],
+    [{ text: '📦 My Orders', callback_data: 'myorders' }, { text: '👤 My Profile', callback_data: 'storeprofile' }],
+    [{ text: `${icon('invite', '👥')} ${active ? 'Refer & Earn' : 'Complete tasks'}`, callback_data: active ? 'invite' : 'tasks' }, { text: `${icon('rewards', '🎁')} Free Rewards`, callback_data: 'rewards' }],
     [{ text: `${icon('support', '💬')} Support`, callback_data: 'support' }, { text: `${icon('help', 'ℹ️')} Help`, callback_data: 'help' }],
   ];
 }
