@@ -1020,6 +1020,41 @@ export type Database = {
         }
         Relationships: []
       }
+      license_credit_events: {
+        Row: {
+          balance_after: number
+          created_at: string
+          delta: number
+          id: string
+          license_id: string
+          reason: string
+        }
+        Insert: {
+          balance_after: number
+          created_at?: string
+          delta: number
+          id?: string
+          license_id: string
+          reason?: string
+        }
+        Update: {
+          balance_after?: number
+          created_at?: string
+          delta?: number
+          id?: string
+          license_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_credit_events_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       license_inventory: {
         Row: {
           added_at: string
@@ -1105,6 +1140,8 @@ export type Database = {
           check_count: number
           created_at: string
           created_by: string | null
+          credit_balance: number | null
+          credit_total: number | null
           device_id: string | null
           duration_seconds: number | null
           expires_at: string | null
@@ -1120,6 +1157,8 @@ export type Database = {
           check_count?: number
           created_at?: string
           created_by?: string | null
+          credit_balance?: number | null
+          credit_total?: number | null
           device_id?: string | null
           duration_seconds?: number | null
           expires_at?: string | null
@@ -1135,6 +1174,8 @@ export type Database = {
           check_count?: number
           created_at?: string
           created_by?: string | null
+          credit_balance?: number | null
+          credit_total?: number | null
           device_id?: string | null
           duration_seconds?: number | null
           expires_at?: string | null
@@ -2653,6 +2694,10 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      license_adjust_credits: {
+        Args: { p_delta: number; p_license_id: string; p_reason: string }
+        Returns: Json
+      }
       redeem_reward: {
         Args: { _generated_key: string; _reward_id: string; _user_id: string }
         Returns: {

@@ -45,6 +45,12 @@
     [/Recharge\s+Key/gi,'']
   ];
 
+  // Credit-balance wording: the workspace menu row keeps the Lovable Pro name, and the
+  // insufficient-credits popup text is shown in clear English instead of mixed Hindi.
+  const ADMIN_HINT_RE = /Admin\s+dwara\s+credits\s+update\s+karne\s+ke\s+baad\s*["'\u201c\u201d]?\s*Check\s+Balance\s*["'\u201c\u201d]?\s*click\s+karein\s+ya\s+tab\s+refocus\s+karein\.?/gi;
+  const ADMIN_HINT = 'After credits are added, click "Check Balance" or return to this tab.';
+  const PRO_NAME_RE = /(?:FoxGEN\s*Pro|BUNDLEE\s*AI|Bundlee\s*AI|BUNDLEE|Bundlee)/gi;
+
   const isElement = n => n && n.nodeType === 1;
   const clean = s => String(s || '').replace(/\s+/g, ' ').trim();
   const isOwnUI = el => !!(isElement(el) && (el.matches?.(OWN_UI) || el.closest?.(OWN_UI)));
@@ -90,11 +96,39 @@
     }, true);
   }
 
+  // True for the credits row the extension adds to the workspace menu (name, PRO badge, used/quota).
+  function inCreditsRow(parent) {
+    if (!isElement(parent) || isOwnUI(parent) || isExcluded(parent)) return false;
+    let el = parent;
+    for (let i = 0; i < 6 && el && el !== document.body; i++, el = el.parentElement) {
+      const t = clean(el.textContent);
+      if (t.length > 240) return false;
+      if (/\b\d+\s*\/\s*\d+\b/.test(t) && /(?:quota|credits|\bPRO\b)/i.test(t)) return true;
+    }
+    return false;
+  }
+
   function patchTextNode(node) {
     const parent = node?.parentElement;
     if (!parent) return;
     const before = node.nodeValue;
     if (!before) return;
+    if (ADMIN_HINT_RE.test(before)) {
+      ADMIN_HINT_RE.lastIndex = 0;
+      if (!parent.closest?.('script,style,noscript,textarea,pre,code,[contenteditable],[role="textbox"]')) {
+        node.nodeValue = before.replace(ADMIN_HINT_RE, ADMIN_HINT);
+      }
+      return;
+    }
+    ADMIN_HINT_RE.lastIndex = 0;
+    PRO_NAME_RE.lastIndex = 0;
+    if (PRO_NAME_RE.test(before) && inCreditsRow(parent)) {
+      PRO_NAME_RE.lastIndex = 0;
+      const named = before.replace(PRO_NAME_RE, 'Lovable Pro');
+      if (named !== before) node.nodeValue = named;
+      return;
+    }
+    PRO_NAME_RE.lastIndex = 0;
     // Fix only the exact noneditable sender badge, including truncated previews.
     // Do not alter saved messages, text inputs, code, or arbitrary 127HUB references.
     if (!parent.closest?.('script,style,noscript,textarea,pre,code,[contenteditable],[role="textbox"]') && senderRE.test(before)) {

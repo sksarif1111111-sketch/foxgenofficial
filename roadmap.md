@@ -195,3 +195,8 @@
 ## Generated Foxy mascot
 - [x] Generate an original chubby headphone-wearing Foxy; remove the background and animate its picture pieces without changing chat or commerce.
 - [x] Desktop light/mobile dark picture and splash/reform checked; chat opens with Foxy greeting in both. Reduced motion stays idle at the same position with chat working. Eight motion tests pass; no runtime errors.
+
+## FoxGEN Pro 5.40 credit plans
+- [x] Licence Center credit plans (100–500 + custom, validity days) and Add credits on every key.
+- [x] Extension balance/spend/heartbeat go to the Store; 1 credit per prompt; insufficient popup in English; workspace row reads Lovable Pro.
+- [ ] Publish so the official site serves the new credit endpoints and 5.40 download.

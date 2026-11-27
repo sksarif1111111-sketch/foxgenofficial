@@ -47,3 +47,4 @@
 - AI product pictures: Cloudflare Workers AI (`product-image.server.ts`) fills only imageless, never-attempted products.
 - CRM write actions run once per request key (`shop_crm_action_requests`) and never echo credentials; member/top-up feeds come from DB triggers so every change re-syncs.
 - Bot hot path: short in-memory caches, sessions read only for text/photos, logging after reply; keeps taps fast.
+- Extension credits live on `licenses.credit_total/credit_balance`, changed only by the locking `license_adjust_credits` function (ledger `license_credit_events`); the extension's `/api/credits/balance|deduct` calls are rerouted to `/api/public/license/credits-*` so spending can never go negative or bypass the panel.

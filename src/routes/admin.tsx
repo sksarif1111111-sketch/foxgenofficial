@@ -1,6 +1,6 @@
 import { adminAccessStatus } from "@/lib/admin-access.functions";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, ArrowUpDown, Ban, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock, Copy, KeyRound, LayoutGrid, List, Plus, RefreshCw, Search, Timer, Trash2, Zap } from "lucide-react";
+import { AlertCircle, Coins, ArrowUpDown, Ban, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock, Copy, KeyRound, LayoutGrid, List, Plus, RefreshCw, Search, Timer, Trash2, Zap } from "lucide-react";
 import { AdminShell, useAdminAccess } from "@/components/admin/admin-shell";
 import { ExtensionAccessForm, ExtensionAccessHeader } from "@/components/admin/extension-access";
 import { ExtensionRelease } from "@/components/admin/extension-release";
@@ -14,10 +14,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { CREDIT_PLANS, MAX_CREDITS } from "@/lib/license-credits";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
   deleteLicense,
+  addLicenseCredits,
   generateLicense,
   listLicenses,
   setLicenseStatus,
@@ -126,6 +128,9 @@ function LicenceCenter() {
   const [amount, setAmount] = useState("30");
   const [unit, setUnit] = useState<Unit>("minutes");
   const [keyName, setKeyName] = useState("");
+  const [creditDays, setCreditDays] = useState("30");
+  const [customCredits, setCustomCredits] = useState("150");
+  const addCredits = useServerFn(addLicenseCredits);
 
   const refresh = useCallback(async () => {
     try {
@@ -139,11 +144,11 @@ function LicenceCenter() {
     void refresh();
   }, [refresh]);
 
-  async function generate(durationSeconds: number, tag: string) {
+  async function generate(durationSeconds: number, tag: string, creditTotal?: number) {
     setBusy(tag);
     setError(null);
     try {
-      const row = await create({ data: { durationSeconds, name: keyName.trim() || undefined } });
+      const row = await create({ data: { durationSeconds, ...(keyName.trim() ? { name: keyName.trim() } : {}), ...(creditTotal ? { creditTotal } : {}) } });
       setRows((prev) => [row, ...prev]);
       await navigator.clipboard.writeText(row.license_key).catch(() => undefined);
       setCopied(row.license_key);
@@ -152,6 +157,19 @@ function LicenceCenter() {
     } finally {
       setBusy(null);
     }
+  }
+
+  function generateCredits(total: number, tag: string) {
+    const days = Math.floor(Number(creditDays));
+    if (!Number.isFinite(days) || days < 1 || days > 3650) {
+      setError("Enter credit validity between 1 and 3650 days.");
+      return;
+    }
+    if (!Number.isInteger(total) || total < 1 || total > MAX_CREDITS) {
+      setError(`Enter credits between 1 and ${MAX_CREDITS}.`);
+      return;
+    }
+    void generate(days * 86400, tag, total);
   }
 
   function onCustom() {
@@ -325,6 +343,7 @@ function LicenceCenter() {
                     <span className="shrink-0 rounded-lg bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums">{duration(row)}</span>
                   </div>
                   {row.note && <p className="mt-1 truncate text-sm text-muted-foreground">{row.note}</p>}
+                  <CreditBadge row={row} />
                   <dl className="mt-4 space-y-1.5 text-sm">
                     <div className="flex items-center justify-between gap-3"><dt className="flex items-center gap-2 text-muted-foreground"><CalendarDays className="size-3.5 text-primary" /> Created</dt><dd className="tabular-nums">{fmt(row.created_at)}</dd></div>
                     <div className="flex items-center justify-between gap-3"><dt className="flex items-center gap-2 text-muted-foreground"><Zap className="size-3.5 text-primary" /> Activated</dt><dd className="tabular-nums">{fmt(row.activated_at)}</dd></div>
@@ -332,7 +351,7 @@ function LicenceCenter() {
                   </dl>
                   <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-4">
                     <LicenseStatus row={row} />
-                    <LicenseActions row={row} onCopy={setCopied} onChanged={refresh} setStatus={setStatus} remove={remove} onError={setError} />
+                    <LicenseActions row={row} onCopy={setCopied} onChanged={refresh} setStatus={setStatus} remove={remove} addCredits={addCredits} onError={setError} />
                   </div>
                 </li>
               ))}
@@ -347,9 +366,9 @@ function LicenceCenter() {
                       <LicenseStatus row={row} />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {duration(row)} · Activated {fmt(row.activated_at)} · Expires {fmt(row.expires_at)}
+                      {row.credit_total !== null ? `${row.credit_balance ?? 0}/${row.credit_total} credits · ` : ""}{duration(row)} · Activated {fmt(row.activated_at)} · Expires {fmt(row.expires_at)}
                     </p>
-                    <LicenseActions row={row} onCopy={setCopied} onChanged={refresh} setStatus={setStatus} remove={remove} onError={setError} />
+                    <LicenseActions row={row} onCopy={setCopied} onChanged={refresh} setStatus={setStatus} remove={remove} addCredits={addCredits} onError={setError} />
                   </li>
                 ))}
               </ul>
@@ -369,12 +388,12 @@ function LicenceCenter() {
                     {pageRows.map((row) => (
                       <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/50">
                         <td className="px-5 py-3 font-mono text-xs font-medium">{row.license_key}</td>
-                        <td className="px-5 py-3 tabular-nums">{duration(row)}</td>
+                        <td className="px-5 py-3 tabular-nums">{duration(row)}{row.credit_total !== null ? ` · ${row.credit_balance ?? 0}/${row.credit_total} cr` : ""}</td>
                         <td className="px-5 py-3"><LicenseStatus row={row} /></td>
                         <td className="px-5 py-3 text-muted-foreground">{fmt(row.activated_at)}</td>
                         <td className="px-5 py-3 text-muted-foreground">{fmt(row.expires_at)}</td>
                         <td className="px-5 py-3">
-                          <LicenseActions row={row} onCopy={setCopied} onChanged={refresh} setStatus={setStatus} remove={remove} onError={setError} />
+                          <LicenseActions row={row} onCopy={setCopied} onChanged={refresh} setStatus={setStatus} remove={remove} addCredits={addCredits} onError={setError} />
                         </td>
                       </tr>
                     ))}
@@ -392,6 +411,51 @@ function LicenceCenter() {
               </div>
             </div>
           )}
+        </section>
+
+        <section id="credit-plans" className="scroll-mt-24 rounded-2xl border border-border bg-card p-5 backdrop-blur-xl sm:p-6">
+          <div className="flex items-center gap-2">
+            <Coins className="size-4 text-primary" />
+            <h2 className="text-lg font-semibold">Credit plans</h2>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Each prompt in the extension uses credits from the key. When they run out, the extension asks for a top-up. The key prefix below also applies to credit keys.
+          </p>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {CREDIT_PLANS.map((plan) => (
+              <button
+                key={plan}
+                type="button"
+                onClick={() => generateCredits(plan, `credits-${plan}`)}
+                disabled={busy !== null}
+                className="group flex flex-col items-start rounded-xl border border-border bg-muted p-4 text-left transition duration-300 ease-weighted hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_0_24px_-8px_var(--primary)] disabled:opacity-50"
+              >
+                <span className="font-display text-3xl font-bold tabular-nums">{plan}</span>
+                <span className="text-xs text-muted-foreground">credits</span>
+                <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                  {busy === `credits-${plan}` ? "Generating…" : (<><Plus className="size-3.5" />Generate</>)}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap items-end gap-3">
+            <label className="text-sm font-medium">
+              Valid for (days)
+              <input type="number" min={1} max={3650} value={creditDays} onChange={(e) => setCreditDays(e.target.value)} className={`${fieldCls} mt-1.5 block w-28 tabular-nums`} />
+            </label>
+            <label className="text-sm font-medium">
+              Custom credits
+              <input type="number" min={1} max={MAX_CREDITS} value={customCredits} onChange={(e) => setCustomCredits(e.target.value)} className={`${fieldCls} mt-1.5 block w-32 tabular-nums`} />
+            </label>
+            <button
+              type="button"
+              onClick={() => generateCredits(Math.floor(Number(customCredits)), "credits-custom")}
+              disabled={busy !== null}
+              className="btn-violet h-11 rounded-xl px-5 text-sm font-semibold transition hover:-translate-y-0.5 disabled:opacity-50"
+            >
+              {busy === "credits-custom" ? "Generating…" : "Generate custom credits key"}
+            </button>
+          </div>
         </section>
 
         <section id="generate" className="grid scroll-mt-24 gap-4 xl:grid-cols-[1.3fr_1fr]">
@@ -452,6 +516,15 @@ function LicenceCenter() {
   );
 }
 
+function CreditBadge({ row }: { row: LicenseRow }) {
+  if (row.credit_total === null) return null;
+  return (
+    <p className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-primary">
+      <Coins className="size-3.5" /> {row.credit_balance ?? 0} / {row.credit_total} credits
+    </p>
+  );
+}
+
 function LicenseStatus({ row }: { row: LicenseRow }) {
   const expired = row.status === "active" && isExpired(row);
   const label = row.status !== "active" ? row.status : expired ? "expired" : row.activated_at ? "active" : "unused";
@@ -470,6 +543,7 @@ function LicenseActions({
   onChanged,
   setStatus,
   remove,
+  addCredits,
   onError,
 }: {
   row: LicenseRow;
@@ -477,9 +551,12 @@ function LicenseActions({
   onChanged: () => Promise<void>;
   setStatus: (args: { data: { id: string; status: "active" | "blocked" } }) => Promise<unknown>;
   remove: (args: { data: { id: string } }) => Promise<unknown>;
+  addCredits: (args: { data: { id: string; amount: number } }) => Promise<unknown>;
   onError: (message: string) => void;
 }) {
   const [confirm, setConfirm] = useState(false);
+  const [topUp, setTopUp] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState("100");
   const [busy, setBusy] = useState(false);
   const icon = "inline-flex size-8 items-center justify-center rounded-lg border border-border bg-muted transition hover:border-primary/60";
   const act = async (fn: () => Promise<unknown>) => {
@@ -515,9 +592,44 @@ function LicenseActions({
       >
         {row.status === "active" ? "Block" : "Activate"}
       </button>
+      <button type="button" title="Add credits" aria-label="Add credits" disabled={busy} onClick={() => setTopUp(true)} className={icon}>
+        <Coins className="size-3.5" />
+      </button>
       <button type="button" title="Delete key" aria-label="Delete key" disabled={busy} onClick={() => setConfirm(true)} className={`${icon} text-destructive hover:bg-destructive/10`}>
         <Trash2 className="size-3.5" />
       </button>
+      <AlertDialog open={topUp} onOpenChange={setTopUp}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Add credits</AlertDialogTitle>
+          <AlertDialogDescription>
+            Credits are added to <span className="font-mono">{row.license_key}</span> and are usable in the extension right away.
+          </AlertDialogDescription>
+          <input
+            type="number"
+            min={1}
+            max={MAX_CREDITS}
+            aria-label="Credits to add"
+            value={topUpAmount}
+            onChange={(e) => setTopUpAmount(e.target.value)}
+            className="h-11 rounded-xl border border-input bg-muted px-3.5 text-sm tabular-nums outline-none focus:border-primary"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const amount = Math.floor(Number(topUpAmount));
+                if (!Number.isFinite(amount) || amount < 1 || amount > MAX_CREDITS) {
+                  onError(`Enter credits between 1 and ${MAX_CREDITS}.`);
+                  return;
+                }
+                void act(() => addCredits({ data: { id: row.id, amount } }));
+              }}
+            >
+              Add credits
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
           <AlertDialogTitle>Delete this licence?</AlertDialogTitle>

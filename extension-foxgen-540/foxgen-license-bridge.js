@@ -1,7 +1,14 @@
 /* FoxGEN Pro 5.40 licence adapter. Original feature bundles stay unchanged. */
 (() => {
   'use strict';
-  const verifyUrl = 'https://foxgenofficial.lovable.app/api/public/license/verify';
+  const storeOrigin = 'https://foxgenofficial.lovable.app';
+  const verifyUrl = storeOrigin + '/api/public/license/verify';
+  // Credit balance and spending are kept by the FoxGEN licence panel, never by the old provider.
+  const creditRoutes = {
+    '/api/credits/balance': storeOrigin + '/api/public/license/credits-balance',
+    '/api/credits/deduct': storeOrigin + '/api/public/license/credits-deduct',
+  };
+  const verifyPaths = new Set(['/api/validate-license', '/api/public/ext/compat/functions/v1/validate-license']);
   const originalFetch = globalThis.fetch.bind(globalThis);
   const providerHosts = new Set(['ai.127hub.com', 'bundlee.store']);
 
@@ -9,7 +16,29 @@
     let url;
     try { url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url); }
     catch (_) { return originalFetch(input, init); }
-    if (!providerHosts.has(url.hostname) || url.pathname !== '/api/validate-license') {
+    if (providerHosts.has(url.hostname) && creditRoutes[url.pathname]) {
+      try {
+        const request = new Request(input, init);
+        const body = await request.text();
+        const headers = { 'Content-Type': 'application/json' };
+        const auth = request.headers.get('Authorization');
+        if (auth) headers.Authorization = auth;
+        const upstream = await originalFetch(creditRoutes[url.pathname], {
+          method: 'POST', headers, body, cache: 'no-store', credentials: 'omit',
+          signal: AbortSignal.timeout(15000),
+        });
+        return new Response(await upstream.text(), {
+          status: upstream.status,
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+        });
+      } catch (_) {
+        return new Response(JSON.stringify({
+          ok: false, success: false, error: 'network_error',
+          message: 'Cannot reach FoxGEN. Please try again.',
+        }), { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+      }
+    }
+    if (!providerHosts.has(url.hostname) || !verifyPaths.has(url.pathname)) {
       return originalFetch(input, init);
     }
 

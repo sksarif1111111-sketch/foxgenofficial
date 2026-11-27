@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { creditPayload } from "@/lib/license-credits";
 
 const bodySchema = z.object({
   licenseKey: z.string().trim().min(4).max(200).optional(),
@@ -58,7 +59,7 @@ export const Route = createFileRoute("/api/public/license/verify")({
         const { data: row, error } = await supabaseAdmin
           .from("licenses")
           .select(
-            "id, license_key, plan_days, duration_seconds, status, device_id, activated_at, expires_at, check_count",
+            "id, license_key, plan_days, duration_seconds, status, device_id, activated_at, expires_at, check_count, credit_total, credit_balance",
           )
           .eq("license_key", licenseKey)
           .maybeSingle();
@@ -156,6 +157,7 @@ export const Route = createFileRoute("/api/public/license/verify")({
           device_limit: null,
           ttl: Math.max(5, Math.min(900, Math.floor((expiresAt.getTime() - now.getTime()) / 1000))),
           plan_days: row.plan_days,
+          ...creditPayload(row),
           duration_seconds: durationSeconds,
           expires_at: expiresAt.toISOString(),
           message: "License active.",
@@ -165,6 +167,7 @@ export const Route = createFileRoute("/api/public/license/verify")({
             max_devices: null,
             multi_device: true,
             is_trial: false,
+            ...creditPayload(row),
           },
         });
 

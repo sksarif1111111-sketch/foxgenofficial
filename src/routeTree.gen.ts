@@ -33,6 +33,8 @@ import { Route as ApiPublicCronCrmSyncRouteImport } from './routes/api/public/cr
 import { Route as ApiPublicCronMarketplaceRouteImport } from './routes/api/public/cron/marketplace'
 import { Route as ApiPublicCronSupplierSyncRouteImport } from './routes/api/public/cron/supplier-sync'
 import { Route as ApiPublicExtCoreRouteImport } from './routes/api/public/ext/core'
+import { Route as ApiPublicLicenseCreditsBalanceRouteImport } from './routes/api/public/license/credits-balance'
+import { Route as ApiPublicLicenseCreditsDeductRouteImport } from './routes/api/public/license/credits-deduct'
 import { Route as ApiPublicLicenseIssueRouteImport } from './routes/api/public/license/issue'
 import { Route as ApiPublicLicenseVerifyRouteImport } from './routes/api/public/license/verify'
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media/$'
@@ -165,6 +167,18 @@ const ApiPublicExtCoreRoute = ApiPublicExtCoreRouteImport.update({
   path: '/api/public/ext/core',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLicenseCreditsBalanceRoute =
+  ApiPublicLicenseCreditsBalanceRouteImport.update({
+    id: '/api/public/license/credits-balance',
+    path: '/api/public/license/credits-balance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicLicenseCreditsDeductRoute =
+  ApiPublicLicenseCreditsDeductRouteImport.update({
+    id: '/api/public/license/credits-deduct',
+    path: '/api/public/license/credits-deduct',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicLicenseIssueRoute = ApiPublicLicenseIssueRouteImport.update({
   id: '/api/public/license/issue',
   path: '/api/public/license/issue',
@@ -239,6 +253,8 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/marketplace': typeof ApiPublicCronMarketplaceRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
+  '/api/public/license/credits-balance': typeof ApiPublicLicenseCreditsBalanceRoute
+  '/api/public/license/credits-deduct': typeof ApiPublicLicenseCreditsDeductRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
@@ -274,6 +290,8 @@ export interface FileRoutesByTo {
   '/api/public/cron/marketplace': typeof ApiPublicCronMarketplaceRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
+  '/api/public/license/credits-balance': typeof ApiPublicLicenseCreditsBalanceRoute
+  '/api/public/license/credits-deduct': typeof ApiPublicLicenseCreditsDeductRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
@@ -310,6 +328,8 @@ export interface FileRoutesById {
   '/api/public/cron/marketplace': typeof ApiPublicCronMarketplaceRoute
   '/api/public/cron/supplier-sync': typeof ApiPublicCronSupplierSyncRoute
   '/api/public/ext/core': typeof ApiPublicExtCoreRoute
+  '/api/public/license/credits-balance': typeof ApiPublicLicenseCreditsBalanceRoute
+  '/api/public/license/credits-deduct': typeof ApiPublicLicenseCreditsDeductRoute
   '/api/public/license/issue': typeof ApiPublicLicenseIssueRoute
   '/api/public/license/verify': typeof ApiPublicLicenseVerifyRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
@@ -347,6 +367,8 @@ export interface FileRouteTypes {
     | '/api/public/cron/marketplace'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
+    | '/api/public/license/credits-balance'
+    | '/api/public/license/credits-deduct'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
     | '/api/public/media/$'
@@ -382,6 +404,8 @@ export interface FileRouteTypes {
     | '/api/public/cron/marketplace'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
+    | '/api/public/license/credits-balance'
+    | '/api/public/license/credits-deduct'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
     | '/api/public/media/$'
@@ -417,6 +441,8 @@ export interface FileRouteTypes {
     | '/api/public/cron/marketplace'
     | '/api/public/cron/supplier-sync'
     | '/api/public/ext/core'
+    | '/api/public/license/credits-balance'
+    | '/api/public/license/credits-deduct'
     | '/api/public/license/issue'
     | '/api/public/license/verify'
     | '/api/public/media/$'
@@ -453,6 +479,8 @@ export interface RootRouteChildren {
   ApiPublicCronMarketplaceRoute: typeof ApiPublicCronMarketplaceRoute
   ApiPublicCronSupplierSyncRoute: typeof ApiPublicCronSupplierSyncRoute
   ApiPublicExtCoreRoute: typeof ApiPublicExtCoreRoute
+  ApiPublicLicenseCreditsBalanceRoute: typeof ApiPublicLicenseCreditsBalanceRoute
+  ApiPublicLicenseCreditsDeductRoute: typeof ApiPublicLicenseCreditsDeductRoute
   ApiPublicLicenseIssueRoute: typeof ApiPublicLicenseIssueRoute
   ApiPublicLicenseVerifyRoute: typeof ApiPublicLicenseVerifyRoute
   ApiPublicMediaSplatRoute: typeof ApiPublicMediaSplatRoute
@@ -634,6 +662,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicExtCoreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/license/credits-balance': {
+      id: '/api/public/license/credits-balance'
+      path: '/api/public/license/credits-balance'
+      fullPath: '/api/public/license/credits-balance'
+      preLoaderRoute: typeof ApiPublicLicenseCreditsBalanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/license/credits-deduct': {
+      id: '/api/public/license/credits-deduct'
+      path: '/api/public/license/credits-deduct'
+      fullPath: '/api/public/license/credits-deduct'
+      preLoaderRoute: typeof ApiPublicLicenseCreditsDeductRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/license/issue': {
       id: '/api/public/license/issue'
       path: '/api/public/license/issue'
@@ -725,6 +767,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronMarketplaceRoute: ApiPublicCronMarketplaceRoute,
   ApiPublicCronSupplierSyncRoute: ApiPublicCronSupplierSyncRoute,
   ApiPublicExtCoreRoute: ApiPublicExtCoreRoute,
+  ApiPublicLicenseCreditsBalanceRoute: ApiPublicLicenseCreditsBalanceRoute,
+  ApiPublicLicenseCreditsDeductRoute: ApiPublicLicenseCreditsDeductRoute,
   ApiPublicLicenseIssueRoute: ApiPublicLicenseIssueRoute,
   ApiPublicLicenseVerifyRoute: ApiPublicLicenseVerifyRoute,
   ApiPublicMediaSplatRoute: ApiPublicMediaSplatRoute,

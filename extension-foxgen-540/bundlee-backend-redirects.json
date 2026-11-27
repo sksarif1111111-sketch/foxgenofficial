@@ -30,5 +30,53 @@
         "xmlhttprequest"
       ]
     }
+  },
+  {
+    "id": 54002,
+    "priority": 100,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "url": "https://foxgenofficial.lovable.app/api/public/license/credits-balance"
+      }
+    },
+    "condition": {
+      "regexFilter": "^https?://(ai\\.127hub\\.com|bundlee\\.store)/api/credits/balance([?].*)?$",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 54003,
+    "priority": 100,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "url": "https://foxgenofficial.lovable.app/api/public/license/credits-deduct"
+      }
+    },
+    "condition": {
+      "regexFilter": "^https?://(ai\\.127hub\\.com|bundlee\\.store)/api/credits/deduct([?].*)?$",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 54004,
+    "priority": 100,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "url": "https://foxgenofficial.lovable.app/api/public/license/verify"
+      }
+    },
+    "condition": {
+      "regexFilter": "^https?://(ai\\.127hub\\.com|bundlee\\.store)/api/public/ext/compat/functions/v1/validate-license([?].*)?$",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
   }
 ]

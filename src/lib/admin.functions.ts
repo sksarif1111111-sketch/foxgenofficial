@@ -1,6 +1,7 @@
 import { requireExtensionPassword } from "@/lib/admin-access.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { MAX_CREDITS } from "@/lib/license-credits";
 
 export type LicenseRow = {
   id: string;
@@ -14,10 +15,12 @@ export type LicenseRow = {
   expires_at: string | null;
   last_seen_at: string | null;
   created_at: string;
+  credit_total: number | null;
+  credit_balance: number | null;
 };
 
 const SELECT =
-  "id, license_key, plan_days, duration_seconds, status, note, device_id, activated_at, expires_at, last_seen_at, created_at";
+  "id, license_key, plan_days, duration_seconds, status, note, device_id, activated_at, expires_at, last_seen_at, created_at, credit_total, credit_balance";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789";
 
@@ -53,6 +56,7 @@ export const generateLicense = createServerFn({ method: "POST" }).middleware([re
         durationSeconds: z.number().int().min(1).max(60 * 60 * 24 * 3650),
         note: z.string().trim().max(120).optional(),
         name: z.string().trim().max(40).optional(),
+        creditTotal: z.number().int().min(1).max(MAX_CREDITS).optional(),
       })
       .parse(input),
   )
@@ -67,12 +71,13 @@ export const generateLicense = createServerFn({ method: "POST" }).middleware([re
           plan_days: planDays,
           duration_seconds: data.durationSeconds,
           note: data.note ?? null,
+          ...(data.creditTotal ? { credit_total: data.creditTotal, credit_balance: data.creditTotal } : {}),
         })
         .select(SELECT)
         .single();
       if (!error && row) {
         const { logActivity } = await import("@/lib/hub.server");
-        await logActivity("extension", "Licence generated", "success", `${row.license_key} · ${planDays}d`);
+        await logActivity("extension", "Licence generated", "success", `${row.license_key} · ${planDays}d${data.creditTotal ? ` · ${data.creditTotal} credits` : ""}`);
         return row as LicenseRow;
       }
     }
@@ -101,4 +106,20 @@ export const deleteLicense = createServerFn({ method: "POST" }).middleware([requ
     const { logActivity } = await import("@/lib/hub.server");
     await logActivity("extension", "Licence deleted", "warning", row.license_key);
     return { ok: true };
+  });
+
+export const addLicenseCredits = createServerFn({ method: "POST" }).middleware([requireExtensionPassword])
+  .inputValidator((input: unknown) =>
+    z.object({ id: z.string().uuid(), amount: z.number().int().min(1).max(MAX_CREDITS) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ ok: true; credits: number }> => {
+    const { adjustCredits } = await import("@/lib/license-credits.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin.from("licenses").select("license_key").eq("id", data.id).maybeSingle();
+    if (!row) throw new Error("Licence not found.");
+    const result = await adjustCredits(data.id, data.amount, "admin top-up");
+    if (!result.ok) throw new Error("Could not add credits.");
+    const { logActivity } = await import("@/lib/hub.server");
+    await logActivity("extension", "Credits added", "success", `${row.license_key} · +${data.amount}`);
+    return { ok: true, credits: result.credits ?? 0 };
   });
