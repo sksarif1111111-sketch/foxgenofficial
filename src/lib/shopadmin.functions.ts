@@ -195,9 +195,8 @@ const productShopSchema = z.object({
   slug: z
     .string()
     .trim()
-    .min(1)
     .max(120)
-    .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers and dashes."),
+    .regex(/^[a-z0-9-]*$/, "Use lowercase letters, numbers and dashes."),
   emoji: z.string().trim().max(8).optional(),
   short_description: z.string().trim().max(300).optional(),
   description: z.string().trim().max(4000).optional(),
@@ -245,8 +244,12 @@ export const shopSaveProduct = createServerFn({ method: "POST" }).middleware([re
   .handler(async ({ data }) => {
     const { db, logActivity } = await import("@/lib/hub.server");
     const { id, ...rest } = data;
+    // Supplier-imported products have no slug; derive one so editing them can save.
+    const base = rest.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100) || "product";
+    const slug = rest.slug || `${base}-${(id ?? crypto.randomUUID()).slice(0, 8)}`;
     const row = {
       ...rest,
+      slug,
       emoji: blank(rest.emoji),
       short_description: blank(rest.short_description),
       description: blank(rest.description),
