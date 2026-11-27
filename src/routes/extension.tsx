@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Download, FolderOpen, KeyRound, MonitorCog, ToggleRight } from "lucide-react";
-import digiExtensionLogo from "@/assets/digiextension-logo.jpeg.asset.json";
+import { BRAND } from "@/lib/brand";
+import { FOXGEN_540 } from "@/lib/extension-releases";
+import { ExtensionDownloadButton } from "@/components/site/extension-download-button";
 import { SiteNav } from "@/components/site/site-nav";
 import { SiteFooter } from "@/components/site/site-footer";
 
@@ -59,13 +61,9 @@ const RELEASES: Release[] = [
     file: "FoxGEN-Pro-5.1.5.zip",
   },
   {
-    name: "DIGI Extension · Reseller 3",
-    version: "5.1.5",
-    tag: "Reseller edition",
-    notes: "Light pink edition · Made by Krishna Gupta.",
-    href: "/digiextension-reseller-3.zip",
-    file: "DG-Extension-Reseller-3-5.1.5.zip",
-    logo: digiExtensionLogo.url,
+    ...FOXGEN_540,
+    tag: "New edition",
+    logo: BRAND.mark,
   },
 ];
 
@@ -93,13 +91,13 @@ export default function DownloadPage() {
                 Free to download. The extension unlocks with a valid FoxGEN licence key and works on multiple devices.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a
+                <ExtensionDownloadButton
                   href={latest.href}
-                  download={latest.file}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-ember"
+                  file={latest.file}
+                  className="h-12 px-6 shadow-ember"
                 >
-                  <Download className="size-4" /> Download {latest.version}
-                </a>
+                  Download {latest.version}
+                </ExtensionDownloadButton>
                 <Link to="/shop" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border px-6 text-sm font-semibold hover:bg-card">
                   Get a licence key <ArrowRight className="size-4" />
                 </Link>
@@ -107,7 +105,7 @@ export default function DownloadPage() {
             </div>
             <div className="relative mx-auto">
               <div className="absolute inset-0 rounded-full bg-primary/30 blur-3xl" />
-              <img src="/foxgen-logo.png" alt="FoxGEN Pro logo" width={200} height={200} className="relative size-40 rounded-[2.25rem] ring-1 ring-border sm:size-48" />
+              <img src={BRAND.mark} alt="FoxGEN Pro logo" width={200} height={200} className="relative size-40 rounded-[2.25rem] ring-1 ring-border sm:size-48" />
             </div>
           </div>
         </div>
@@ -122,7 +120,7 @@ export default function DownloadPage() {
           <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
             {[latest, ...others].map((r) => (
               <div key={r.file} className="flex flex-col gap-4 border-b border-border p-5 last:border-0 sm:flex-row sm:items-center sm:p-6">
-                <img src={r.logo ?? "/foxgen-logo.png"} alt="" width={48} height={48} className="size-12 shrink-0 rounded-xl object-cover ring-1 ring-border" />
+                <img src={r.logo ?? BRAND.mark} alt="" width={48} height={48} className="size-12 shrink-0 rounded-xl object-cover ring-1 ring-border" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold">{r.name}</p>
@@ -135,15 +133,14 @@ export default function DownloadPage() {
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">{r.notes}</p>
                 </div>
-                <a
+                <ExtensionDownloadButton
                   href={r.href}
-                  download={r.file}
-                  className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold ${
-                    r.recommended ? "bg-ink text-ink-foreground" : "border border-border hover:bg-muted"
-                  }`}
+                  file={r.file}
+                  variant={r.recommended ? "default" : "outline"}
+                  className="h-10 shrink-0 px-4"
                 >
-                  <Download className="size-4" /> Download
-                </a>
+                  {r.version === FOXGEN_540.version ? 'Download 5.40' : 'Download'}
+                </ExtensionDownloadButton>
               </div>
             ))}
           </div>

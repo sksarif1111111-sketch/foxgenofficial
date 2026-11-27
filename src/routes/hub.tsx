@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { completeTask, getHubState, redeemReward, verifyMembership, type HubState } from "@/lib/hub.functions";
 import { Gift } from "lucide-react";
 import { SiteNav } from "@/components/site/site-nav";
-import digiExtensionLogo from "@/assets/digiextension-logo.jpeg.asset.json";
+import { BRAND } from "@/lib/brand";
+import { ExtensionDownloadButton } from "@/components/site/extension-download-button";
 
 export const Route = createFileRoute("/hub")({
   head: () => ({
@@ -439,25 +440,19 @@ function HubPage() {
           <div className="mx-auto mt-6 max-w-2xl border border-accent/30 bg-background/40 p-5">
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:text-left">
               <img
-                src={digiExtensionLogo.url}
-                alt="DIGI Extension logo"
+                src={BRAND.mark}
+                alt="FoxGEN Pro logo"
                 width={64}
                 height={64}
                 className="h-16 w-16 rounded-xl border border-accent/30 object-cover"
               />
               <div className="flex-1">
-                <p className="text-xs font-black uppercase tracking-[0.3em] text-accent">Reseller 3</p>
-                <p className="mt-1 text-lg font-bold">DIGI Extension 5.1.5</p>
-                <p className="mt-1 text-xs text-muted-foreground">Light pink edition · Made by Krishna Gupta</p>
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-accent">New edition</p>
+                <p className="mt-1 text-lg font-bold">FoxGEN Pro 5.40</p>
+                <p className="mt-1 text-xs text-muted-foreground">FoxGEN branding and licence activation</p>
               </div>
             </div>
-            <a
-              href="/digiextension-reseller-3.zip"
-              download="DG-Extension-Reseller-3-5.1.5.zip"
-              className="mt-4 inline-block rounded-xl bg-accent px-6 py-3 text-xs font-black uppercase text-accent-foreground"
-            >
-              📥 Download Reseller 3
-            </a>
+            <div className="mt-4 flex justify-center"><ExtensionDownloadButton /></div>
           </div>
 
           <p className="mt-7 text-xs font-bold uppercase text-muted-foreground">Need help?</p>

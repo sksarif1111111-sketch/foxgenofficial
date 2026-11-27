@@ -1,0 +1,13 @@
+{
+  "extensionName": "FoxGEN Pro",
+  "adminContactLink": "",
+  "channelLink": "",
+  "adminTelegram": "",
+  "channelTelegram": "",
+  "serverUrl": "bundlee.store",
+  "secondaryServerUrl": "bundlee.store",
+  "switchServerUrl": "https://bundlee.store/api/switch",
+  "defaultCredits": 0,
+  "footerText": "FoxGEN Pro 5.40",
+  "footerLink": "https://foxgenofficial.lovable.app"
+}

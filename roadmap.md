@@ -1,5 +1,11 @@
 # Roadmap
 
+## FoxGEN Pro 5.40 replacement
+- [x] Preserved 30 original files byte-for-byte in an independent edition; applied FoxGEN name/logo/version and exact-path existing-panel licence adapter. Admin passwords remain unchanged, as confirmed.
+- [x] Replaced DG downloads in Extension/Rewards, removed its served ZIP, and added 5.40 download controls inside unlocked Licence Center and Release details.
+- [x] 141 tests passed; real generated key accepted inside loaded Chrome extension, panel activation readback verified, invalid/expired keys denied and temporary keys removed. ZIP downloads verified at 754/390px and unlocked Admin; no overflow or page errors.
+- [x] Original branded activation screen rendered in loaded Chrome extension. Full activation-button flow against a real Lovable workspace and third-party feature services remains unverified; original services still require their own access. Publish required for the official site's new release.
+
 ## Foxy expression and natural movement repair
 - [x] Kept generated iris identity across expressions, rebuilt feathered fur backing and aligned independent paws/feet/head/tail; cursor tracking now reaches the visible rig.
 - [x] Short distance-driven planted steps, head counterbalance, tail swing, curious sniffing and gentle settling; cancellable manual falls, live reduced-motion changes, preserved chat/hide/drag and mobile purchase-bar clearance.

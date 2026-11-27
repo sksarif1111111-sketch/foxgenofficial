@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, ArrowUpDown, Ban, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock, Copy, KeyRound, LayoutGrid, List, Plus, RefreshCw, Search, Timer, Trash2, Zap } from "lucide-react";
 import { AdminShell, useAdminAccess } from "@/components/admin/admin-shell";
 import { ExtensionAccessForm, ExtensionAccessHeader } from "@/components/admin/extension-access";
+import { ExtensionRelease } from "@/components/admin/extension-release";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -209,6 +210,7 @@ function LicenceCenter() {
       }
     >
       <div className="space-y-8">
+        <ExtensionRelease />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">Track · Secure · Control</p>
           <a href="#generate" className="btn-violet inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition duration-300 ease-weighted hover:-translate-y-0.5">

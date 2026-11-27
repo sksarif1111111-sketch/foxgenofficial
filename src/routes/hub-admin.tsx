@@ -27,6 +27,7 @@ import { ActivityPanel, CatalogPanel, ProductFilesPanel, ProductsPanel } from "@
 import { BotDashboardPanel, IntegrationsPanel, LeaderboardPanel, OffersPanel, SecurityPanel, SyncHistoryPanel } from "@/components/admin/control-panels";
 import { MembersPanel, TasksPanel, type TaskFilter } from "@/components/admin/bot-panels";
 import { ExtensionAccessForm, ExtensionAccessHeader } from "@/components/admin/extension-access";
+import { ExtensionRelease } from "@/components/admin/extension-release";
 import { BuyingPanel, ShopProductsPanel, WalletPanel } from "@/components/admin/shop-panels";
 import { ManagementDashboard } from "@/components/admin/management-dashboard";
 import { Button } from "@/components/ui/button";
@@ -452,6 +453,7 @@ function HubAdmin() {
 
       {section === "Extension" && extensionUnlocked && (
         <section className="space-y-4">
+          <ExtensionRelease />
           <div className="rounded-2xl border border-border bg-card/60 p-5">
             <p className="font-bold">🦊 FoxGEN PRO Extension management</p>
             <p className="text-xs text-muted-foreground">

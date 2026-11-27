@@ -1,0 +1,34 @@
+[
+  {
+    "id": 4005,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "https://bundlee.store\\1"
+      }
+    },
+    "condition": {
+      "regexFilter": "^https?://ai\\.127hub\\.com(/.*)$",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  },
+  {
+    "id": 54001,
+    "priority": 100,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "url": "https://foxgenofficial.lovable.app/api/public/license/verify"
+      }
+    },
+    "condition": {
+      "regexFilter": "^https?://(ai\\.127hub\\.com|bundlee\\.store)/api/validate-license([?].*)?$",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ]
+    }
+  }
+]

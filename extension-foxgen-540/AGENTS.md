@@ -1,0 +1,3 @@
+- Keep original feature bundles byte-for-byte unchanged; licence requests are adapted by foxgen-license-bridge.js so upstream features remain isolated from Store licensing.
+- Package this edition independently; do not reuse another edition's icons or source directory.
+- Restore the oversized original powerkits-core.js from the immutable shipped release ZIP into temporary packaging space with restore-core.py; the downloadable ZIP retains the complete source without exceeding repository limits.

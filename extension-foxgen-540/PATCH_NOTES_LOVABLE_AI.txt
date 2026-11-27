@@ -1,0 +1,20 @@
+Lovable AI patched extension (based on Bundlee AI v40.5)
+
+Applied changes:
+- Rebranded visible extension name and description to Lovable AI.
+- Replaced extension icons with the supplied Lovable logo.
+- Replaced visible Bundlee branding in injected UI with Lovable AI.
+- Removed/hid support/contact/channel/recharge buttons in the injected UI:
+  - Contact Admin / Contact Admin (Admin)
+  - WhatsApp Admin / WhatsApp Support
+  - Main Channel / Join Channel / Telegram
+  - Recharge Key
+- Disabled direct WhatsApp/Telegram redirect helper scripts.
+- Cleared branding.json support/contact links.
+- Kept main feature code and backend logic intact as much as possible.
+- Added bridge compatibility for Lovable-branded GitHub Mode UI messages.
+
+Important notes:
+- This is a static code patch. It is not a guarantee that every screen or obfuscated flow is fully rebranded.
+- Core backend/API behavior remains dependent on the original extension code and services.
+- No live backend credentials or production account testing was performed in this patch step.
