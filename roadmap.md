@@ -1,11 +1,14 @@
 # Roadmap
 
 ## Final comprehensive pass (Nov 28 2026)
-- [ ] Audit and complete Telegram My Orders, home/profile navigation and stale funding sessions.
-- [ ] Audit storefront stock, checkout, account history, validation and loading/error states without merging unverified identities.
-- [ ] Complete Admin overview, order bulk/review/delivery controls, wallet, products and member details.
-- [ ] Verify concurrency safeguards and external-service failure paths; run focused tests and phone-sized checks.
-- [ ] Record changed files, migrations, flow evidence, required secrets and any externally blocked checks in a review checklist.
+- [x] Telegram My Orders navigation/details, empty/retry states, expired unpaid orders, live catalogue, home/profile shortcuts, loading feedback and 30-minute funding inactivity.
+- [x] Stock-aware checkout links, minimum quantity, email/proof validation, owner-only paginated history and loading/error states; unverified identities are never merged.
+- [x] Admin daily/week currency-separated figures, overdue filter/bulk review, per-channel delivery results, wallet quick actions, member search/history pagination and product picture preview.
+- [x] 167 existing/focused tests passed; 12 real-database transport-mocked scenarios and signed-in mobile website proof/order, Admin bulk approve/private evidence/wallet/member search flows checked; 390/1280px light/dark checkout verified.
+- [x] Changed-file, migration, flow and secret checklist recorded; temporary fixtures removed. Whole-system production readiness is not claimed.
+- [ ] Live email delivery — blocked by missing RESEND_API_KEY and verified sender.
+- [ ] Real Telegram customer delivery, Google/email signup inbox roundtrips and Cloudflare picture generation — require recipient/provider interaction or working provider credentials; mocked transport is not a live-provider test.
+- [ ] Publish reviewed changes and verify hosted webhook/scheduler behaviour — requires deployment.
 
 ## FoxGEN Pro 5.40 replacement
 - [x] Preserved 30 original files byte-for-byte in an independent edition; applied FoxGEN name/logo/version and exact-path existing-panel licence adapter. Admin passwords remain unchanged, as confirmed.

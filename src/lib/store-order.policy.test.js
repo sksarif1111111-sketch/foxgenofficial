@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { sessionIsFresh, paymentExpired, validDeliveryEmails, matchesMemberSearch } from './store-order.policy';
+import { sessionIsFresh, paymentExpired, validDeliveryEmails, matchesMemberSearch, customerErrorMessage } from './store-order.policy';
 const time = Date.parse('2026-11-28T00:00:00Z');
 test('funding expires after exactly thirty minutes of inactivity', () => {
   expect(sessionIsFresh('2026-11-28T00:00:00Z', time + 29 * 60000)).toBe(true);
@@ -21,3 +21,5 @@ test('Telegram username search accepts @', () => expect(matchesMemberSearch(memb
 test('Telegram ID search', () => expect(matchesMemberSearch(member,'987654321')).toBe(true));
 test('member email search uses order contact without merging identities', () => expect(matchesMemberSearch(member,'buyer@example.com',['buyer@example.com'])).toBe(true));
 test('unrelated search is not a match', () => expect(matchesMemberSearch(member,'unknown')).toBe(false));
+test('provider failures show a calm payment retry message',()=>expect(customerErrorMessage(new Error('Payment method unavailable'))).toBe('Payment is temporarily unavailable. Please try again in a few minutes.'));
+test('unexpected database details are never shown to customers',()=>expect(customerErrorMessage(new Error('relation secret_table null undefined SQLSTATE'))).toBe('This action could not be completed. Please retry or contact Support with your order number.'));

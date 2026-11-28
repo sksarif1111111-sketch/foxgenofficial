@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { telegramRenderer, telegramHomeKeyboard } from './telegram-navigation';
+import { telegramRenderer, telegramLoadingRenderer, telegramHomeKeyboard } from './telegram-navigation';
 
 describe('single Telegram navigation screen', () => {
   const keyboard = [[{ text: 'Shop', callback_data: 'shop' }]];
@@ -41,6 +41,21 @@ describe('single Telegram navigation screen', () => {
   it('does not send a duplicate screen when Telegram throttles an edit', async () => {
     const calls = [];
     await telegramRenderer(async method => { calls.push(method); return { ok: false, error_code: 429, parameters: { retry_after: 9 } }; }, 12, 34)('Home', keyboard);
+    expect(calls).toEqual(['editMessageText']);
+  });
+  it('a slow screen replaces its loading placeholder instead of sending two active menus', async()=>{
+    const calls=[];
+    const renderer=telegramRenderer(async(method,body)=>{calls.push({method,body});return {ok:true,result:{message_id:99}};},12,34);
+    const screen=telegramLoadingRenderer(renderer,true,Date.now(),10);
+    await new Promise(r=>setTimeout(r,25));
+    await screen.render('Order details',[[{callback_data:'myorders',text:'Orders'}]]);
+    expect(calls.map(c=>c.method)).toEqual(['editMessageText','editMessageText']);
+    expect(calls.at(-1).body.message_id).toBe(34);
+  });
+  it('a fast screen cancels the pending placeholder',async()=>{
+    const calls=[];
+    const screen=telegramLoadingRenderer(telegramRenderer(async method=>{calls.push(method);return {ok:true};},12,34),true,Date.now(),10);
+    await screen.render('Home',[]);await new Promise(r=>setTimeout(r,25));
     expect(calls).toEqual(['editMessageText']);
   });
 });

@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Profile } from "@/lib/hub.server";
-import { telegramRenderer, telegramHomeKeyboard, styledKeyboard } from "@/lib/telegram-navigation";
+import { telegramRenderer, telegramLoadingRenderer, telegramHomeKeyboard, styledKeyboard } from "@/lib/telegram-navigation";
 import { botFailureMessage, isReadOnlyBotAction } from "@/lib/telegram-recovery";
+import { telegramUpdateSchema } from '@/lib/telegram-update.schema';
 
 type TgUser = { id: number; username?: string; first_name?: string; last_name?: string };
 type Btn = { text: string; url?: string; callback_data?: string; copy_text?: { text: string } };
@@ -67,32 +68,13 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return new Response("Unauthorized", { status: 401 });
         }
 
-        const update = (await request.json()) as {
-          update_id?: number;
-          message?: {
-            chat: { id: number };
-            from?: TgUser;
-            text?: string;
-            photo?: Array<{ file_id: string }>;
-            successful_payment?: {
-              currency: string;
-              total_amount: number;
-              invoice_payload: string;
-              telegram_payment_charge_id: string;
-            };
-          };
-          pre_checkout_query?: { id: string; from: TgUser; total_amount: number; invoice_payload: string };
-          callback_query?: {
-            id: string;
-            from: TgUser;
-            data?: string;
-            message?: { chat: { id: number }; message_id: number; photo?: Array<{ file_id: string }> };
-          };
-        };
+        const parsed = telegramUpdateSchema.safeParse(await request.json().catch(()=>null));
+        if(!parsed.success)return Response.json({ok:false,error:'INVALID_UPDATE'},{status:400});
+        const update = parsed.data;
 
         // 1. ALWAYS acknowledge the callback first so the button never spins.
         if (update.callback_query) {
-          void tg("answerCallbackQuery", { callback_query_id: update.callback_query.id }).catch(() => undefined);
+          void tg("answerCallbackQuery", { callback_query_id: update.callback_query.id, text: 'Loading…', cache_time: 0 }).catch(() => undefined);
         }
 
         const updateId = update.update_id;
@@ -113,6 +95,12 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           if (claimed.data !== "claimed") return Response.json({ ok: false }, { status: 503 });
         }
         let workFailed = false;
+        let timed = false;
+        const timedTg: typeof tg = (method, payload) => {
+          if (!timed && /^(edit|send)/.test(method)) { timed = true; console.log(`[bot-timing] ${(update.callback_query?.data || update.message?.text || '').slice(0,40)} ${Date.now()-receivedAt}ms`); }
+          return tg(method,payload);
+        };
+        const screen = telegramLoadingRenderer(telegramRenderer(timedTg,update.callback_query?.message?.chat.id ?? update.message?.chat.id ?? 0,update.callback_query?.message?.message_id,Boolean(update.callback_query?.message?.photo?.length)),Boolean(update.callback_query),receivedAt);
         try {
         // ---------- Telegram Stars: pre-checkout validation ----------
         if (update.pre_checkout_query) {
@@ -198,7 +186,6 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
 
         const text = update.message?.text?.trim() ?? "";
         const cb = update.callback_query?.data ?? "";
-        const editMessageId = update.callback_query?.message?.message_id;
         const settings = settingsLoaded;
 
         const S = (key: string, fallback: string) => (settings[key] || fallback).trim();
@@ -218,12 +205,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
          * Centralised page renderer: one message, one fresh keyboard, no duplicates.
          * Every navigation edits the current message and safely ignores "not modified".
          */
-        let timed = false;
-        const timedTg: typeof tg = (method, payload) => {
-          if (!timed && /^(edit|send)/.test(method)) { timed = true; console.log(`[bot-timing] ${(cb || text).slice(0, 40)} ${Date.now() - receivedAt}ms`); }
-          return tg(method, payload);
-        };
-        const render = telegramRenderer(timedTg, chatId, editMessageId, Boolean(update.callback_query?.message?.photo?.length));
+        const render = screen.render;
 
         const storeName = S("store_name", "FoxGEN Store");
         const storeTagline = S("store_tagline", "Premium digital products at affordable prices.");
@@ -984,6 +966,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
           return Response.json({ ok: false }, { status: 500 });
         } finally {
           // Runs after the user's screen was sent: bookkeeping never delays the reply.
+          await screen.finish();
           await Promise.all(deferred);
           if (typeof updateId === "number") await db.from("shop_webhook_work").update({ status: workFailed ? "failed" : "completed", locked_until: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("update_id", updateId).eq("claim_token", claimToken);
         }

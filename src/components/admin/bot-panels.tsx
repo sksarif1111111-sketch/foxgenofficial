@@ -218,6 +218,7 @@ type UserRow = Awaited<ReturnType<typeof adminUsers>>[number];
 export function MembersPanel({ notify }: { notify: Notify }) {
   const fUsers = useServerFn(adminUsers);
   const fDetail=useServerFn(adminMemberDetail);
+  const [memberPage,setMemberPage]=useState(1);
   const [detail,setDetail]=useState<Awaited<ReturnType<typeof adminMemberDetail>>|null>(null);
   const [page,setPage]=useState(1);
   const [busy,setBusy]=useState(false);
@@ -278,7 +279,7 @@ export function MembersPanel({ notify }: { notify: Notify }) {
                     <td className="px-4 py-3 text-xs text-muted-foreground">{shortDate(u.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1.5">
-                        <Button size="sm" variant="outline" disabled={busy} onClick={()=>void run(async()=>setDetail(await fDetail({data:{id:u.id}})), 'Member profile opened.')}>Profile</Button>
+                        <Button size="sm" variant="outline" disabled={busy} onClick={()=>void run(async()=>{setMemberPage(1);setDetail(await fDetail({data:{id:u.id,page:1}}));}, 'Member profile opened.')}>Profile</Button>
                         <Button size="sm" variant="outline" disabled={busy} onClick={() => setAdjust({ user: u, amount: "1", reason: "" })}>Adjust credits</Button>
                         <Button size="sm" variant="ghost" disabled={busy} title="Reset task progress" onClick={() => void run(() => fReset({ data: { userId: u.id } }), "Task progress reset — member is pending again.")}><RotateCcw className="size-3.5" /></Button>
                       </div>
@@ -296,9 +297,10 @@ export function MembersPanel({ notify }: { notify: Notify }) {
         <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{[detail.profile.first_name,detail.profile.last_name].filter(Boolean).join(' ')||'Member'} · {memberLabel(detail.profile.member_number)}</h3><Button variant="outline" onClick={()=>setDetail(null)}>Close profile</Button></div>
         <p className="text-sm">Telegram ID: {detail.profile.telegram_user_id} · Joined {shortDate(detail.profile.created_at)}</p>
         <Button asChild variant="outline"><a href={detail.profile.telegram_username?`https://t.me/${detail.profile.telegram_username.replace(/^@/,'')}`:`tg://user?id=${detail.profile.telegram_user_id}`} target="_blank" rel="noreferrer">Open Telegram chat</a></Button>
-        <h4 className="font-semibold">Orders · latest 100</h4>{detail.orders.length?detail.orders.map(o=><p key={o.id} className="text-sm font-mono break-words">{o.order_number} · {o.status.replaceAll('_',' ')} · {o.currency==='XTR'?o.stars_total:o.total} {o.currency} · {shortDate(o.created_at)}</p>):<p className="text-sm text-muted-foreground">No orders yet.</p>}
-        <h4 className="font-semibold">Wallet history · latest 100</h4>{detail.wallet.length?detail.wallet.map(t=><p key={t.id} className="text-sm break-words">{t.amount_usd} USD · {t.kind} · {t.note} · {shortDate(t.created_at)}</p>):<p className="text-sm text-muted-foreground">No wallet transactions.</p>}
-        <h4 className="font-semibold">Top-up requests · latest 100</h4>{detail.topups.length?detail.topups.map(t=><p key={t.id} className="text-sm break-words">{t.amount} {t.currency} · {t.status} · {t.reference}</p>):<p className="text-sm text-muted-foreground">No top-up requests.</p>}
+        <h4 className="font-semibold">Orders · page {memberPage}</h4>{detail.orders.length?detail.orders.map(o=><p key={o.id} className="text-sm font-mono break-words">{o.order_number} · {o.status.replaceAll('_',' ')} · {o.currency==='XTR'?o.stars_total:o.total} {o.currency} · {shortDate(o.created_at)}</p>):<p className="text-sm text-muted-foreground">No orders yet.</p>}
+        <h4 className="font-semibold">Wallet history · page {memberPage}</h4>{detail.wallet.length?detail.wallet.map(t=><p key={t.id} className="text-sm break-words">{t.amount_usd} USD · {t.kind} · {t.note} · {shortDate(t.created_at)}</p>):<p className="text-sm text-muted-foreground">No wallet transactions.</p>}
+        <h4 className="font-semibold">Top-up requests · page {memberPage}</h4>{detail.topups.length?detail.topups.map(t=><p key={t.id} className="text-sm break-words">{t.amount} {t.currency} · {t.status} · {t.reference}</p>):<p className="text-sm text-muted-foreground">No top-up requests.</p>}
+        <div className="flex items-center gap-2"><Button variant="outline" disabled={busy||memberPage===1} onClick={()=>void run(async()=>{const next=memberPage-1;setDetail(await fDetail({data:{id:detail.profile.id,page:next}}));setMemberPage(next);},'History loaded.')}>Previous history</Button><Button variant="outline" disabled={busy||Math.max(detail.orders.length,detail.wallet.length,detail.topups.length)<100} onClick={()=>void run(async()=>{const next=memberPage+1;setDetail(await fDetail({data:{id:detail.profile.id,page:next}}));setMemberPage(next);},'History loaded.')}>Next history</Button></div>
       </section>}
       <AlertDialog open={!!adjust} onOpenChange={(v) => !v && setAdjust(null)}>
         <AlertDialogContent>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
+import { Button } from '@/components/ui/button';
 
 export type ProofFile = { base64: string; previewUrl: string; name: string };
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
@@ -11,7 +12,9 @@ async function compress(file: File): Promise<Blob> {
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(bitmap.width * scale);
   canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const context = canvas.getContext('2d');
+  if (!context) { bitmap.close(); return file; }
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.85));
   if (!blob) throw new Error("compress");
@@ -54,10 +57,10 @@ export function ProofUpload({ value, onChange, disabled }: { value: ProofFile | 
       {value ? (
         <div className="relative mt-2 overflow-hidden rounded-xl border border-border bg-muted">
           <img src={value.previewUrl} alt="Payment screenshot preview" className="mx-auto max-h-64 w-auto object-contain" />
-          <button type="button" disabled={disabled} onClick={() => onChange(null)} aria-label="Remove screenshot"
+          <Button variant="ghost" type="button" disabled={disabled} onClick={() => onChange(null)} aria-label="Remove screenshot"
             className="absolute right-2 top-2 inline-flex size-8 items-center justify-center rounded-full bg-background/90 text-foreground shadow-soft hover:bg-background">
             <X className="size-4" />
-          </button>
+          </Button>
           <p className="truncate border-t border-border bg-card px-3 py-2 text-xs font-normal text-muted-foreground">{value.name}</p>
         </div>
       ) : (

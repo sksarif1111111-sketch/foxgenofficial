@@ -24,6 +24,7 @@ export type ShopCatalog = {
     availability: string;
     purchasable: boolean;
     max_units: number;
+    min_units: number;
     delivery_method: string;
     featured: boolean;
     created_at: string | null;

@@ -38,7 +38,7 @@ export function PriceTag({ product, size = "md" }: { product: CatalogProduct; si
   );
 }
 
-/** Minimal catalogue card; details and purchase actions remain on the individual product page. */
+/** Shared catalogue card with the existing product details and checkout destinations. */
 export function ProductCard({ product, onOpen }: { product: CatalogProduct; onOpen?: () => void; footnote?: string; ribbon?: string }) {
   const body = (
     <>
@@ -61,10 +61,14 @@ export function ProductCard({ product, onOpen }: { product: CatalogProduct; onOp
             </>
           )}
         </div>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2"><StockPill product={product} /><span className={`button-5 ${product.purchasable?'text-primary':'text-muted-foreground'}`}>{product.purchasable?'Buy':product.availability==='coming_soon'?'Coming soon':'Out of stock'}</span></div>
       </div>
     </>
   );
-  if (onOpen) return <Button variant="ghost" onClick={onOpen} className="catalog-card" data-robot-point="">{body}</Button>;
-  return <Link to="/product/$productId" params={{ productId: product.id }} className="catalog-card" data-robot-point="">{body}</Link>;
+  return <article className="catalog-card" data-robot-point="">
+    {onOpen ? <Button variant="ghost" onClick={onOpen} className="contents">{body}</Button> : <Link to="/product/$productId" params={{ productId: product.id }} className="contents">{body}</Link>}
+    <div className="flex flex-wrap items-center justify-between gap-2 px-3 pb-3">
+      <StockPill product={product} />
+      {product.purchasable ? <Button asChild size="sm"><Link to="/shop" search={{product:product.id,buy:true}}>Buy</Link></Button> : <Button size="sm" variant="outline" disabled>{product.availability==='coming_soon'?'Coming soon':'Out of stock'}</Button>}
+    </div>
+  </article>;
 }

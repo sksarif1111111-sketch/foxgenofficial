@@ -81,13 +81,14 @@ export const adminUsers = createServerFn({method:'POST'}).middleware([requireAdm
  });
 
 export const adminMemberDetail=createServerFn({method:'POST'}).middleware([requireAdminPassword])
- .inputValidator((v:unknown)=>z.object({id:z.string().uuid()}).parse(v)).handler(async({data})=>{
+ .inputValidator((v:unknown)=>z.object({id:z.string().uuid(),page:z.number().int().min(1).max(10000).optional()}).parse(v)).handler(async({data})=>{
   const {db}=await import('./hub.server');
+  const start=((data.page??1)-1)*100;
   const [profile,orders,wallet,topups]=await Promise.all([
     db.from('profiles').select('id,member_number,telegram_user_id,telegram_username,first_name,last_name,created_at,status').eq('id',data.id).maybeSingle(),
-    db.from('shop_orders').select('id,order_number,status,currency,total,stars_total,created_at').eq('profile_id',data.id).order('created_at',{ascending:false}).limit(100),
-    db.from('wallet_transactions').select('id,amount_usd,balance_after,kind,note,created_at').eq('profile_id',data.id).order('created_at',{ascending:false}).limit(100),
-    db.from('wallet_topup_requests').select('id,amount,currency,status,reference,created_at').eq('profile_id',data.id).order('created_at',{ascending:false}).limit(100),
+    db.from('shop_orders').select('id,order_number,status,currency,total,stars_total,created_at').eq('profile_id',data.id).order('created_at',{ascending:false}).range(start,start+99),
+    db.from('wallet_transactions').select('id,amount_usd,balance_after,kind,note,created_at').eq('profile_id',data.id).order('created_at',{ascending:false}).range(start,start+99),
+    db.from('wallet_topup_requests').select('id,amount,currency,status,reference,created_at').eq('profile_id',data.id).order('created_at',{ascending:false}).range(start,start+99),
   ]);
   if(!profile.data || [profile,orders,wallet,topups].some(r=>r.error))throw new Error('Could not load this member.');
   return {profile:profile.data,orders:orders.data??[],wallet:wallet.data??[],topups:topups.data??[]};

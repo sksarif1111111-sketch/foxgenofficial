@@ -27,3 +27,16 @@ export function matchesMemberSearch(member: { member_number: number | null; firs
     member.referral_code, number, number === null ? null : `M-${String(number).padStart(6, '0')}`, ...emails]
     .some(v => v !== null && v !== undefined && String(v).toLowerCase().includes(q));
 }
+export function customerErrorMessage(error: unknown) {
+  const message=error instanceof Error?error.message.toLowerCase():'';
+  if(/insufficient|balance/.test(message))return 'Your wallet balance is too low. Add funds or choose another payment method.';
+  if(/quantity|stock|product unavailable/.test(message))return 'This quantity is no longer available. Refresh the product and choose another quantity.';
+  if(/payment method|price or wallet|provider|reseller/.test(message))return 'Payment is temporarily unavailable. Please try again in a few minutes.';
+  if(/verify your email/.test(message))return 'Verify your email before ordering. Check your inbox or sign in again.';
+  if(/email/.test(message))return 'Enter a valid delivery email, or one email per unit.';
+  if(/transaction|reference/.test(message))return 'Check your transaction reference and try again. Contact Support if it was already submitted.';
+  if(/screenshot|upload|proof/.test(message))return 'The payment screenshot could not be saved. Choose a JPEG, PNG or WebP under 5 MB and retry.';
+  if(/auth|sign-in|session/.test(message))return 'Please sign in again, then retry your action.';
+  if(/no longer waiting|expired|cannot be cancelled/.test(message))return 'This order has changed. Open My orders to check its latest status.';
+  return 'This action could not be completed. Please retry or contact Support with your order number.';
+}

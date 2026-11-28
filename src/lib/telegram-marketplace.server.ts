@@ -1,4 +1,4 @@
-import { db, tg, type Profile } from './hub.server';
+import { db, tg, acquireLock, type Profile } from './hub.server';
 import { createOrder, maxUnits, shopProductById, shapeProduct, cancelOrder, submitPayment, type ShopProduct } from './shop.server';
 import { orderStatus, paymentExpired } from './store-order.policy';
 import { quantityChoices, orderTime } from './telegram-marketplace.policy';
@@ -131,6 +131,10 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
   if(action.startsWith('buy:')){const [,id,q]=action.split(':');await confirm(id??'',Number(q));return true;}
   if(action.startsWith('pay:')||action.startsWith('buystars:')) {
     const [,id,q,method]=action.split(':');
+    if (!await acquireLock(`checkout:${profile.id}:${id}:${q}:${method??'stars'}`,3000)) {
+      await send('Your checkout is processing. Open My Orders in a moment; no second order was created.', [[{text:'📦 My Orders',callback_data:'myorders'}],...home]);
+      return true;
+    }
     let methodId=method;
     if(action.startsWith('pay:') && ['wallet','upi','binance_id','usdt_bep20'].includes(method??'')) {
       const selected=await db.from('payment_methods').select('id').eq('channel','telegram').eq('enabled',true).eq('provider',method??'').order('display_order').limit(1).maybeSingle();
@@ -158,7 +162,7 @@ export async function marketplaceBot(input: { profile: Profile; chatId: number; 
     const orders=(result.data??[]).slice(0,8);
     const amount=(o:typeof orders[number])=>o.currency==='XTR'?`${o.stars_total} ⭐`:`${o.total} ${o.currency}`;
     const content=orders.map(o=>`${esc(o.order_number)} · ${esc(orderStatus(o))}\n${o.shop_order_items.map(i=>`${esc(i.product_name)} ×${i.quantity}`).join(', ')}\n${esc(amount(o))} · ${esc(o.payment_method_name||'—')} · ${o.created_at.slice(0,10)}${o.delivered_at?`\n✅ Delivered: ${o.delivered_at.slice(0,16).replace('T',' ')} UTC`:''}`).join('\n\n');
-    await send(`<b>MY ORDERS</b> · Page ${page}\n\n${content|| (page===1?'📭 You have not placed any orders yet.':'No orders on this page.')}`.slice(0,3900),[...ordersHome,...orders.map(o=>[{text:`${o.order_number} · ${o.shop_order_items.map(i=>`${i.product_name} ×${i.quantity}`).join(', ')} · ${amount(o)} · ${o.payment_method_name||'—'} · ${orderStatus(o)} · ${o.created_at.slice(5,10)}`.slice(0,60),callback_data:`order:${o.id}`}]),...(orders.length||page>1?[[...(page>1?[{text:'◀ Previous',callback_data:`myorders:${page-1}`}]:[]),...(result.data?.length===9?[{text:'Next ▶',callback_data:`myorders:${page+1}`}]:[])]]:[]),[{text:'🛍️ Browse Shop',callback_data:'shop'}],...home]);
+    await send(`<b>MY ORDERS</b> · Page ${page}\n\n${content|| (page===1?'📭 You have not placed any orders yet.':'No orders on this page.')}`.slice(0,3900),[...ordersHome,...orders.map(o=>[{text:(()=>{const tail=` · ${amount(o)} · ${(o.payment_method_name||'—').slice(0,5)} · ${orderStatus(o).slice(0,7)} · ${o.created_at.slice(5,10)}`;const qty=`×${o.shop_order_items.reduce((n,i)=>n+i.quantity,0)}`;const name=(o.shop_order_items[0]?.product_name||'Product').slice(0,Math.max(1,60-o.order_number.length-tail.length-qty.length-1));return `${o.order_number} ${name}${qty}${tail}`;})(),callback_data:`order:${o.id}`}]),...(orders.length||page>1?[[...(page>1?[{text:'◀ Previous',callback_data:`myorders:${page-1}`}]:[]),...(result.data?.length===9?[{text:'Next ▶',callback_data:`myorders:${page+1}`}]:[])]]:[]),[{text:'🛍️ Browse Shop',callback_data:'shop'}],...home]);
     return true;
   }
   if(action.startsWith('order:')){await detail(action.slice(6));return true;}

@@ -23,6 +23,7 @@ export type ShopProduct = {
   stock_mode: string;
   stock_quantity: number | null;
   max_per_order: number;
+  min_per_order: number;
   availability: string;
   delivery_method: string;
   requires_buyer_email: boolean;
@@ -117,6 +118,7 @@ export function shapeProduct(row: Record<string, unknown>, channel: ShopChannel)
     stock_mode: stockMode,
     stock_quantity: stockQty,
     max_per_order: Number(row["max_per_order"] ?? 1),
+    min_per_order: Number(row['min_per_order'] ?? 1),
     availability,
     delivery_method: String(row["delivery_method"] ?? "email_manual"),
     requires_buyer_email: channel === "telegram" ? row["requires_buyer_email"] === true : row["requires_buyer_email"] !== false,
@@ -164,6 +166,7 @@ export function toCatalogProduct(p: ShopProduct) {
     availability: p.availability,
     purchasable: p.purchasable,
     max_units: maxUnits(p),
+    min_units: p.min_per_order,
     delivery_method: p.delivery_method,
     featured: p.featured,
     created_at: p.created_at,
@@ -465,15 +468,18 @@ export async function sendTelegramDelivery(orderId: string, actor = "admin", cha
   const { acquireLock, releaseLock } = await import("@/lib/hub.server");
   if (!await acquireLock(lock, 60000)) return { ok: false, reason: "delivery_in_progress" };
   try {
-    const { data: previous } = await db.from("shop_delivery_jobs").select("id,payload").eq("order_id", orderId).eq("channel", "telegram").eq("status", "sent");
-    if ((previous ?? []).some(j => (j.payload as Record<string, unknown>)?.["fulfillment"] === true)) return { ok: true, reason: "already_sent" };
+    const previousRead = await db.from("shop_delivery_jobs").select("id,payload,status").eq("order_id", orderId).eq("channel", "telegram");
+    if(previousRead.error)return {ok:false,reason:'delivery_read_failed'};
+    const fulfillmentJobs=(previousRead.data??[]).filter(j=>(j.payload as Record<string,unknown>|null)?.['fulfillment']===true);
+    if(fulfillmentJobs.some(j=>j.status==='sent'))return {ok:true,reason:'already_sent'};
+    if(fulfillmentJobs.some(j=>['pending','blocked'].includes(j.status)))return {ok:false,reason:'delivery_uncertain'};
     const { data: job, error } = await db.from("shop_delivery_jobs").insert({ order_id: orderId, channel: "telegram", target: String(targetChat), payload: { text, fulfillment: true }, attempts: 1 }).select("id").single();
     if (error || !job) return { ok: false, reason: "delivery_job_failed" };
-    let sent = false;
-    try { const result = await tg("sendMessage", { chat_id: targetChat, text, parse_mode: "HTML", disable_web_page_preview: true }); sent = result.ok; } catch { /* keep credential details out of errors */ }
+    let sent = false;let uncertain=false;
+    try { const result = await tg("sendMessage", { chat_id: targetChat, text, parse_mode: "HTML", disable_web_page_preview: true }); sent = result.ok; } catch { uncertain=true; /* An accepted message can lose its response; never replay blindly. */ }
     if (!sent) {
-      await db.from("shop_delivery_jobs").update({ status: "failed", last_error: "Telegram could not deliver the message." }).eq("id", job.id);
-      return { ok: false, reason: "telegram_send_failed" };
+      await db.from("shop_delivery_jobs").update({ status: uncertain?"blocked":"failed", last_error: uncertain?"Delivery outcome is uncertain. Confirm with the buyer before another send.":"Telegram could not deliver the message." }).eq("id", job.id);
+      return { ok: false, reason: uncertain?"delivery_uncertain":"telegram_send_failed" };
     }
     const now = new Date().toISOString();
     const result = await db.from("shop_delivery_jobs").update({ status: "sent", sent_at: now }).eq("id", job.id);

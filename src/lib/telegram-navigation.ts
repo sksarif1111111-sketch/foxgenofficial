@@ -8,15 +8,17 @@ type TelegramCall = (method: string, body: Record<string, unknown>) => Promise<T
 
 /** Replace callback screens; new user messages still receive a new reply. */
 export function telegramRenderer(call: TelegramCall, chatId: number, messageId?: number, hasPhoto = false) {
+  let currentMessageId=messageId;
+  let currentHasPhoto=hasPhoto;
   return async (body: string, keyboard: TelegramKeyboard, image?: string | null): Promise<string | undefined> => {
     const reply_markup = { inline_keyboard: styledKeyboard(keyboard) };
-    if (messageId) {
-      const method = image ? 'editMessageMedia' : hasPhoto && body.length <= 1024 ? 'editMessageCaption' : 'editMessageText';
+    if (currentMessageId) {
+      const method = image ? 'editMessageMedia' : currentHasPhoto && body.length <= 1024 ? 'editMessageCaption' : 'editMessageText';
       const content = image ? { media: { type: 'photo', media: image, caption: body, parse_mode: 'HTML' } }
         : method === 'editMessageCaption' ? { caption: body, parse_mode: 'HTML' }
         : { text: body, parse_mode: 'HTML', disable_web_page_preview: true };
-      const edited = await call(method, { chat_id: chatId, message_id: messageId, ...content, reply_markup });
-      if (edited.ok) return photoFileId(edited.result);
+      const edited = await call(method, { chat_id: chatId, message_id: currentMessageId, ...content, reply_markup });
+      if (edited.ok) {currentHasPhoto=!!image || method==='editMessageCaption';return photoFileId(edited.result);}
       if (edited.description?.includes('message is not modified')) return;
       if (edited.error_code === 429 || edited.parameters?.retry_after || edited.description?.includes('Too Many Requests')) return;
     }
@@ -31,9 +33,23 @@ export function telegramRenderer(call: TelegramCall, chatId: number, messageId?:
     }
     const fileId = photoFileId(sent.result);
     // A non-editable older message must not retain an active duplicate menu.
-    if (messageId) await call('editMessageReplyMarkup', { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } });
+    if (currentMessageId) await call('editMessageReplyMarkup', { chat_id: chatId, message_id: currentMessageId, reply_markup: { inline_keyboard: [] } });
+    const nextId=(sent.result as {message_id?:number}|undefined)?.message_id;
+    if(nextId)currentMessageId=nextId;
+    currentHasPhoto=!!image && !!fileId;
     return fileId;
   };
+}
+
+/** A slow callback gets an editable placeholder; the final screen waits for that edit, never races it. */
+export function telegramLoadingRenderer(render: ReturnType<typeof telegramRenderer>, enabled: boolean, receivedAt=Date.now(), delay=1500) {
+  let pending: Promise<unknown> | null=null;
+  let finished=false;
+  const timer=enabled?setTimeout(()=>{
+    if(!finished)pending=render('Loading…',[[{text:'🏠 Home',callback_data:'menu'}]]).catch(()=>undefined);
+  },Math.max(0,delay-(Date.now()-receivedAt))):null;
+  const finish=async()=>{finished=true;if(timer)clearTimeout(timer);if(pending)await pending;};
+  return {finish,render:async(body:string,keyboard:TelegramKeyboard,image?:string|null)=>{await finish();return render(body,keyboard,image);}};
 }
 
 /** Largest photo file_id from a Telegram message result, if any. */

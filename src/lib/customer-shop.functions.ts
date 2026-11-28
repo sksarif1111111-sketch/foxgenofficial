@@ -53,11 +53,13 @@ export const customerConfirmEmails = createServerFn({ method: "POST" }).middlewa
 export const customerCancelOrder = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
  .inputValidator((input: unknown) => z.object({ orderId: z.string().uuid() }).parse(input))
  .handler(async ({ data, context }) => { await ownOrder(data.orderId, context.userId); const { cancelOrder } = await import("@/lib/shop.server"); return cancelOrder(data.orderId, "customer", "Cancelled by customer"); });
-export const customerMyOrders = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }): Promise<MyOrder[]> => {
+export const customerMyOrders = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+.inputValidator((v:unknown)=>z.object({page:z.number().int().min(1).max(10000).optional()}).parse(v??{}))
+.handler(async ({ context,data }): Promise<MyOrder[]> => {
   const { db } = await import("@/lib/hub.server");
   const expired = await db.rpc('shop_expire_unpaid', { _customer: context.userId });
   if (expired.error) throw new Error('Could not refresh your orders. Please try again.');
-  const result = await db.from("shop_orders").select("*").eq("customer_user_id", context.userId).eq("channel", "website").order("created_at", { ascending: false }).limit(50);
+  const result = await db.from("shop_orders").select("*").eq("customer_user_id", context.userId).eq("channel", "website").order("created_at", { ascending: false }).order("id").range(((data.page??1)-1)*50,(data.page??1)*50-1);
   if (result.error) throw new Error("Could not read your orders.");
   const orders = result.data ?? [], ids = orders.map(o => o.id);
   if (!ids.length) return [];

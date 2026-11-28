@@ -69,6 +69,7 @@ const DELIVERY_REASONS: Record<string, string> = {
   telegram_material_too_long: "Delivery material is too long for one Telegram message. Shorten it or use email.",
   telegram_send_failed: "Telegram could not deliver. Check the delivery job and retry.",
   delivery_in_progress: "Delivery is already in progress.",
+  delivery_uncertain: "Telegram delivery could not be confirmed. Check with the customer before another send; automatic retries are blocked.",
   delivery_failed: "Nothing was delivered. The order is still waiting for fulfillment. Check the channel results and retry.",
   email_send_failed: "The email provider rejected the send. See the delivery jobs list for the error.",
   sent: "Delivery email sent.",
@@ -215,7 +216,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
         <Field label="Search order / email / reference">
           <input value={search} onChange={(e) => setSearch(e.target.value)} className={input} />
         </Field>
-        <Button type="button" className={ghostBtn} onClick={() => void load()}>
+        <Button variant="ghost" type="button" className={ghostBtn} onClick={() => void load()}>
           Refresh
         </Button>
       </div>
@@ -256,7 +257,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
             {row["delivery_emails"] ? (
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 {String(row["delivery_emails"])}
-                <Button
+                <Button variant="ghost"
                   type="button"
                   className={ghostBtn}
                   onClick={() => void navigator.clipboard.writeText(String(row["delivery_emails"]))}
@@ -268,7 +269,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
             {row["payment_reference"] ? (
               <p className="text-xs text-muted-foreground">Reference: {String(row["payment_reference"])}</p>
             ) : null}
-            <Button type="button" className={primaryBtn} onClick={() => void openOrder(String(row["id"]))}>
+            <Button variant="ghost" type="button" className={primaryBtn} onClick={() => void openOrder(String(row["id"]))}>
               View Order
             </Button>
           </article>
@@ -279,7 +280,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
         <div className={`${card} space-y-4 border-primary/40`}>
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-black">Order {String(open.order["order_number"])}</h3>
-            <Button type="button" className={ghostBtn} onClick={() => setOpen(null)}>
+            <Button variant="ghost" type="button" className={ghostBtn} onClick={() => setOpen(null)}>
               Close
             </Button>
           </div>
@@ -310,7 +311,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
               <input value={notes} onChange={(e) => setNotes(e.target.value)} className={input} />
             </Field>
             <div className="flex flex-wrap gap-2">
-              <Button
+              <Button variant="ghost"
                 type="button"
                 disabled={busy}
                 className={primaryBtn}
@@ -322,9 +323,9 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                   })
                 }
               >
-                Approve Payment
+                {busy?"Processing…":"Approve Payment"}
               </Button>
-              <Button
+              <Button variant="ghost"
                 type="button"
                 disabled={busy}
                 className={primaryBtn}
@@ -338,9 +339,9 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                   })
                 }
               >
-                Approve and Send
+                {busy?"Processing…":"Approve and Send"}
               </Button>
-              {open.order.delivery_emails && (              <Button
+              {open.order.delivery_emails && (              <Button variant="ghost"
                 type="button"
                 disabled={busy}
                 className={ghostBtn}
@@ -352,7 +353,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                   })
                 }
               >
-                Send Email
+                {busy?"Processing…":"Send Email"}
               </Button>)}
               {open.order.telegram_user_id != null && <Button type="button" variant="outline" disabled={busy} className={ghostBtn} onClick={() => void act(async () => {
                 const result = await fSendTelegram({ data: { id: open.order.id } });
@@ -364,7 +365,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
               <input value={reason} onChange={(e) => setReason(e.target.value)} className={input} />
             </Field>
             <div className="flex flex-wrap gap-2">
-              <Button
+              <Button variant="ghost"
                 type="button"
                 disabled={busy || reason.trim().length < 3}
                 className={ghostBtn}
@@ -377,9 +378,9 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
                   })
                 }
               >
-                Reject Payment
+                {busy?"Processing…":"Reject Payment"}
               </Button>
-              <Button
+              <Button variant="ghost"
                 type="button"
                 disabled={busy || reason.trim().length < 3}
                 className={ghostBtn}
@@ -414,7 +415,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
               <Field label="Content">
                 <input value={material} onChange={(e) => setMaterial(e.target.value)} className={input} />
               </Field>
-              <Button
+              <Button variant="ghost"
                 type="button"
                 disabled={busy || material.trim().length < 3}
                 className={primaryBtn}
@@ -439,7 +440,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
               payment details), review it, then save. A saved draft is what gets sent.
             </p>
             <div className="flex flex-wrap gap-2">
-              <Button
+              <Button variant="ghost"
                 type="button"
                 disabled={busy || drafting}
                 className={primaryBtn}
@@ -461,7 +462,7 @@ export function BuyingPanel({ notify }: { notify: Notify }) {
               >
                 {drafting ? "Writing draft…" : "Draft with AI"}
               </Button>
-              <Button
+              <Button variant="ghost"
                 type="button"
                 disabled={busy || emailSubject.trim().length < 3 || emailBody.trim().length < 10}
                 className={ghostBtn}
@@ -723,8 +724,8 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
             <b className={quota.left === 0 ? "text-destructive" : "text-foreground"}>{quota.limited ? "limit reached" : `about ${quota.left} left`}</b> of ~{quota.estimatedCap} free · resets in {formatReset(msUntilReset(new Date(nowTick)))}
           </p>
         )}
-        <Button type="button" className={ghostBtn} disabled={generating||busy} onClick={() => { setGenerating(true); void act(async () => { const r = await fFillImages(); notify(`${r.made} picture(s) created.`); }, "Missing pictures checked.").finally(() => { setGenerating(false); refreshQuota(); }); }}>{generating ? "Creating pictures…" : "Create missing pictures"}</Button>
-        <Button type="button" disabled={busy} className={primaryBtn} onClick={() => { setDraft({ ...emptyProduct }); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>
+        <Button variant="ghost" type="button" className={ghostBtn} disabled={generating||busy} onClick={() => { setGenerating(true); void act(async () => { const r = await fFillImages(); notify(`${r.made} picture(s) created.`); }, "Missing pictures checked.").finally(() => { setGenerating(false); refreshQuota(); }); }}>{generating ? "Creating pictures…" : "Create missing pictures"}</Button>
+        <Button variant="ghost" type="button" disabled={busy} className={primaryBtn} onClick={() => { setDraft({ ...emptyProduct }); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>
           + Add Product
         </Button>
       </div>
@@ -733,7 +734,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search products" aria-label="Search products" className="h-10 min-w-56 flex-1 rounded-lg border border-input bg-background px-3 text-sm" />
         <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">
           {([["all", "All"], ["manual", "Store managed"], ["api", "Supplier API"], ["featured", "Featured"], ["unpublished", "Hidden"]] as const).map(([id, label]) => (
-            <Button key={id} type="button" onClick={() => setSourceFilter(id)} className={`h-8 rounded-md px-3 text-xs font-medium ${sourceFilter === id ? "bg-card shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>
+            <Button variant="ghost" key={id} type="button" onClick={() => setSourceFilter(id)} className={`h-8 rounded-md px-3 text-xs font-medium ${sourceFilter === id ? "bg-card shadow-soft" : "text-muted-foreground hover:text-foreground"}`}>
               {label}
             </Button>
           ))}
@@ -777,7 +778,7 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
                     </td>
                     <td className="px-4 py-3 text-xs">{String(row["availability"]).replaceAll("_", " ")}{row["stock_mode"] === "tracked" ? ` · ${String(row["stock_quantity"] ?? 0)} left` : ""}</td>
                     <td className="px-4 py-3">
-                      <Button
+                      <Button variant="ghost"
                         type="button"
                         disabled={busy}
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${row["shop_published"] ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}
@@ -788,18 +789,18 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1.5">
-                        {!row['image_url'] && <Button size="sm" variant="outline" disabled={busy||generating} onClick={()=>{edit(row);document.getElementById('product-editor')?.scrollIntoView({behavior:'smooth'});}}>Generate picture</Button>}
-                        <Button type="button" disabled={busy} className={ghostBtn} onClick={() => { edit(row); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>Edit</Button>
-                        <Button type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fState({ data: { id, featured: !(row["featured"] === true) } }), row["featured"] ? "Removed from featured." : "Marked as featured on the Home page.")}>
+                        {!row['image_url'] && <Button size="sm" variant="outline" disabled={busy||generating} onClick={async()=>{if(generating||busy||!window.confirm('Generate a picture for this product with Cloudflare AI?'))return;edit(row);setGenerating(true);try{const result=await fGenerateImage({data:{name:String(row['name']),description:String(row['description']??'')}});setDraft(d=>d?.id===id?{...d,image_url:result.url}:d);notify('Picture preview ready. Save the product to publish the picture.');}catch(e){notify(e instanceof Error?e.message:'Picture generation unavailable. Upload a picture instead.');}finally{setGenerating(false);refreshQuota();document.getElementById('product-editor')?.scrollIntoView({behavior:'smooth'});}}}>Generate picture</Button>}
+                        <Button variant="ghost" type="button" disabled={busy} className={ghostBtn} onClick={() => { edit(row); window.setTimeout(() => document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" }), 60); }}>Edit</Button>
+                        <Button variant="ghost" type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fState({ data: { id, featured: !(row["featured"] === true) } }), row["featured"] ? "Removed from featured." : "Marked as featured on the Home page.")}>
                           {row["featured"] ? "Unfeature" : "Feature"}
                         </Button>
-                        <Button type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fDuplicate({ data: { id } }), "Product duplicated as a hidden draft.")}>Duplicate</Button>
+                        <Button variant="ghost" type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fDuplicate({ data: { id } }), "Product duplicated as a hidden draft.")}>Duplicate</Button>
                         {archived ? (
-                          <Button type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fState({ data: { id, status: "active" } }), "Product restored.")}>Restore</Button>
+                          <Button variant="ghost" type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fState({ data: { id, status: "active" } }), "Product restored.")}>Restore</Button>
                         ) : (
-                          <Button type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fState({ data: { id, status: "archived" } }), "Product archived.")}>Archive</Button>
+                          <Button variant="ghost" type="button" disabled={busy} className={ghostBtn} onClick={() => void act(() => fState({ data: { id, status: "archived" } }), "Product archived.")}>Archive</Button>
                         )}
-                        <Button
+                        <Button variant="ghost"
                           type="button"
                           className="rounded-xl border border-destructive/40 px-3 py-2 text-xs font-bold text-destructive"
                           onClick={() => {
@@ -936,10 +937,10 @@ export function ShopProductsPanel({ notify }: { notify: Notify }) {
             Requires a buyer email
           </label>
           <div className="flex gap-2">
-            <Button type="button" className={primaryBtn} disabled={busy||generating} onClick={() => void save()}>
-              Save product
+            <Button variant="ghost" type="button" className={primaryBtn} disabled={busy||generating} onClick={() => void save()}>
+              {busy?"Processing…":"Save product"}
             </Button>
-            <Button type="button" disabled={busy} className={ghostBtn} onClick={() => setDraft(null)}>
+            <Button variant="ghost" type="button" disabled={busy} className={ghostBtn} onClick={() => setDraft(null)}>
               Cancel
             </Button>
           </div>
@@ -972,7 +973,7 @@ function PaymentMethodsEditor({
     <section className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-black">Payment methods</h3>
-        <Button
+        <Button variant="ghost"
           type="button"
           className={primaryBtn}
           onClick={() =>
@@ -1002,7 +1003,7 @@ function PaymentMethodsEditor({
             {String(row["network"] ?? "no network")} · {String(row["recipient"] ?? "—")} ·{" "}
             {row["enabled"] ? "enabled" : "disabled"}
           </span>
-          <Button type="button" disabled={busy} className={ghostBtn} onClick={() => setDraft(row)}>
+          <Button variant="ghost" type="button" disabled={busy} className={ghostBtn} onClick={() => setDraft(row)}>
             Edit
           </Button>
         </article>
@@ -1044,9 +1045,10 @@ function PaymentMethodsEditor({
             Enabled
           </label>
           <div className="flex gap-2">
-            <Button
+            <Button variant="ghost"
               type="button"
               className={primaryBtn}
+              disabled={busy}
               onClick={() =>
                 void (async () => {
                   if(actionLock.current)return;
@@ -1081,7 +1083,7 @@ function PaymentMethodsEditor({
             >
               Save
             </Button>
-            <Button type="button" disabled={busy} className={ghostBtn} onClick={() => setDraft(null)}>
+            <Button variant="ghost" type="button" disabled={busy} className={ghostBtn} onClick={() => setDraft(null)}>
               Cancel
             </Button>
           </div>
@@ -1185,7 +1187,7 @@ export function WalletPanel({ notify }: { notify: Notify }) {
           placeholder="Search by name or username"
           className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
         />
-        <Button
+        <Button variant="ghost"
           type="button"
           onClick={() => void load()}
           className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted/40"
@@ -1212,7 +1214,7 @@ export function WalletPanel({ notify }: { notify: Notify }) {
                 inputMode="decimal"
                 className="w-24 rounded-xl border border-border bg-background px-3 py-2 text-sm"
               />
-              <Button
+              <Button variant="ghost"
                 type="button"
                 disabled={busy}
                 onClick={() => void topUp(row)}

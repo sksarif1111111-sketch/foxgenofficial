@@ -1,0 +1,6 @@
+- Validate Telegram updates through the shared schema before claiming webhook work; durable update IDs prevent duplicate payment handling.
+- Order expiry uses the service-only row-locking helper, scoped to a verified buyer, so a concurrent payment cannot expire.
+- Read bot catalogue publication and stock on each visit; settings/member-count caches remain separate from sale availability.
+- Customer email addresses are contact/search data, never authorization or an account-linking mechanism.
+- Email fulfillment shares the order delivery lock and persists provider idempotency keys; uncertain Telegram sends block replay until verified.
+- Use the shared order policy for funding inactivity and customer validation; member aggregates and operational statistics keep currencies separate.
